@@ -5,13 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface DonationRecord {
-    id: number;
-    amount: string;
-    method: string;
-    checkNumber?: string;
-    scanString?: string;
-    status: 'Saved' | 'Pending' | 'Error';
-    timestamp: Date;
+    DonationID: number;
+    GiftAmount: number;
+    SecondaryID?: string; // Check Number
+    ScanString?: string;
+    CreatedAt: string;
 }
 
 export default function DataEntryPage({ params }: { params: { id: string } }) {
@@ -20,55 +18,71 @@ export default function DataEntryPage({ params }: { params: { id: string } }) {
     const [checkNum, setCheckNum] = useState('');
     const [scanInput, setScanInput] = useState('');
     const [lastSaved, setLastSaved] = useState<number | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const amountRef = useRef<HTMLInputElement>(null);
     const checkRef = useRef<HTMLInputElement>(null);
     const scanRef = useRef<HTMLInputElement>(null);
 
-    // Focus management
+    // Load Initial Data
     useEffect(() => {
-        // Start with Scan input if mode is Barcode, else Amount
+        fetchRecords();
         scanRef.current?.focus();
     }, []);
 
-    const handleSave = () => {
-        if (!amount) return; // Validation
+    const fetchRecords = async () => {
+        try {
+            const res = await fetch(`/api/batches/${params.id}/donations`);
+            if (res.ok) setRecords(await res.json());
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
-        const newRecord: DonationRecord = {
-            id: Date.now(),
-            amount,
-            method: 'Check', // Default for now
-            checkNumber: checkNum,
-            scanString: scanInput,
-            status: 'Saved',
-            timestamp: new Date()
-        };
+    const handleSave = async () => {
+        if (!amount) return;
+        setSaving(true);
 
-        setRecords(prev => [newRecord, ...prev]);
-        setLastSaved(newRecord.id);
+        try {
+            const res = await fetch(`/api/batches/${params.id}/donations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: parseFloat(amount),
+                    checkNumber: checkNum,
+                    scanString: scanInput
+                })
+            });
 
-        // Reset fields
-        setAmount('');
-        setCheckNum('');
-        setScanInput('');
+            if (res.ok) {
+                const newRecord = await res.json();
+                setLastSaved(newRecord.DonationID);
+                // Refresh list to be sure or append manually? Refresh is safer for sync.
+                await fetchRecords();
 
-        // Refocus
-        scanRef.current?.focus();
+                // Reset
+                setAmount('');
+                setCheckNum('');
+                setScanInput('');
+                scanRef.current?.focus();
 
-        // Clear "Last Saved" highlight after 2s
-        setTimeout(() => setLastSaved(null), 2000);
+                setTimeout(() => setLastSaved(null), 2000);
+            } else {
+                alert('Save Failed');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Save Error');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Enter') {
-            // If on the last field (Amount), save.
-            // Logic: Scan -> Check -> Amount -> Save
-            // Actually, standard flow: Scan (fills others) -> or Manual: Amount -> Check -> Next
-            // Simplified for "Manual" check entry:
             if (document.activeElement === amountRef.current) {
                 handleSave();
             } else if (document.activeElement === scanRef.current) {
-                // Mock parsing: if scan input has data, jump to amount
                 if (scanInput) {
                     checkRef.current?.focus();
                 }
@@ -92,7 +106,7 @@ export default function DataEntryPage({ params }: { params: { id: string } }) {
                 </div>
                 <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9rem' }}>
                     <div>Count: <strong>{records.length}</strong></div>
-                    <div>Total: <strong>${records.reduce((sum, r) => sum + Number(r.amount), 0).toFixed(2)}</strong></div>
+                    <div>Total: <strong>${records.reduce((sum, r) => sum + r.GiftAmount, 0).toFixed(2)}</strong></div>
                 </div>
             </div>
 
@@ -150,13 +164,9 @@ export default function DataEntryPage({ params }: { params: { id: string } }) {
                     </div>
 
                     <div style={{ marginTop: 'auto' }}>
-                        <button className="btn-primary" style={{ width: '100%', marginBottom: '1rem' }} onClick={handleSave}>
-                            Save Record (Enter)
+                        <button className="btn-primary" style={{ width: '100%', marginBottom: '1rem' }} onClick={handleSave} disabled={saving}>
+                            {saving ? 'Saving...' : 'Save Record (Enter)'}
                         </button>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                            <button style={{ padding: '0.5rem', background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'hsl(var(--color-text-muted))', borderRadius: 'var(--radius-sm)' }}>Void Previous</button>
-                            <button style={{ padding: '0.5rem', background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'hsl(var(--color-text-muted))', borderRadius: 'var(--radius-sm)' }}>Submit Batch</button>
-                        </div>
                     </div>
                 </div>
 
@@ -169,24 +179,22 @@ export default function DataEntryPage({ params }: { params: { id: string } }) {
                                 <th style={{ padding: '1rem' }}>Time</th>
                                 <th style={{ padding: '1rem' }}>Method</th>
                                 <th style={{ padding: '1rem' }}>Check #</th>
-                                <th style={{ padding: '1rem' }}>Scan Data</th>
                                 <th style={{ padding: '1rem', textAlign: 'right' }}>Amount</th>
                                 <th style={{ padding: '1rem' }}>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {records.map((r, i) => (
-                                <tr key={r.id} style={{
+                                <tr key={r.DonationID} style={{
                                     borderBottom: '1px solid hsla(var(--color-border), 0.3)',
-                                    backgroundColor: r.id === lastSaved ? 'hsla(140, 60%, 40%, 0.1)' : 'transparent',
+                                    backgroundColor: r.DonationID === lastSaved ? 'hsla(140, 60%, 40%, 0.1)' : 'transparent',
                                     transition: 'background-color 0.5s'
                                 }}>
                                     <td style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))' }}>{records.length - i}</td>
-                                    <td style={{ padding: '1rem' }}>{r.timestamp.toLocaleTimeString()}</td>
-                                    <td style={{ padding: '1rem' }}>{r.method}</td>
-                                    <td style={{ padding: '1rem' }}>{r.checkNumber || '-'}</td>
-                                    <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'hsl(var(--color-accent))' }}>{r.scanString || '-'}</td>
-                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600 }}>${Number(r.amount).toFixed(2)}</td>
+                                    <td style={{ padding: '1rem' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</td>
+                                    <td style={{ padding: '1rem' }}>Check</td>
+                                    <td style={{ padding: '1rem' }}>{r.SecondaryID || '-'}</td>
+                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600 }}>${r.GiftAmount.toFixed(2)}</td>
                                     <td style={{ padding: '1rem' }}>
                                         <span style={{ color: '#4ade80', fontSize: '0.8em' }}>✔ Saved</span>
                                     </td>
