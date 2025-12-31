@@ -1,28 +1,28 @@
-import sql from 'mssql';
+import { Pool } from 'pg';
 
-const config = {
-    user: process.env.DB_USER || 'sa',
-    password: process.env.DB_PASSWORD || 'CompassCaging123!',
-    server: process.env.DB_SERVER || 'localhost',
-    database: process.env.DB_NAME || 'CompassCaging',
-    options: {
-        encrypt: false, // For local dev
-        trustServerCertificate: true,
-    },
-};
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/compass_caging',
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
-let pool: sql.ConnectionPool | null = null;
-
-export async function getPool() {
-    if (pool) return pool;
-
-    try {
-        pool = await sql.connect(config);
-        return pool;
-    } catch (err) {
-        console.error('Database Connection Failed:', err);
-        throw err;
-    }
+export async function query(text: string, params?: any[]) {
+    const start = Date.now();
+    const res = await pool.query(text, params);
+    const duration = Date.now() - start;
+    // console.log('executed query', { text, duration, rows: res.rowCount });
+    return res;
 }
 
-export { sql };
+// Helper for clients used to MSSQL style
+export async function getPool() {
+    return pool;
+}
+
+// No-op for syntax highlighting if needed
+export const sql = {
+    // Basic types for compatibility if needed, but we'll switch to native types
+    Int: 'int',
+    NVarChar: 'text',
+    Decimal: 'decimal',
+    DateTime2: 'timestamp',
+};
