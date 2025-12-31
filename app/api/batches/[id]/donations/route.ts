@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const result = await query(`
         SELECT "DonationID", "GiftAmount", "CheckNumber", "SecondaryID", "ScanString", "CreatedAt", "GiftMethod"
         FROM "Donations" 
         WHERE "BatchID" = $1 
         ORDER BY "CreatedAt" DESC
-      `, [params.id]);
+      `, [id]);
         return NextResponse.json(result.rows);
     } catch (error) {
         console.error(error);
@@ -16,13 +17,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const body = await request.json();
         const { amount, checkNumber, scanString } = body;
+        const { id } = await params;
 
         // Get ClientID from Batch
-        const batchRes = await query('SELECT "ClientID" FROM "Batches" WHERE "BatchID" = $1', [params.id]);
+        const batchRes = await query('SELECT "ClientID" FROM "Batches" WHERE "BatchID" = $1', [id]);
 
         if (batchRes.rows.length === 0) throw new Error('Batch not found');
         const clientId = batchRes.rows[0].ClientID;
@@ -34,7 +36,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             RETURNING "DonationID", "CreatedAt", "GiftAmount"
         `, [
             clientId,
-            params.id,
+            id,
             amount,
             checkNumber || null, // SecondaryID can double as check num or be distinct, Postgres schema has CheckNumber column now
             checkNumber || null,
