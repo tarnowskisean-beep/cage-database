@@ -92,7 +92,7 @@ export default function Home() {
                 <YAxis stroke="hsl(var(--color-text-muted))" tickFormatter={(val) => `$${val}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--color-bg-surface))', border: '1px solid hsl(var(--color-border))' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: any) => formatCurrency(value)}
                 />
                 <Bar dataKey="total" fill="#4ade80" radius={[4, 4, 0, 0]} />
               </BarChart>
