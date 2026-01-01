@@ -10,3 +10,30 @@ export async function GET() {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        const { code, name } = body;
+
+        if (!code || !name) {
+            return NextResponse.json({ error: 'Client Code and Name are required' }, { status: 400 });
+        }
+
+        // Check if code exists
+        const existing = await query('SELECT "ClientID" FROM "Clients" WHERE "ClientCode" = $1', [code]);
+        if (existing.rows.length > 0) {
+            return NextResponse.json({ error: 'Client Code already exists' }, { status: 409 });
+        }
+
+        const result = await query(
+            'INSERT INTO "Clients" ("ClientCode", "ClientName") VALUES ($1, $2) RETURNING *',
+            [code, name]
+        );
+
+        return NextResponse.json(result.rows[0], { status: 201 });
+    } catch (error) {
+        console.error('POST /api/clients error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

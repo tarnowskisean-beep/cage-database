@@ -11,23 +11,52 @@ interface Client {
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newClient, setNewClient] = useState({ code: '', name: '' });
+    const [submitting, setSubmitting] = useState(false);
+
+    const fetchClients = async () => {
+        try {
+            const res = await fetch('/api/clients');
+            if (res.ok) {
+                const data = await res.json();
+                setClients(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch clients', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchClients = async () => {
-            try {
-                const res = await fetch('/api/clients');
-                if (res.ok) {
-                    const data = await res.json();
-                    setClients(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch clients', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchClients();
     }, []);
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const res = await fetch('/api/clients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newClient)
+            });
+
+            if (res.ok) {
+                setNewClient({ code: '', name: '' });
+                setIsModalOpen(false);
+                fetchClients(); // Refresh list
+            } else {
+                alert('Failed to create client');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error creating client');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <div>
@@ -36,6 +65,13 @@ export default function ClientsPage() {
                     <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Client Directory</h1>
                     <p style={{ color: 'hsl(var(--color-text-muted))' }}>Manage and view all registered clients</p>
                 </div>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="button-primary"
+                    style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                    <span>+</span> New Client
+                </button>
             </header>
 
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
@@ -83,6 +119,58 @@ export default function ClientsPage() {
                     </table>
                 )}
             </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50
+                }}>
+                    <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
+                        <h2 style={{ marginBottom: '1.5rem' }}>Add New Client</h2>
+                        <form onSubmit={handleCreate}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'hsl(var(--color-text-muted))' }}>Client Code</label>
+                                <input
+                                    className="input-field"
+                                    placeholder="e.g. ABC"
+                                    value={newClient.code}
+                                    onChange={e => setNewClient({ ...newClient, code: e.target.value.toUpperCase() })}
+                                    required
+                                    maxLength={10}
+                                />
+                            </div>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'hsl(var(--color-text-muted))' }}>Client Name</label>
+                                <input
+                                    className="input-field"
+                                    placeholder="e.g. American Bird Conservancy"
+                                    value={newClient.name}
+                                    onChange={e => setNewClient({ ...newClient, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    style={{ background: 'transparent', border: '1px solid hsla(var(--color-border), 0.5)', padding: '0.5rem 1rem', borderRadius: '0.375rem', color: 'white', cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="button-primary"
+                                    style={{ padding: '0.5rem 1.5rem' }}
+                                >
+                                    {submitting ? 'Saving...' : 'Create'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
