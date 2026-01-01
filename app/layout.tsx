@@ -31,6 +31,7 @@ export default function RootLayout({
 
             <nav className="nav-menu">
               <NavLink href="/" label="Dashboard" icon="📊" />
+              <NavLink href="/clients" label="Clients" icon="🏢" />
               <NavLink href="/batches" label="Batches" icon="📦" />
               <NavLink href="/search" label="Search" icon="🔍" />
               <NavLink href="/reconciliation" label="Reconciliation" icon="⚖️" />
