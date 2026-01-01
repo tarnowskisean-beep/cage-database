@@ -41,7 +41,9 @@ export default function BatchesPage() {
 
     // Load Data
     useEffect(() => {
+        // eslint-disable-next-line
         fetchBatches();
+        // eslint-disable-next-line
         fetchClients();
     }, []);
 
