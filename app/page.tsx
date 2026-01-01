@@ -20,7 +20,7 @@ export default function Home() {
           </div>
         </Link>
 
-        <div className="glass-panel" style={{ padding: '2rem', opcode: 0.5 }}>
+        <div className="glass-panel" style={{ padding: '2rem', opacity: 0.5 }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
           <h2 style={{ marginBottom: '0.5rem', color: 'white' }}>Reporting</h2>
           <p style={{ color: 'hsl(var(--color-text-muted))' }}>Reconciliation and export tools coming soon.</p>
