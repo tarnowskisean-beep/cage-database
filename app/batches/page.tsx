@@ -25,12 +25,6 @@ export default function BatchesPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const router = useRouter();
 
-    // Load Data
-    useEffect(() => {
-        fetchBatches();
-        fetchClients();
-    }, []);
-
     const fetchBatches = async () => {
         try {
             const res = await fetch('/api/batches');
@@ -44,6 +38,12 @@ export default function BatchesPage() {
             if (res.ok) setClients(await res.json());
         } catch (err) { console.error(err); }
     };
+
+    // Load Data
+    useEffect(() => {
+        fetchBatches();
+        fetchClients();
+    }, []);
 
     return (
         <div>
