@@ -68,7 +68,7 @@ export default function Home() {
         />
         <DashboardCard
           title="Active Batches"
-          value={stats.byClient?.length || '0'}
+          value={(stats.byClient?.length || 0).toString()}
           icon="📂"
         />
         <DashboardCard
