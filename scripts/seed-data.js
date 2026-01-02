@@ -28,7 +28,20 @@ const CLIENTS = [
 const PLATFORMS = ['Cage', 'Stripe', 'Propay', 'WinRed', 'Anedot'];
 const METHODS = ['Check', 'Credit Card', 'Cash', 'EFT'];
 
-// ... (helper functions remain same)
+function randomDate(start, end) {
+    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+}
+
+function randomAmount() {
+    const rand = Math.random();
+    if (rand < 0.5) return Math.floor(Math.random() * 50) + 10;
+    if (rand < 0.8) return Math.floor(Math.random() * 200) + 50;
+    return Math.floor(Math.random() * 5000) + 250;
+}
+
+function randomChoice(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
 
 async function seed() {
     try {
