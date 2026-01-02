@@ -33,7 +33,10 @@ export default function BatchEntry({ id }: { id: string }) {
         platform: '',
         giftType: '',
         year: '',
-        quarter: ''
+        quarter: '',
+        donorEmail: '',
+        donorPhone: '',
+        organizationName: ''
     });
 
     const [donorInfo, setDonorInfo] = useState({
@@ -172,6 +175,12 @@ export default function BatchEntry({ id }: { id: string }) {
             return;
         }
 
+        // Conditional Validation
+        if (['Corporate', 'Foundation', 'Donor-Advised Fund'].includes(formData.giftType) && !formData.organizationName) {
+            alert(`Organization Name is required for ${formData.giftType} gifts.`);
+            return;
+        }
+
         setSaving(true);
         try {
             const payload = {
@@ -182,7 +191,10 @@ export default function BatchEntry({ id }: { id: string }) {
                 giftPlatform: formData.platform,
                 giftType: formData.giftType,
                 giftYear: parseInt(formData.year),
-                giftQuarter: formData.quarter
+                giftQuarter: formData.quarter,
+                donorEmail: formData.donorEmail,
+                donorPhone: formData.donorPhone,
+                organizationName: formData.organizationName
             };
 
             const res = await fetch(`/api/batches/${id}/donations`, {
@@ -201,7 +213,10 @@ export default function BatchEntry({ id }: { id: string }) {
                     ...prev,
                     amount: '',
                     checkNumber: '',
-                    scanString: ''
+                    scanString: '',
+                    donorEmail: '',
+                    donorPhone: '',
+                    organizationName: ''
                 }));
                 setDonorInfo({ firstName: '', lastName: '', address: '', city: '', state: '', zip: '' });
 
@@ -378,6 +393,49 @@ export default function BatchEntry({ id }: { id: string }) {
                                 disabled={!donorInfo.firstName}
                             />
 
+                        </div>
+
+                        {/* ADDITIONAL FIELDS (Expandable based on need) */}
+                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid #334155', paddingTop: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+
+                                {/* Organization Name (Conditional) */}
+                                {['Corporate', 'Foundation', 'Donor-Advised Fund'].includes(formData.giftType) && (
+                                    <div style={{ gridColumn: 'span 2' }}>
+                                        <label style={labelStyle}>Organization Name <span style={{ color: '#ef4444' }}>*</span></label>
+                                        <input
+                                            className="input-field"
+                                            value={formData.organizationName}
+                                            onChange={e => setFormData({ ...formData, organizationName: e.target.value })}
+                                            placeholder="Enter Organization Name"
+                                            disabled={!donorInfo.firstName}
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label style={labelStyle}>Email (Optional)</label>
+                                    <input
+                                        className="input-field"
+                                        type="email"
+                                        value={formData.donorEmail}
+                                        onChange={e => setFormData({ ...formData, donorEmail: e.target.value })}
+                                        placeholder="donor@example.com"
+                                        disabled={!donorInfo.firstName}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Phone (Optional)</label>
+                                    <input
+                                        className="input-field"
+                                        type="tel"
+                                        value={formData.donorPhone}
+                                        onChange={e => setFormData({ ...formData, donorPhone: e.target.value })}
+                                        placeholder="(555) 555-5555"
+                                        disabled={!donorInfo.firstName}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
