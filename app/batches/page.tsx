@@ -184,6 +184,12 @@ export default function BatchesPage() {
 function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: () => void }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentQuarter = Math.ceil((currentMonth + 1) / 3);
+
     const [formData, setFormData] = useState({
         clientId: '',
         entryMode: 'Barcode',
@@ -191,7 +197,10 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
         zerosType: '',
         defaultGiftMethod: 'Check',
         defaultGiftPlatform: 'Cage',
-        defaultTransactionType: 'Donation'
+        defaultTransactionType: 'Donation',
+        date: today.toISOString().split('T')[0],
+        defaultGiftYear: currentYear,
+        defaultGiftQuarter: `Q${currentQuarter}`
     });
 
     const handleSubmit = async () => {
@@ -222,10 +231,10 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <div className="glass-panel" style={{ width: '600px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
+            <div className="glass-panel" style={{ width: '700px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
                 <h2 style={{ marginBottom: '1.5rem' }}>Start New Batch</h2>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
                     <div style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Client</label>
                         <select
@@ -252,6 +261,43 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                                 />
                             ))}
                         </div>
+                    </div>
+
+                    <div style={{ gridColumn: '1 / 2' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Batch Date</label>
+                        <input
+                            type="date"
+                            className="input-field"
+                            value={formData.date}
+                            onChange={e => setFormData({ ...formData, date: e.target.value })}
+                        />
+                    </div>
+
+                    <div style={{ gridColumn: '2 / 3' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Gift Year</label>
+                        <select
+                            className="input-field"
+                            value={formData.defaultGiftYear}
+                            onChange={e => setFormData({ ...formData, defaultGiftYear: parseInt(e.target.value) })}
+                        >
+                            <option value={currentYear + 1}>{currentYear + 1}</option>
+                            <option value={currentYear}>{currentYear}</option>
+                            <option value={currentYear - 1}>{currentYear - 1}</option>
+                        </select>
+                    </div>
+
+                    <div style={{ gridColumn: '3 / 4' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Quarter</label>
+                        <select
+                            className="input-field"
+                            value={formData.defaultGiftQuarter}
+                            onChange={e => setFormData({ ...formData, defaultGiftQuarter: e.target.value })}
+                        >
+                            <option>Q1</option>
+                            <option>Q2</option>
+                            <option>Q3</option>
+                            <option>Q4</option>
+                        </select>
                     </div>
 
                     <div>
@@ -295,28 +341,18 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         </select>
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Trans. Type</label>
-                        <select
-                            className="input-field"
-                            value={formData.defaultTransactionType}
-                            onChange={e => setFormData({ ...formData, defaultTransactionType: e.target.value })}
-                        >
-                            <option>Donation</option>
-                            <option>Payment</option>
-                        </select>
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                        <button className="btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading}>
-                            {loading ? 'Creating...' : 'Create Batch'}
-                        </button>
-                        <button
-                            style={{ flex: 1, background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'white', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
-                            onClick={onClose}
-                        >
-                            Cancel
-                        </button>
+                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid hsla(var(--color-border), 0.5)' }}>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button className="btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading}>
+                                {loading ? 'Creating...' : 'Create Batch'}
+                            </button>
+                            <button
+                                style={{ flex: 1, background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'white', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                                onClick={onClose}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

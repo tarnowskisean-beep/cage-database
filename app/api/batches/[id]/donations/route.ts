@@ -28,15 +28,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const { id } = await params;
 
         // Get ClientID and Defaults from Batch
-        const batchRes = await query('SELECT "ClientID", "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType" FROM "Batches" WHERE "BatchID" = $1', [id]);
+        const batchRes = await query('SELECT "ClientID", "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter" FROM "Batches" WHERE "BatchID" = $1', [id]);
 
         if (batchRes.rows.length === 0) throw new Error('Batch not found');
         const batch = batchRes.rows[0];
 
         const result = await query(`
             INSERT INTO "Donations" 
-            ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType")
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
+            ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType", "GiftYear", "GiftQuarter")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10, $11)
             RETURNING "DonationID", "CreatedAt", "GiftAmount"
         `, [
             batch.ClientID,
@@ -47,7 +47,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             scanString || null,
             batch.DefaultGiftMethod || 'Check',
             batch.DefaultGiftPlatform || 'Cage',
-            batch.DefaultTransactionType || 'Donation'
+            batch.DefaultTransactionType || 'Donation',
+            batch.DefaultGiftYear,
+            batch.DefaultGiftQuarter
         ]);
 
         return NextResponse.json(result.rows[0]);
