@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent, use } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 interface DonationRecord {
     DonationID: number;
@@ -12,8 +12,10 @@ interface DonationRecord {
     CreatedAt: string;
 }
 
-export default function DataEntryPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default function DataEntryPage() {
+    const params = useParams();
+    const id = params?.id as string;
+
     const [records, setRecords] = useState<DonationRecord[]>([]);
     const [amount, setAmount] = useState('');
     const [checkNum, setCheckNum] = useState('');
@@ -25,20 +27,31 @@ export default function DataEntryPage({ params }: { params: Promise<{ id: string
     const checkRef = useRef<HTMLInputElement>(null);
     const scanRef = useRef<HTMLInputElement>(null);
 
-    // Load Initial Data
-    useEffect(() => {
-        fetchRecords();
-        scanRef.current?.focus();
-    }, []);
-
+    // Fetch Records Function
     const fetchRecords = async () => {
+        if (!id) return;
         try {
             const res = await fetch(`/api/batches/${id}/donations`);
-            if (res.ok) setRecords(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    setRecords(data);
+                } else {
+                    console.error('API returned non-array:', data);
+                    setRecords([]);
+                }
+            }
         } catch (e) {
             console.error(e);
         }
     };
+
+    // Load Initial Data
+    useEffect(() => {
+        fetchRecords();
+        scanRef.current?.focus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
     const handleSave = async () => {
         if (!amount) return;
