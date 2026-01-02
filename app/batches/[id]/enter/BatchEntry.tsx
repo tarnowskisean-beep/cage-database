@@ -279,46 +279,134 @@ export default function BatchEntry({ id }: { id: string }) {
                 }}>
                     <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>BATCH DEFAULTS</div>
 
-                    <div>
-                        <label style={labelStyle}>Platform</label>
-                        <select className="input-field" value={formData.platform} onChange={e => setFormData({ ...formData, platform: e.target.value })}>
-                            {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style={labelStyle}>Type</label>
-                        <select className="input-field" value={formData.giftType} onChange={e => setFormData({ ...formData, giftType: e.target.value })}>
-                            {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style={labelStyle}>Method</label>
-                        <select className="input-field" value={formData.method} onChange={e => setFormData({ ...formData, method: e.target.value })}>
-                            {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                        <div>
-                            <label style={labelStyle}>Year</label>
-                            <input className="input-field" type="number" value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} />
+                    {/* Transaction Details (Editable - LOCKED UNTIL SCAN) */}
+                    <div style={{
+                        background: '#1e293b',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        border: '1px solid #334155',
+                        flex: 1,
+                        opacity: donorInfo.firstName ? 1 : 0.4,
+                        pointerEvents: donorInfo.firstName ? 'auto' : 'none',
+                        transition: 'opacity 0.2s'
+                    }}>
+                        <div style={{ color: '#e2e8f0', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem', borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>
+                            {donorInfo.firstName ? "2. TRANSACTION DETAILS" : "2. SCAN TO UNLOCK"}
                         </div>
-                        <div>
-                            <label style={labelStyle}>Quarter</label>
-                            <select className="input-field" value={formData.quarter} onChange={e => setFormData({ ...formData, quarter: e.target.value })}>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 2fr', gap: '0.75rem', alignItems: 'center' }}>
+
+                            <label style={labelStyle}>Platform</label>
+                            <select
+                                className="input-field"
+                                value={formData.platform}
+                                onChange={e => setFormData({ ...formData, platform: e.target.value })}
+                                disabled={!donorInfo.firstName}
+                            >
+                                {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+
+                            <label style={labelStyle}>Type</label>
+                            <select
+                                className="input-field"
+                                value={formData.giftType}
+                                onChange={e => setFormData({ ...formData, giftType: e.target.value })}
+                                disabled={!donorInfo.firstName}
+                            >
+                                {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+
+                            <label style={labelStyle}>Method</label>
+                            <select
+                                className="input-field"
+                                value={formData.method}
+                                onChange={e => setFormData({ ...formData, method: e.target.value })}
+                                disabled={!donorInfo.firstName}
+                            >
+                                {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+
+                            <div style={{ height: '1px', background: '#334155', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
+
+                            <label style={labelStyle}>Gift Year</label>
+                            <input
+                                className="input-field"
+                                type="number"
+                                value={formData.year}
+                                onChange={e => setFormData({ ...formData, year: e.target.value })}
+                                disabled={!donorInfo.firstName}
+                            />
+
+                            <label style={labelStyle}>Gift Quarter</label>
+                            <select
+                                className="input-field"
+                                value={formData.quarter}
+                                onChange={e => setFormData({ ...formData, quarter: e.target.value })}
+                                disabled={!donorInfo.firstName}
+                            >
                                 <option value="Q1">Q1</option>
                                 <option value="Q2">Q2</option>
                                 <option value="Q3">Q3</option>
                                 <option value="Q4">Q4</option>
                             </select>
-                        </div>
-                    </div>
 
-                    <div style={{ paddingTop: '1rem', borderTop: '1px solid #1e293b' }}>
-                        <label style={labelStyle}>Check # (Optional)</label>
-                        <input className="input-field" value={formData.checkNumber} onChange={e => setFormData({ ...formData, checkNumber: e.target.value })} placeholder="---" />
+                            <div style={{ height: '1px', background: '#334155', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
+
+                            <label style={labelStyle}>Check #</label>
+                            <input
+                                className="input-field"
+                                value={formData.checkNumber}
+                                onChange={e => setFormData({ ...formData, checkNumber: e.target.value })}
+                                disabled={!donorInfo.firstName}
+                            />
+
+                            <label style={{ ...labelStyle, color: donorInfo.firstName ? '#4ade80' : '#64748b', fontWeight: 600 }}>Gift Amount</label>
+                            <input
+                                ref={amountRef}
+                                className="input-field"
+                                type="number"
+                                placeholder="0.00"
+                                style={{
+                                    fontSize: '1.1rem',
+                                    fontWeight: 600,
+                                    color: donorInfo.firstName ? '#4ade80' : '#64748b',
+                                    borderColor: donorInfo.firstName ? '#4ade80' : '#334155'
+                                }}
+                                value={formData.amount}
+                                onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                                onKeyDown={handleKeyDown}
+                                disabled={!donorInfo.firstName}
+                            />
+
+                        </div>
+
+                        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
+                            <button
+                                className="btn-primary"
+                                style={{ flex: 1, background: '#334155', border: '1px solid #475569' }}
+                                onClick={() => {
+                                    // Reset Fields
+                                    setFormData({
+                                        ...formData,
+                                        amount: '',
+                                        checkNumber: '',
+                                        scanString: ''
+                                    });
+                                    setDonorInfo({ firstName: '', lastName: '', address: '', city: '', state: '', zip: '' });
+                                    scanRef.current?.focus();
+                                }}
+                            >
+                                Reset
+                            </button>
+                            <button
+                                className="btn-primary"
+                                style={{ flex: 2, background: saving ? '#475569' : (donorInfo.firstName ? '#3b82f6' : '#334155') }}
+                                onClick={handleSave}
+                                disabled={saving || !donorInfo.firstName}
+                            >
+                                {saving ? "Saving..." : "Save Record"}
+                            </button>
+                        </div>
                     </div>
 
                 </div>
