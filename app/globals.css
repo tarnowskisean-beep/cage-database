@@ -1,48 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&family=Cinzel:wght@500;700&display=swap');
 
 :root {
-  /* Compass Professional Theme (Deep Navy & Gold) */
-  --color-bg-base: 224, 71%, 4%;
-  /* #020412 (Deepest Navy) */
-  --color-bg-surface: 222, 47%, 11%;
-  /* #0f172a (Slate 900) */
-  --color-bg-elevated: 217, 33%, 17%;
-  /* #1e293b (Slate 800) */
-  --color-bg-sidebar: 222, 47%, 11%;
-  /* Match Surface */
+  /* Compass Professional Theme (Greyscale / Monochrome) */
+  --color-bg-base: 0, 0%, 5%;
+  /* #0d0d0d (Almost Black) */
+  --color-bg-surface: 0, 0%, 10%;
+  /* #1a1a1a (Dark Grey) */
+  --color-bg-elevated: 0, 0%, 15%;
+  /* #262626 (Lighter Grey) */
+  --color-bg-sidebar: 0, 0%, 8%;
+  /* #141414 */
 
-  --color-primary: 217, 91%, 60%;
-  /* #3b82f6 (Bright Blue) */
-  --color-primary-glow: hsla(217, 91%, 60%, 0.2);
+  --color-primary: 0, 0%, 90%;
+  /* #e5e5e5 (Off-White) */
+  --color-primary-glow: hsla(0, 0%, 100%, 0.1);
 
-  --color-accent: 38, 92%, 50%;
-  /* #f59e0b (Gold) */
+  --color-accent: 0, 0%, 60%;
+  /* #999999 (Mid Grey) */
 
-  --color-active: 142, 69%, 58%;
-  /* #4ade80 (Green - for Amount/Success) */
-  --color-error: 0, 72%, 51%;
-  /* #ef4444 */
+  --color-active: 142, 60%, 50%;
+  /* #33cc66 (Muted Green for Success) */
+  --color-error: 0, 60%, 50%;
+  /* #cc3333 (Muted Red) */
 
-  --color-text-main: 210, 40%, 98%;
-  /* #f8fafc */
-  --color-text-muted: 215, 20%, 65%;
-  /* #94a3b8 */
+  --color-text-main: 0, 0%, 95%;
+  /* #f2f2f2 */
+  --color-text-muted: 0, 0%, 60%;
+  /* #999999 */
 
-  --color-border: 217, 33%, 22%;
-  /* #334155 (Slate 700) */
-  --color-border-subtle: 217, 33%, 15%;
+  --color-border: 0, 0%, 20%;
+  /* #333333 */
+  --color-border-subtle: 0, 0%, 15%;
+  /* #262626 */
 
   --font-display: 'Playfair Display', serif;
   --font-logo: 'Cinzel', serif;
   --font-body: 'Inter', sans-serif;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.15);
-  --glow-primary: 0 0 20px hsla(217, 91%, 60%, 0.15);
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+  --glow-primary: 0 0 15px rgba(255, 255, 255, 0.05);
 
   --sidebar-width: 280px;
 }
