@@ -62,10 +62,10 @@ export async function GET(request: Request) {
         `, params);
 
         return NextResponse.json({
-            totalRevenue,
-            byClient: clientRes.rows,
-            byMethod: methodRes.rows,
-            byPlatform: platformRes.rows
+            totalRevenue: parseFloat(totalRevenue.toString()),
+            byClient: clientRes.rows.map(row => ({ ...row, total: parseFloat(row.total) })),
+            byMethod: methodRes.rows.map(row => ({ ...row, count: parseInt(row.count), total: parseFloat(row.total) })),
+            byPlatform: platformRes.rows.map(row => ({ ...row, count: parseInt(row.count), total: parseFloat(row.total) }))
         });
 
     } catch (error) {
