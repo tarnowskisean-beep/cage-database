@@ -22,11 +22,36 @@ export default function RootLayout({
         <div className="app-shell">
           {/* Sidebar */}
           <aside className="sidebar">
-            <div className="brand-header">
-              <h1 className="brand-text">
+            <div className="brand-header" style={{ textAlign: 'center', paddingBottom: '2rem', borderBottom: '1px solid hsla(var(--color-border), 0.3)' }}>
+              {/* Compass Rose Icon */}
+              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                <svg width="48" height="48" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'white' }}>
+                  <circle cx="50" cy="50" r="45" strokeWidth="1" />
+                  <path d="M50 10 L60 40 L90 50 L60 60 L50 90 L40 60 L10 50 L40 40 Z" fill="currentColor" opacity="0.9" />
+                  <circle cx="50" cy="50" r="3" fill="black" />
+                </svg>
+              </div>
+              <h1 className="brand-text" style={{
+                fontFamily: 'var(--font-logo)',
+                fontSize: '1.25rem',
+                letterSpacing: '0.15em',
+                background: 'none',
+                WebkitBackgroundClip: 'unset',
+                color: 'white',
+                display: 'block'
+              }}>
                 COMPASS
               </h1>
-              <p style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>Caging Database</p>
+              <p style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '0.65rem',
+                color: 'hsl(var(--color-text-muted))',
+                letterSpacing: '0.3em',
+                marginTop: '0.5rem',
+                textTransform: 'uppercase'
+              }}>
+                PROFESSIONAL
+              </p>
             </div>
 
             <nav className="nav-menu">
