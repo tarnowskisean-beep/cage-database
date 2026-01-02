@@ -29,14 +29,15 @@ export default function Sidebar() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#3b82f6',
+                    background: 'hsl(var(--color-primary))',
                     color: 'white',
-                    border: '2px solid #0f172a',
+                    border: '2px solid hsl(var(--color-bg-base))',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    zIndex: 10
+                    zIndex: 10,
+                    boxShadow: 'var(--shadow-sm)'
                 }}
             >
                 {isCollapsed ? '→' : '←'}

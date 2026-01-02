@@ -239,16 +239,16 @@ export default function BatchEntry({ id }: { id: string }) {
         }
     };
 
-    if (!isMounted || loading) return <div className="p-8 text-slate-400">Loading...</div>;
+    if (!isMounted || loading) return <div className="p-8" style={{ color: 'hsl(var(--color-text-muted))' }}>Loading...</div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', margin: '-2rem', width: 'calc(100% + 4rem)', background: '#0f172a' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', margin: '-2rem', width: 'calc(100% + 4rem)', background: 'hsl(var(--color-bg-base))' }}>
 
             {/* 1. TOP HEADER (Minimal Info) */}
             <div style={{
                 height: '60px',
-                background: '#1e293b',
-                borderBottom: '1px solid #334155',
+                background: 'hsl(var(--color-bg-surface))',
+                borderBottom: '1px solid hsl(var(--color-border))',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0 1.5rem',
@@ -256,24 +256,24 @@ export default function BatchEntry({ id }: { id: string }) {
                 flexShrink: 0
             }}>
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <Link href="/batches" style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Link href="/batches" style={{ color: 'hsl(var(--color-text-muted))', textDecoration: 'none', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span>&larr;</span> Back
                     </Link>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <span style={{ color: '#64748b' }}>|</span>
-                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{batch?.BatchCode}</span>
-                        <span style={{ color: '#64748b' }}>/</span>
-                        <span style={{ color: '#94a3b8' }}>{batch?.ClientCode}</span>
+                        <span style={{ color: 'hsl(var(--color-border))' }}>|</span>
+                        <span style={{ fontWeight: 600, color: 'hsl(var(--color-text-main))' }}>{batch?.BatchCode}</span>
+                        <span style={{ color: 'hsl(var(--color-border))' }}>/</span>
+                        <span style={{ color: 'hsl(var(--color-text-muted))' }}>{batch?.ClientCode}</span>
                     </div>
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', gap: '2rem' }}>
                     <div>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', marginRight: '0.5rem' }}>COUNT</span>
-                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{records.length}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginRight: '0.5rem' }}>COUNT</span>
+                        <span style={{ fontWeight: 600, color: 'hsl(var(--color-text-main))' }}>{records.length}</span>
                     </div>
                     <div>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', marginRight: '0.5rem' }}>TOTAL</span>
-                        <span style={{ fontWeight: 600, color: '#4ade80' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginRight: '0.5rem' }}>TOTAL</span>
+                        <span style={{ fontWeight: 600, color: 'hsl(var(--color-active))' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
                     </div>
                 </div>
             </div>
@@ -284,28 +284,28 @@ export default function BatchEntry({ id }: { id: string }) {
                 {/* COL 1: SETTINGS / DEFAULTS (Left Sidebar) */}
                 <div style={{
                     width: '300px',
-                    background: '#0f172a',
-                    borderRight: '1px solid #334155',
+                    background: 'hsl(var(--color-bg-base))',
+                    borderRight: '1px solid hsl(var(--color-border))',
                     padding: '1.5rem',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '1.5rem',
                     overflowY: 'auto'
                 }}>
-                    <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>BATCH DEFAULTS</div>
+                    <div style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>BATCH DEFAULTS</div>
 
                     {/* Transaction Details (Editable - LOCKED UNTIL SCAN) */}
                     <div style={{
-                        background: '#1e293b',
+                        background: 'hsl(var(--color-bg-surface))',
                         padding: '1rem',
                         borderRadius: '8px',
-                        border: '1px solid #334155',
+                        border: '1px solid hsl(var(--color-border))',
                         flex: 1,
                         opacity: donorInfo.firstName ? 1 : 0.4,
                         pointerEvents: donorInfo.firstName ? 'auto' : 'none',
                         transition: 'opacity 0.2s'
                     }}>
-                        <div style={{ color: '#e2e8f0', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem', borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>
+                        <div style={{ color: 'hsl(var(--color-text-main))', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem', borderBottom: '1px solid hsl(var(--color-border))', paddingBottom: '0.5rem' }}>
                             {donorInfo.firstName ? "2. TRANSACTION DETAILS" : "2. SCAN TO UNLOCK"}
                         </div>
 
@@ -341,7 +341,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                             </select>
 
-                            <div style={{ height: '1px', background: '#334155', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
+                            <div style={{ height: '1px', background: 'hsl(var(--color-border))', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
 
                             <label style={labelStyle}>Gift Year</label>
                             <input
@@ -365,7 +365,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 <option value="Q4">Q4</option>
                             </select>
 
-                            <div style={{ height: '1px', background: '#334155', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
+                            <div style={{ height: '1px', background: 'hsl(var(--color-border))', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
 
                             <label style={labelStyle}>Check #</label>
                             <input
@@ -375,7 +375,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 disabled={!donorInfo.firstName}
                             />
 
-                            <label style={{ ...labelStyle, color: donorInfo.firstName ? '#4ade80' : '#64748b', fontWeight: 600 }}>Gift Amount</label>
+                            <label style={{ ...labelStyle, color: donorInfo.firstName ? 'hsl(var(--color-active))' : 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Gift Amount</label>
                             <input
                                 ref={amountRef}
                                 className="input-field"
@@ -384,8 +384,8 @@ export default function BatchEntry({ id }: { id: string }) {
                                 style={{
                                     fontSize: '1.1rem',
                                     fontWeight: 600,
-                                    color: donorInfo.firstName ? '#4ade80' : '#64748b',
-                                    borderColor: donorInfo.firstName ? '#4ade80' : '#334155'
+                                    color: donorInfo.firstName ? 'hsl(var(--color-active))' : 'hsl(var(--color-text-muted))',
+                                    borderColor: donorInfo.firstName ? 'hsl(var(--color-active))' : 'hsl(var(--color-border))'
                                 }}
                                 value={formData.amount}
                                 onChange={e => setFormData({ ...formData, amount: e.target.value })}
@@ -396,13 +396,13 @@ export default function BatchEntry({ id }: { id: string }) {
                         </div>
 
                         {/* ADDITIONAL FIELDS (Expandable based on need) */}
-                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid #334155', paddingTop: '1rem' }}>
+                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid hsl(var(--color-border))', paddingTop: '1rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
 
                                 {/* Organization Name (Conditional) */}
                                 {['Corporate', 'Foundation', 'Donor-Advised Fund'].includes(formData.giftType) && (
                                     <div style={{ gridColumn: 'span 2' }}>
-                                        <label style={labelStyle}>Organization Name <span style={{ color: '#ef4444' }}>*</span></label>
+                                        <label style={labelStyle}>Organization Name <span style={{ color: 'hsl(var(--color-error))' }}>*</span></label>
                                         <input
                                             className="input-field"
                                             value={formData.organizationName}
@@ -441,14 +441,17 @@ export default function BatchEntry({ id }: { id: string }) {
                         <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
                             <button
                                 className="btn-primary"
-                                style={{ flex: 1, background: '#334155', border: '1px solid #475569' }}
+                                style={{ flex: 1, background: 'hsl(var(--color-border))', border: '1px solid hsl(var(--color-border-subtle))' }}
                                 onClick={() => {
                                     // Reset Fields
                                     setFormData({
                                         ...formData,
                                         amount: '',
                                         checkNumber: '',
-                                        scanString: ''
+                                        scanString: '',
+                                        donorEmail: '',
+                                        donorPhone: '',
+                                        organizationName: ''
                                     });
                                     setDonorInfo({ firstName: '', lastName: '', address: '', city: '', state: '', zip: '' });
                                     scanRef.current?.focus();
@@ -458,7 +461,7 @@ export default function BatchEntry({ id }: { id: string }) {
                             </button>
                             <button
                                 className="btn-primary"
-                                style={{ flex: 2, background: saving ? '#475569' : (donorInfo.firstName ? '#3b82f6' : '#334155') }}
+                                style={{ flex: 2, background: saving ? 'hsl(var(--color-bg-elevated))' : (donorInfo.firstName ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))') }}
                                 onClick={handleSave}
                                 disabled={saving || !donorInfo.firstName}
                             >
@@ -472,7 +475,7 @@ export default function BatchEntry({ id }: { id: string }) {
                 {/* COL 2: ACTIVE ENTRY (Center Focus) */}
                 <div style={{
                     flex: 1,
-                    background: '#1e293b', // Slightly lighter for focus
+                    background: 'hsl(var(--color-bg-elevated))', // Slightly lighter for focus
                     padding: '2rem',
                     display: 'flex',
                     flexDirection: 'column',
@@ -485,7 +488,7 @@ export default function BatchEntry({ id }: { id: string }) {
 
                     {/* A. SCAN INPUT */}
                     <div style={{ width: '100%', maxWidth: '500px' }}>
-                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '0.5rem', textAlign: 'center' }}>1. SCAN BARCODE OR DATAMATRIX</label>
+                        <label style={{ display: 'block', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', marginBottom: '0.5rem', textAlign: 'center' }}>1. SCAN BARCODE OR DATAMATRIX</label>
                         <input
                             ref={scanRef}
                             className="input-field"
@@ -496,8 +499,8 @@ export default function BatchEntry({ id }: { id: string }) {
                                 padding: '1rem',
                                 height: 'auto',
                                 fontFamily: 'monospace',
-                                border: '2px solid #3b82f6', // distinct border for focus
-                                boxShadow: '0 0 15px rgba(59, 130, 246, 0.2)'
+                                border: '2px solid hsl(var(--color-primary))', // distinct border for focus
+                                boxShadow: 'var(--glow-primary)'
                             }}
                             placeholder="Ready to Scan..."
                             value={formData.scanString}
