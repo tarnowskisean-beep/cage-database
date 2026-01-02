@@ -16,54 +16,49 @@ export async function GET(request: Request) {
         let paramIndex = 1;
 
         if (clientId) {
-            conditions.push(`d.ClientID = $${paramIndex++}`);
+            conditions.push(`d."ClientID" = $${paramIndex++}`);
             params.push(clientId);
         }
         if (startDate) {
-            conditions.push(`d.GiftDate >= $${paramIndex++}`);
+            conditions.push(`d."GiftDate" >= $${paramIndex++}`);
             params.push(startDate);
         }
         if (endDate) {
-            conditions.push(`d.GiftDate <= $${paramIndex++}`);
+            conditions.push(`d."GiftDate" <= $${paramIndex++}`);
             // Append end of day time if needed, assuming just date string YYYY-MM-DD
             params.push(`${endDate} 23:59:59`);
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-        // Helper to adjust parameter indices if I were reusing them, but for simplicity I'll pass relevant params strict
-        // Actually, since I run separate queries, I can just reuse the generated whereClause and params array
-        // However, queries without joins (like Total Revenue) might need "Donations d" alias if I use "d." prefixes
-        // Let's standardise on aliasing Donations as 'd' in all queries
-
         // 1. Total Revenue
-        const revenueRes = await query(`SELECT SUM(d.GiftAmount) as total FROM Donations d ${whereClause}`, params);
+        const revenueRes = await query(`SELECT SUM(d."GiftAmount") as total FROM "Donations" d ${whereClause}`, params);
         const totalRevenue = revenueRes.rows[0]?.total || 0;
 
         // 2. Revenue by Client
         const clientRes = await query(`
-            SELECT c.ClientName, SUM(d.GiftAmount) as total 
-            FROM Donations d 
-            JOIN Clients c ON d.ClientID = c.ClientID 
+            SELECT c."ClientName", SUM(d."GiftAmount") as total 
+            FROM "Donations" d 
+            JOIN "Clients" c ON d."ClientID" = c."ClientID" 
             ${whereClause}
-            GROUP BY c.ClientName
+            GROUP BY c."ClientName"
             ORDER BY total DESC
         `, params);
 
         // 3. Donations by Payment Method
         const methodRes = await query(`
-            SELECT d.GiftMethod, COUNT(*) as count, SUM(d.GiftAmount) as total 
-            FROM Donations d
+            SELECT d."GiftMethod", COUNT(*) as count, SUM(d."GiftAmount") as total 
+            FROM "Donations" d
             ${whereClause}
-            GROUP BY d.GiftMethod
+            GROUP BY d."GiftMethod"
         `, params);
 
         // 4. Donations by Platform
         const platformRes = await query(`
-            SELECT d.GiftPlatform, COUNT(*) as count, SUM(d.GiftAmount) as total 
-            FROM Donations d
+            SELECT d."GiftPlatform", COUNT(*) as count, SUM(d."GiftAmount") as total 
+            FROM "Donations" d
             ${whereClause}
-            GROUP BY d.GiftPlatform
+            GROUP BY d."GiftPlatform"
         `, params);
 
         return NextResponse.json({
