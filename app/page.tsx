@@ -21,10 +21,33 @@ export default function Home() {
   const [clients, setClients] = useState<{ ClientID: number, ClientName: string, ClientCode: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Calculate default weekly range (Sat -> Fri)
+  const getWeeklyRange = () => {
+    const today = new Date();
+    const day = today.getDay(); // 0 is Sunday, 6 is Saturday
+
+    // Find most recent Saturday
+    // If today is Saturday (6), diff is 0. If Sunday (0), diff is 1. If Friday (5), diff is 6.
+    const diff = (day + 1) % 7;
+    const start = new Date(today);
+    start.setDate(today.getDate() - diff);
+
+    // End is start + 6 days (Friday)
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
+  };
+
+  const defaultRange = getWeeklyRange();
+
   const [filters, setFilters] = useState({
     clientId: '',
-    startDate: '',
-    endDate: ''
+    startDate: defaultRange.start,
+    endDate: defaultRange.end
   });
 
   useEffect(() => {
@@ -102,6 +125,13 @@ export default function Home() {
             style={{ width: 'auto' }}
             value={filters.startDate}
             onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+            onMouseOver={(e) => {
+              try {
+                e.currentTarget.showPicker();
+              } catch (err) {
+                // Ignore errors if browser doesn't support showPicker or blocks it
+              }
+            }}
           />
         </div>
 
@@ -113,6 +143,11 @@ export default function Home() {
             style={{ width: 'auto' }}
             value={filters.endDate}
             onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+            onMouseOver={(e) => {
+              try {
+                e.currentTarget.showPicker();
+              } catch (err) { }
+            }}
           />
         </div>
 
