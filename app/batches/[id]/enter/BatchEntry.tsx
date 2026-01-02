@@ -96,21 +96,55 @@ export default function BatchEntry({ id }: { id: string }) {
     // --- HANDLERS ---
 
     const handleScanLookup = () => {
-        // Mock Lookup based on scan string
-        // In reality this would hit an API to find the constituent
-        if (formData.scanString) {
-            // Fake Populate
+        const raw = formData.scanString.trim();
+        if (!raw) return;
+
+        // --- SMART DETECTION LOGIC ---
+
+        // 1. Check for Datamatrix (Contains Pipes OR is very long)
+        // Assumption: Datamatrix format: "FinderID|Amount|FirstName|LastName|Address|City|State|Zip"
+        if (raw.includes('|') || raw.length > 40) {
+            console.log("Detected: Datamatrix");
+            const parts = raw.split('|');
+
+            // Auto-fill from parsed data
+            // Note: This is a flexible parser example. Adjust indices to match actual client matrix definitions.
+            setDonorInfo({
+                firstName: parts[2] || 'D.',
+                lastName: parts[3] || 'Matrix',
+                address: parts[4] || '123 Datamatrix Way',
+                city: parts[5] || 'Scan City',
+                state: parts[6] || 'SC',
+                zip: parts[7] || '99999'
+            });
+
+            // If amount is in the scan, set it
+            if (parts[1] && !isNaN(parseFloat(parts[1]))) {
+                setFormData(prev => ({ ...prev, amount: parts[1] }));
+                // If we have amount, maybe we focus Check Number next instead of Amount?
+                // For now, let's stick to standard flow
+            }
+
+            setFormData(prev => ({ ...prev, checkNumber: parts[0] || prev.checkNumber })); // Use Finder as check/ref if valid
+
+        } else {
+            // 2. Fallback to Barcode Lookup
+            // Format: "AFTP26 - 125859998"
+            console.log("Detected: Barcode Lookup");
+
+            // Mock API Lookup
             setDonorInfo({
                 firstName: 'John',
                 lastName: 'Doe',
-                address: '123 Main St',
+                address: '123 Lookup Lane',
                 city: 'Arlington',
                 state: 'VA',
                 zip: '22201'
             });
-            // Auto focus amount after scan?
-            amountRef.current?.focus();
         }
+
+        // Always move focus to amount (or check num) to continue flow
+        amountRef.current?.focus();
     };
 
     const handleSave = async () => {
