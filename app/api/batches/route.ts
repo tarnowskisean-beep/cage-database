@@ -71,9 +71,10 @@ export async function POST(request: Request) {
     const result = await query(`
         INSERT INTO "Batches" (
             "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date",
-            "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType"
+            "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter",
+            "DefaultGiftType"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, 'Open', NOW(), $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13)
         RETURNING "BatchID", "BatchCode"
       `, [
       batchCode,
@@ -82,9 +83,13 @@ export async function POST(request: Request) {
       paymentCategory,
       zerosType || null,
       userId,
+      body.date || new Date().toISOString(),
       body.defaultGiftMethod || 'Check',
       body.defaultGiftPlatform || 'Cage',
-      body.defaultTransactionType || 'Donation'
+      body.defaultTransactionType || 'Donation',
+      body.defaultGiftYear || new Date().getFullYear(),
+      body.defaultGiftQuarter || 'Q1',
+      body.defaultGiftType || 'Individual/Trust/IRA'
     ]);
 
     return NextResponse.json(result.rows[0]);

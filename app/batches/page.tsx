@@ -198,10 +198,16 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
         defaultGiftMethod: 'Check',
         defaultGiftPlatform: 'Cage',
         defaultTransactionType: 'Donation',
+        defaultGiftType: 'Individual/Trust/IRA',
         date: today.toISOString().split('T')[0],
         defaultGiftYear: currentYear,
         defaultGiftQuarter: `Q${currentQuarter}`
     });
+
+    // Options Lists from User Requirements
+    const methodOptions = ['Check', 'Cash', 'Credit Card', 'Chargeback', 'EFT', 'Stock', 'Crypto'];
+    const platformOptions = ['Chainbridge', 'Stripe', 'National Capital', 'City National', 'Propay', 'Anedot', 'Winred', 'Cage', 'Import'];
+    const giftTypeOptions = ['Individual/Trust/IRA', 'Corporate', 'Foundation', 'Donor-Advised Fund'];
 
     const handleSubmit = async () => {
         if (!formData.clientId) return alert('Select a client');
@@ -231,7 +237,7 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <div className="glass-panel" style={{ width: '700px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
+            <div className="glass-panel" style={{ width: '800px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
                 <h2 style={{ marginBottom: '1.5rem' }}>Start New Batch</h2>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
@@ -301,44 +307,30 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Payment Category</label>
-                        <select
-                            className="input-field"
-                            value={formData.paymentCategory}
-                            onChange={e => setFormData({ ...formData, paymentCategory: e.target.value })}
-                        >
-                            <option>Checks</option>
-                            <option>Credit Card</option>
-                            <option>EFT</option>
-                            <option>Mixed</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Method</label>
-                        <select
-                            className="input-field"
+                        <CreatableSelect
+                            label="Default Method"
+                            options={methodOptions}
                             value={formData.defaultGiftMethod}
-                            onChange={e => setFormData({ ...formData, defaultGiftMethod: e.target.value })}
-                        >
-                            <option>Check</option>
-                            <option>Cash</option>
-                            <option>Credit Card</option>
-                            <option>EFT</option>
-                        </select>
+                            onChange={val => setFormData({ ...formData, defaultGiftMethod: val })}
+                        />
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Platform</label>
-                        <select
-                            className="input-field"
+                        <CreatableSelect
+                            label="Default Platform"
+                            options={platformOptions}
                             value={formData.defaultGiftPlatform}
-                            onChange={e => setFormData({ ...formData, defaultGiftPlatform: e.target.value })}
-                        >
-                            <option>Cage</option>
-                            <option>Online</option>
-                            <option>Import</option>
-                        </select>
+                            onChange={val => setFormData({ ...formData, defaultGiftPlatform: val })}
+                        />
+                    </div>
+
+                    <div>
+                        <CreatableSelect
+                            label="Default Gift Type"
+                            options={giftTypeOptions}
+                            value={formData.defaultGiftType}
+                            onChange={val => setFormData({ ...formData, defaultGiftType: val })}
+                        />
                     </div>
 
                     <div style={{ gridColumn: '1 / -1', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid hsla(var(--color-border), 0.5)' }}>
@@ -394,6 +386,52 @@ function BatchRow({ batch }: { batch: Batch }) {
                 </Link>
             </td>
         </tr>
+    );
+}
+
+// Reusable Component for Select + Custom Entry
+function CreatableSelect({ label, value, options, onChange }: { label: string, value: string, options: string[], onChange: (val: string) => void }) {
+    const isCustom = value && !options.includes(value);
+    const [mode, setMode] = useState<'select' | 'input'>(isCustom ? 'input' : 'select');
+
+    return (
+        <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>
+            {mode === 'select' ? (
+                <select
+                    className="input-field"
+                    value={value}
+                    onChange={(e) => {
+                        if (e.target.value === '__NEW__') {
+                            setMode('input');
+                            onChange('');
+                        } else {
+                            onChange(e.target.value);
+                        }
+                    }}
+                >
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    <option style={{ fontWeight: 600, color: 'hsl(var(--color-primary))' }} value="__NEW__">+ Add New...</option>
+                </select>
+            ) : (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                        className="input-field"
+                        value={value}
+                        onChange={e => onChange(e.target.value)}
+                        placeholder={`Enter new ${label.toLowerCase()}...`}
+                        autoFocus
+                    />
+                    <button
+                        onClick={() => setMode('select')}
+                        style={{ padding: '0 1rem', background: 'hsl(var(--color-bg-elevated))', border: '1px solid hsl(var(--color-border))', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                        title="Cancel custom entry"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+        </div>
     );
 }
 
