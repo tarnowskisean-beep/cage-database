@@ -69,7 +69,7 @@ export default function ClientsPage() {
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="button-primary"
+                    className="btn-primary"
                     style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                     <span>+</span> New Client
@@ -168,7 +168,7 @@ export default function ClientsPage() {
                                     <button
                                         type="submit"
                                         disabled={submitting}
-                                        className="button-primary"
+                                        className="btn-primary"
                                         style={{ padding: '0.5rem 1.5rem' }}
                                     >
                                         {submitting ? 'Saving...' : 'Create'}
