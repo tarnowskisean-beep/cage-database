@@ -97,6 +97,7 @@ export default function ClientsPage() {
                                     <td style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))' }}>{client.ClientType || '-'}</td>
                                     <td style={{ padding: '1rem' }}>
                                         <button
+                                            title="Upload Finder File CSV (CagingID, Name, Address...)"
                                             onClick={() => setImportClient(client)}
                                             style={{
                                                 background: 'transparent',
@@ -178,6 +179,85 @@ export default function ClientsPage() {
                     </div>
                 )
             }
+
+            {importClient && <ImportFinderFileModal client={importClient} onClose={() => setImportClient(null)} />}
         </div >
+    );
+}
+
+function ImportFinderFileModal({ client, onClose }: { client: Client, onClose: () => void }) {
+    const [file, setFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const handleUpload = async () => {
+        if (!file) return;
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch(`/api/clients/${client.ClientID}/import`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(`Imported ${data.count} records. (Skipped: ${data.skipped})`);
+                onClose();
+            } else {
+                alert('Import failed: ' + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Upload error');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const templateCsv = "CagingID,MailerID,MailCode,FirstName,LastName,Address,City,State,Zip";
+    const blob = new Blob([templateCsv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    return (
+        <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+            <div className="glass-panel" style={{ width: '500px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
+                <h3 style={{ marginBottom: '1rem' }}>Import Finder File</h3>
+                <p style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>
+                    Upload a CSV for <strong>{client.ClientCode}</strong>.
+                </p>
+
+                <a
+                    href={url}
+                    download="finder_template.csv"
+                    style={{ display: 'inline-block', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#4ade80', textDecoration: 'underline' }}
+                >
+                    ⬇ Download CSV Template
+                </a>
+
+                <input
+                    type="file"
+                    accept=".csv"
+                    className="input-field"
+                    style={{ marginBottom: '1.5rem' }}
+                    onChange={e => setFile(e.target.files?.[0] || null)}
+                />
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button className="btn-primary" style={{ flex: 1 }} onClick={handleUpload} disabled={uploading || !file}>
+                        {uploading ? 'Importing...' : 'Upload CSV'}
+                    </button>
+                    <button
+                        style={{ flex: 1, background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'white', borderRadius: '6px', cursor: 'pointer' }}
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
