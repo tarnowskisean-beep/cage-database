@@ -122,7 +122,7 @@ export default function BatchEntry({ id }: { id: string }) {
                 </div>
                 <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9rem' }}>
                     <div>Count: <strong>{records.length}</strong></div>
-                    <div>Total: <strong>${records.reduce((sum, r) => sum + r.GiftAmount, 0).toFixed(2)}</strong></div>
+                    <div>Total: <strong>${records.reduce((sum, r) => sum + (parseFloat(r.GiftAmount as any) || 0), 0).toFixed(2)}</strong></div>
                 </div>
             </div>
 

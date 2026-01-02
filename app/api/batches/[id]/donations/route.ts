@@ -10,7 +10,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         WHERE "BatchID" = $1 
         ORDER BY "CreatedAt" DESC
       `, [id]);
-        return NextResponse.json(result.rows);
+        const rows = result.rows.map(row => ({
+            ...row,
+            GiftAmount: parseFloat(row.GiftAmount)
+        }));
+        return NextResponse.json(rows);
     } catch (error) {
         console.error(error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
