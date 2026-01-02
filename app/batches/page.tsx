@@ -223,7 +223,8 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                 // Redirect to enter page
                 router.push(`/batches/${data.BatchID}/enter`);
             } else {
-                alert('Error creating batch');
+                console.error('Batch creation failed:', data);
+                alert(`Error creating batch: ${data.error}`);
             }
         } catch (e) {
             console.error(e);
