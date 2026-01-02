@@ -6,6 +6,7 @@ interface Client {
     ClientID: number;
     ClientCode: string;
     ClientName: string;
+    ClientType?: string;
 }
 
 export default function ClientsPage() {
@@ -84,6 +85,7 @@ export default function ClientsPage() {
                                 <th style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>ID</th>
                                 <th style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>Code</th>
                                 <th style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>Name</th>
+                                <th style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>Type</th>
                                 <th style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>Status</th>
                             </tr>
                         </thead>
@@ -95,6 +97,7 @@ export default function ClientsPage() {
                                         {client.ClientCode}
                                     </td>
                                     <td style={{ padding: '1rem', fontWeight: 500 }}>{client.ClientName}</td>
+                                    <td style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))' }}>{client.ClientType || '-'}</td>
                                     <td style={{ padding: '1rem' }}>
                                         <span style={{
                                             padding: '0.25rem 0.75rem',

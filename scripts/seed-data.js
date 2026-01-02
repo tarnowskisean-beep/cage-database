@@ -7,35 +7,28 @@ const pool = new Pool({
 });
 
 const CLIENTS = [
-    { code: 'AFL', name: 'American Freedom League' },
-    { code: 'SVW', name: 'Save the Whales' },
-    { code: 'VET', name: 'Veterans Fund' },
-    { code: 'HLT', name: 'Health for All' },
-    { code: 'EDU', name: 'Education First' },
-    { code: 'ANI', name: 'Animal Rescue Corp' },
-    { code: 'ENV', name: 'Green Earth Initiative' },
-    { code: 'RTS', name: 'Rights Watch' },
-    { code: 'CAND001', name: 'Candidate One' },
-    { code: 'CAND002', name: 'Candidate Two' }
+    { code: 'AAF', name: 'American Accountability Foundation', type: 'c3' },
+    { code: 'AFL', name: 'America First Legal', type: 'c3' },
+    { code: 'AMSI', name: 'American Main Street Initiative', type: 'c3' },
+    { code: 'CFRA', name: 'Citizens for Renewing America', type: 'c4' },
+    { code: 'CFS', name: 'Citizens for Sanity, Inc.', type: '527' },
+    { code: 'CPI', name: 'Conservative Partnership Institute', type: 'c3' },
+    { code: 'CPIN', name: 'Conservative Partnership Initiative', type: 'c3' },
+    { code: 'CRA', name: 'Center for Renewing America', type: 'c3' },
+    { code: 'EIN', name: 'Election Integrity Network', type: 'c4' },
+    { code: 'IAP', name: 'Immigration Accountability Project', type: 'c3' },
+    { code: 'JLF', name: 'Johnson Leadership Fund', type: 'PAC' },
+    { code: 'MFI', name: 'Maryland Family Institute', type: 'c3' },
+    { code: 'PPO', name: 'Personal Policy Organization', type: 'c3' },
+    { code: 'SFCA', name: 'State Freedom Caucus Action', type: '527' },
+    { code: 'SFCF', name: 'State Freedom Caucus Foundation', type: 'c3' },
+    { code: 'SFCN', name: 'State Freedom Caucus Network', type: 'c4' }
 ];
 
-const PLATFORMS = ['Cage', 'Stripe', 'ActBlue', 'WinRed'];
+const PLATFORMS = ['Cage', 'Stripe', 'Propay', 'WinRed', 'Anedot'];
 const METHODS = ['Check', 'Credit Card', 'Cash', 'EFT'];
 
-function randomDate(start, end) {
-    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-}
-
-function randomAmount() {
-    const rand = Math.random();
-    if (rand < 0.5) return Math.floor(Math.random() * 50) + 10;
-    if (rand < 0.8) return Math.floor(Math.random() * 200) + 50;
-    return Math.floor(Math.random() * 5000) + 250;
-}
-
-function randomChoice(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
+// ... (helper functions remain same)
 
 async function seed() {
     try {
@@ -65,8 +58,8 @@ async function seed() {
         const clientIds = [];
         for (const client of CLIENTS) {
             const res = await pool.query(
-                `INSERT INTO "Clients" ("ClientCode", "ClientName") VALUES ($1, $2) RETURNING "ClientID"`,
-                [client.code, client.name]
+                `INSERT INTO "Clients" ("ClientCode", "ClientName", "ClientType") VALUES ($1, $2, $3) RETURNING "ClientID"`,
+                [client.code, client.name, client.type]
             );
             clientIds.push(res.rows[0].ClientID);
         }
@@ -78,7 +71,7 @@ async function seed() {
         const endDate = new Date();
 
         for (const clientId of clientIds) {
-            const numBatches = Math.floor(Math.random() * 2) + 1; // Smaller batch count to avoid timeouts if remote DB is slow
+            const numBatches = Math.floor(Math.random() * 2) + 1; // Smaller batch count
 
             for (let i = 0; i < numBatches; i++) {
                 const batchDate = randomDate(startDate, endDate);
@@ -92,16 +85,25 @@ async function seed() {
 
                 const batchId = batchRes.rows[0].BatchID;
 
-                const numDonations = Math.floor(Math.random() * 10) + 1; // Smaller donation count for speed
+                const numDonations = Math.floor(Math.random() * 10) + 1;
                 for (let j = 0; j < numDonations; j++) {
                     const amount = randomAmount();
                     const method = randomChoice(METHODS);
                     const platform = randomChoice(PLATFORMS);
 
                     await pool.query(`
-                        INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType")
-                        VALUES ($1, $2, $3, $4, $5, $6, 'Donation')
-                    `, [clientId, batchId, amount, method, platform, batchDate.toISOString()]);
+                        INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType", "GiftYear", "GiftQuarter", "GiftType")
+                        VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, 'Individual/Trust/IRA')
+                    `, [
+                        clientId,
+                        batchId,
+                        amount,
+                        method,
+                        platform,
+                        batchDate.toISOString(),
+                        batchDate.getFullYear(),
+                        `Q${Math.ceil((batchDate.getMonth() + 1) / 3)}`
+                    ]);
                 }
             }
         }
@@ -135,9 +137,18 @@ async function seed() {
                     const platform = randomChoice(PLATFORMS);
 
                     await pool.query(`
-                        INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType")
-                        VALUES ($1, $2, $3, $4, $5, $6, 'Donation')
-                    `, [clientId, batchId, amount, method, platform, batchDate.toISOString()]);
+                        INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType", "GiftYear", "GiftQuarter", "GiftType")
+                        VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, 'Individual/Trust/IRA')
+                    `, [
+                        clientId,
+                        batchId,
+                        amount,
+                        method,
+                        platform,
+                        batchDate.toISOString(),
+                        batchDate.getFullYear(),
+                        `Q${Math.ceil((batchDate.getMonth() + 1) / 3)}`
+                    ]);
                 }
             }
         }
