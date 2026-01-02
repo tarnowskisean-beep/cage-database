@@ -96,54 +96,59 @@ export default function BatchEntry({ id }: { id: string }) {
     // --- HANDLERS ---
 
     const handleScanLookup = () => {
-        const raw = formData.scanString.trim();
+        const raw = formData.scanString; // Don't trim immediately, tabs are significant
         if (!raw) return;
 
         // --- SMART DETECTION LOGIC ---
 
-        // 1. Check for Datamatrix (Contains Pipes OR is very long)
-        // Assumption: Datamatrix format: "FinderID|Amount|FirstName|LastName|Address|City|State|Zip"
-        if (raw.includes('|') || raw.length > 40) {
-            console.log("Detected: Datamatrix");
-            const parts = raw.split('|');
+        // METHOD B: Datamatrix (Direct Data) - Detects TABS
+        // Format: MailCode \t ACCT# \t Pre \t First \t Mi \t Last \t Suffix \t Add1 \t Add2 \t City \t State \t Zip
+        if (raw.includes('\t')) {
+            console.log("Detected: Datamatrix (Method B - Direct Parse)");
+            const parts = raw.split('\t');
 
-            // Auto-fill from parsed data
-            // Note: This is a flexible parser example. Adjust indices to match actual client matrix definitions.
+            // Map fields based on user spec (1-indexed in spec, 0-indexed here)
+            // 0: MailCode, 1: ACCT#, 2: Prefix, 3: First, 4: Middle, 5: Last, 6: Suffix
+            // 7: Add1, 8: Add2, 9: City, 10: State, 11: Zip
+
             setDonorInfo({
-                firstName: parts[2] || 'D.',
-                lastName: parts[3] || 'Matrix',
-                address: parts[4] || '123 Datamatrix Way',
-                city: parts[5] || 'Scan City',
-                state: parts[6] || 'SC',
-                zip: parts[7] || '99999'
+                firstName: parts[3] || '',
+                lastName: parts[5] || '',
+                address: (parts[7] || '') + (parts[8] ? ' ' + parts[8] : ''), // Combine Add1 + Add2
+                city: parts[9] || '',
+                state: parts[10] || '',
+                zip: parts[11] || ''
             });
 
-            // If amount is in the scan, set it
-            if (parts[1] && !isNaN(parseFloat(parts[1]))) {
-                setFormData(prev => ({ ...prev, amount: parts[1] }));
-                // If we have amount, maybe we focus Check Number next instead of Amount?
-                // For now, let's stick to standard flow
-            }
+            // Use ACCT# as check number or reference? User said "ACCT#", likely internal ID.
+            // Using MailCode or ACCT# as reference
+            const refId = parts[1] || parts[0];
+            setFormData(prev => ({
+                ...prev,
+                checkNumber: refId || prev.checkNumber
+            }));
 
-            setFormData(prev => ({ ...prev, checkNumber: parts[0] || prev.checkNumber })); // Use Finder as check/ref if valid
+            // Note: Method B spec didn't explicitly say "Amount" is in the string, 
+            // unlike my previous guess. So we leave Amount blank for manual entry.
 
         } else {
-            // 2. Fallback to Barcode Lookup
-            // Format: "AFTP26 - 125859998"
-            console.log("Detected: Barcode Lookup");
+            // METHOD A: Barcode (CagingID Lookup)
+            // Format: "CagingID" (or "Client Mailer CagingID...")
+            console.log("Detected: Barcode (Method A - Lookup)");
 
-            // Mock API Lookup
+            // Mock API Lookup for CagingID
+            // In production: await fetch(`/api/lookup/${raw}`)
             setDonorInfo({
                 firstName: 'John',
                 lastName: 'Doe',
-                address: '123 Lookup Lane',
-                city: 'Arlington',
+                address: '123 Caging Lookup Blvd',
+                city: 'Alexandria',
                 state: 'VA',
-                zip: '22201'
+                zip: '22314'
             });
         }
 
-        // Always move focus to amount (or check num) to continue flow
+        // Always move focus to amount to continue flow
         amountRef.current?.focus();
     };
 
