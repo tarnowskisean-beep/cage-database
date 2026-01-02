@@ -16,6 +16,9 @@ export default function DataEntryPage() {
     const params = useParams();
     const id = params?.id as string;
 
+    // Safety: Prevent Hydration Mismatch
+    const [isMounted, setIsMounted] = useState(false);
+
     const [records, setRecords] = useState<DonationRecord[]>([]);
     const [amount, setAmount] = useState('');
     const [checkNum, setCheckNum] = useState('');
@@ -48,6 +51,7 @@ export default function DataEntryPage() {
 
     // Load Initial Data
     useEffect(() => {
+        setIsMounted(true);
         fetchRecords();
         scanRef.current?.focus();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,6 +108,8 @@ export default function DataEntryPage() {
             }
         }
     };
+
+    if (!isMounted) return <div style={{ padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>Loading Batch...</div>;
 
     return (
         <div className="app-shell" style={{ height: '100vh', overflow: 'hidden' }}>
