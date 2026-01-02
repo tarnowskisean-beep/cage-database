@@ -136,16 +136,30 @@ export default function BatchEntry({ id }: { id: string }) {
             // Format: "CagingID" (or "Client Mailer CagingID...")
             console.log("Detected: Barcode (Method A - Lookup)");
 
-            // Mock API Lookup for CagingID
-            // In production: await fetch(`/api/lookup/${raw}`)
-            setDonorInfo({
-                firstName: 'John',
-                lastName: 'Doe',
-                address: '123 Caging Lookup Blvd',
-                city: 'Alexandria',
-                state: 'VA',
-                zip: '22314'
-            });
+            // Real API Lookup
+            fetch(`/api/lookup/caging/${encodeURIComponent(raw)}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('Not Found');
+                })
+                .then(data => {
+                    if (data.found && data.record) {
+                        setDonorInfo({
+                            firstName: data.record.FirstName || '',
+                            lastName: data.record.LastName || '',
+                            address: data.record.Address || '',
+                            city: data.record.City || '',
+                            state: data.record.State || '',
+                            zip: data.record.Zip || ''
+                        });
+                        // Also set check number / scan string if needed
+                        setFormData(prev => ({ ...prev, checkNumber: raw }));
+                    }
+                })
+                .catch(() => {
+                    alert('Barcode not found in Finder File');
+                    // Optional: Clear donor info or leave as is
+                });
         }
 
         // Always move focus to amount to continue flow

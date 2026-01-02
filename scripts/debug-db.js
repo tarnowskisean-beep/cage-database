@@ -18,6 +18,13 @@ async function check() {
         `);
         console.log('Batches Columns:', batchCols.rows.map(r => r.column_name).join(', '));
 
+        const prospectCols = await pool.query(`
+             SELECT column_name 
+             FROM information_schema.columns 
+             WHERE table_name = 'Prospects';
+        `);
+        console.log('Prospects Columns:', prospectCols.rows.map(r => r.column_name).join(', '));
+
     } catch (e) {
         console.error(e);
     } finally {
