@@ -25,9 +25,36 @@ export default function BatchesPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const router = useRouter();
 
+    // Calculate default weekly range (Sat -> Fri)
+    const getWeeklyRange = () => {
+        const today = new Date();
+        const day = today.getDay();
+        const diff = (day + 1) % 7;
+        const start = new Date(today);
+        start.setDate(today.getDate() - diff);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        return {
+            start: start.toISOString().split('T')[0],
+            end: end.toISOString().split('T')[0]
+        };
+    };
+
+    const defaultRange = getWeeklyRange();
+    const [filters, setFilters] = useState({
+        clientId: '',
+        startDate: defaultRange.start,
+        endDate: defaultRange.end
+    });
+
     const fetchBatches = async () => {
         try {
-            const res = await fetch('/api/batches');
+            const params = new URLSearchParams();
+            if (filters.clientId) params.append('clientId', filters.clientId);
+            if (filters.startDate) params.append('startDate', filters.startDate);
+            if (filters.endDate) params.append('endDate', filters.endDate);
+
+            const res = await fetch(`/api/batches?${params.toString()}`);
             if (res.ok) setBatches(await res.json());
         } catch (err) { console.error(err); }
     };
@@ -42,10 +69,13 @@ export default function BatchesPage() {
     // Load Data
     useEffect(() => {
         // eslint-disable-next-line
-        fetchBatches();
-        // eslint-disable-next-line
         fetchClients();
     }, []);
+
+    useEffect(() => {
+        // eslint-disable-next-line
+        fetchBatches();
+    }, [filters]);
 
     return (
         <div>
@@ -58,6 +88,59 @@ export default function BatchesPage() {
                     + New Batch
                 </button>
             </header>
+
+            {/* Filter Bar */}
+            <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                    <span style={{ fontWeight: 600, color: 'hsl(var(--color-text-muted))' }}>Filters:</span>
+                </div>
+
+                <select
+                    className="input-field"
+                    style={{ width: 'auto', minWidth: '200px' }}
+                    value={filters.clientId}
+                    onChange={(e) => setFilters(prev => ({ ...prev, clientId: e.target.value }))}
+                >
+                    <option value="">All Clients</option>
+                    {clients.map(c => (
+                        <option key={c.ClientID} value={c.ClientID}>{c.ClientCode} - {c.ClientName}</option>
+                    ))}
+                </select>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>From</span>
+                    <input
+                        type="date"
+                        className="input-field"
+                        style={{ width: 'auto' }}
+                        value={filters.startDate}
+                        onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                        onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>To</span>
+                    <input
+                        type="date"
+                        className="input-field"
+                        style={{ width: 'auto' }}
+                        value={filters.endDate}
+                        onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                        onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                    />
+                </div>
+
+                {(filters.clientId || filters.startDate || filters.endDate) && (
+                    <button
+                        onClick={() => setFilters({ clientId: '', startDate: '', endDate: '' })}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+                    >
+                        Clear Filters
+                    </button>
+                )}
+            </div>
 
             {/* Batch Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>

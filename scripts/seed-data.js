@@ -106,9 +106,45 @@ async function seed() {
             }
         }
 
+        // 5. Seed Recent Data (Last 7 Days) for Dashboard Default View
+        console.log('Seeding recent data for this week...');
+        const recentStart = new Date();
+        recentStart.setDate(recentStart.getDate() - 7);
+        const recentEnd = new Date();
+
+        for (const clientId of clientIds) {
+            // Ensure every client has activity this week
+            const numBatches = Math.floor(Math.random() * 2) + 1;
+
+            for (let i = 0; i < numBatches; i++) {
+                const batchDate = randomDate(recentStart, recentEnd);
+                const batchCode = `BATCH-RECENT-${Math.floor(Math.random() * 1000)}`;
+
+                const batchRes = await pool.query(`
+                    INSERT INTO "Batches" ("BatchCode", "ClientID", "EntryMode", "PaymentCategory", "Status", "CreatedBy", "Date")
+                    VALUES ($1, $2, 'Manual', 'Checks', 'Closed', $3, $4)
+                    RETURNING "BatchID"
+                `, [batchCode, clientId, userId, batchDate.toISOString()]);
+
+                const batchId = batchRes.rows[0].BatchID;
+
+                const numDonations = Math.floor(Math.random() * 15) + 5;
+                for (let j = 0; j < numDonations; j++) {
+                    const amount = randomAmount();
+                    const method = randomChoice(METHODS);
+                    const platform = randomChoice(PLATFORMS);
+
+                    await pool.query(`
+                        INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType")
+                        VALUES ($1, $2, $3, $4, $5, $6, 'Donation')
+                    `, [clientId, batchId, amount, method, platform, batchDate.toISOString()]);
+                }
+            }
+        }
+
         console.log(`Seed complete! 
         - ${CLIENTS.length} Clients
-        - Data generated successfully.`);
+        - Historical and RECENT data generated.`);
         process.exit(0);
     } catch (err) {
         console.error(err);
