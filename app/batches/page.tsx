@@ -258,8 +258,14 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
 
                     <div style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Entry Mode</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem' }}>
-                            {['Barcode', 'Datamatrix', 'Manual', 'ZerosOCR'].map(mode => (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                            {/* Combined Barcode/Datamatrix into single 'Scan' option, storing as 'Barcode' for DB compatibility */}
+                            <ModeOption
+                                label="Scan"
+                                selected={formData.entryMode === 'Barcode'}
+                                onClick={() => setFormData({ ...formData, entryMode: 'Barcode' })}
+                            />
+                            {['Manual', 'ZerosOCR'].map(mode => (
                                 <ModeOption
                                     key={mode}
                                     label={mode}
