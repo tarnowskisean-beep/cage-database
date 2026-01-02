@@ -69,10 +69,23 @@ export async function POST(request: Request) {
     const batchCode = `${userInitials}.${dailyCount.toString().padStart(2, '0')}`;
 
     const result = await query(`
-        INSERT INTO "Batches" ("BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date")
-        VALUES ($1, $2, $3, $4, $5, $6, 'Open', NOW())
+        INSERT INTO "Batches" (
+            "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date",
+            "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType"
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, 'Open', NOW(), $7, $8, $9)
         RETURNING "BatchID", "BatchCode"
-      `, [batchCode, clientId, entryMode, paymentCategory, zerosType || null, userId]);
+      `, [
+      batchCode,
+      clientId,
+      entryMode,
+      paymentCategory,
+      zerosType || null,
+      userId,
+      body.defaultGiftMethod || 'Check',
+      body.defaultGiftPlatform || 'Cage',
+      body.defaultTransactionType || 'Donation'
+    ]);
 
     return NextResponse.json(result.rows[0]);
   } catch (error) {

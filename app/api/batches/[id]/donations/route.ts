@@ -27,24 +27,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const { amount, checkNumber, scanString } = body;
         const { id } = await params;
 
-        // Get ClientID from Batch
-        const batchRes = await query('SELECT "ClientID" FROM "Batches" WHERE "BatchID" = $1', [id]);
+        // Get ClientID and Defaults from Batch
+        const batchRes = await query('SELECT "ClientID", "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType" FROM "Batches" WHERE "BatchID" = $1', [id]);
 
         if (batchRes.rows.length === 0) throw new Error('Batch not found');
-        const clientId = batchRes.rows[0].ClientID;
+        const batch = batchRes.rows[0];
 
         const result = await query(`
             INSERT INTO "Donations" 
             ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType")
-            VALUES ($1, $2, $3, $4, $5, $6, 'Check', 'Cage', NOW(), 'Donation')
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
             RETURNING "DonationID", "CreatedAt", "GiftAmount"
         `, [
-            clientId,
+            batch.ClientID,
             id,
             amount,
-            checkNumber || null, // SecondaryID can double as check num or be distinct, Postgres schema has CheckNumber column now
             checkNumber || null,
-            scanString || null
+            checkNumber || null,
+            scanString || null,
+            batch.DefaultGiftMethod || 'Check',
+            batch.DefaultGiftPlatform || 'Cage',
+            batch.DefaultTransactionType || 'Donation'
         ]);
 
         return NextResponse.json(result.rows[0]);

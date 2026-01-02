@@ -188,7 +188,10 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
         clientId: '',
         entryMode: 'Barcode',
         paymentCategory: 'Checks',
-        zerosType: ''
+        zerosType: '',
+        defaultGiftMethod: 'Check',
+        defaultGiftPlatform: 'Cage',
+        defaultTransactionType: 'Donation'
     });
 
     const handleSubmit = async () => {
@@ -219,11 +222,11 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <div className="glass-panel" style={{ width: '500px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
+            <div className="glass-panel" style={{ width: '600px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
                 <h2 style={{ marginBottom: '1.5rem' }}>Start New Batch</h2>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Client</label>
                         <select
                             className="input-field"
@@ -237,9 +240,9 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         </select>
                     </div>
 
-                    <div>
+                    <div style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Entry Mode</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem' }}>
                             {['Barcode', 'Datamatrix', 'Manual', 'ZerosOCR'].map(mode => (
                                 <ModeOption
                                     key={mode}
@@ -265,7 +268,46 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         </select>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Method</label>
+                        <select
+                            className="input-field"
+                            value={formData.defaultGiftMethod}
+                            onChange={e => setFormData({ ...formData, defaultGiftMethod: e.target.value })}
+                        >
+                            <option>Check</option>
+                            <option>Cash</option>
+                            <option>Credit Card</option>
+                            <option>EFT</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Platform</label>
+                        <select
+                            className="input-field"
+                            value={formData.defaultGiftPlatform}
+                            onChange={e => setFormData({ ...formData, defaultGiftPlatform: e.target.value })}
+                        >
+                            <option>Cage</option>
+                            <option>Online</option>
+                            <option>Import</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Trans. Type</label>
+                        <select
+                            className="input-field"
+                            value={formData.defaultTransactionType}
+                            onChange={e => setFormData({ ...formData, defaultTransactionType: e.target.value })}
+                        >
+                            <option>Donation</option>
+                            <option>Payment</option>
+                        </select>
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                         <button className="btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading}>
                             {loading ? 'Creating...' : 'Create Batch'}
                         </button>
