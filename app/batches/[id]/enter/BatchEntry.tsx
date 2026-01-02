@@ -227,13 +227,13 @@ export default function BatchEntry({ id }: { id: string }) {
     if (!isMounted || loading) return <div className="p-8 text-slate-400">Loading...</div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', margin: '-2rem', width: 'calc(100% + 4rem)', background: '#1e293b' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', margin: '-2rem', width: 'calc(100% + 4rem)', background: '#0f172a' }}>
 
-            {/* 1. TOP BAR (Batch Defaults Context) */}
+            {/* 1. TOP HEADER (Minimal Info) */}
             <div style={{
-                height: '80px',
-                background: '#334155',
-                borderBottom: '1px solid #475569',
+                height: '60px',
+                background: '#1e293b',
+                borderBottom: '1px solid #334155',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0 1.5rem',
@@ -241,248 +241,234 @@ export default function BatchEntry({ id }: { id: string }) {
                 flexShrink: 0
             }}>
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <Link href="/batches" style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 500 }}>&larr; Exit</Link>
-                    <div>
-                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>Batch</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>{batch?.BatchCode || id}</div>
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>Client</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>{batch?.ClientCode || '...'}</div>
+                    <Link href="/batches" style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>&larr;</span> Back
+                    </Link>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <span style={{ color: '#64748b' }}>|</span>
+                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{batch?.BatchCode}</span>
+                        <span style={{ color: '#64748b' }}>/</span>
+                        <span style={{ color: '#94a3b8' }}>{batch?.ClientCode}</span>
                     </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>TOTAL</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#4ade80' }}>
-                        ${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}
+                <div style={{ textAlign: 'right', display: 'flex', gap: '2rem' }}>
+                    <div>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', marginRight: '0.5rem' }}>COUNT</span>
+                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{records.length}</span>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Count: {records.length}</div>
+                    <div>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', marginRight: '0.5rem' }}>TOTAL</span>
+                        <span style={{ fontWeight: 600, color: '#4ade80' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
+                    </div>
                 </div>
             </div>
 
-            {/* 2. MAIN CONTENT SPLIT */}
+            {/* 2. MAIN WORKSPACE (3 Columns) */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-                {/* LEFT: FORM (Fixed Width) */}
+                {/* COL 1: SETTINGS / DEFAULTS (Left Sidebar) */}
                 <div style={{
-                    width: '450px',
+                    width: '300px',
                     background: '#0f172a',
                     borderRight: '1px solid #334155',
+                    padding: '1.5rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    padding: '1.5rem',
                     gap: '1.5rem',
                     overflowY: 'auto'
                 }}>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>BATCH DEFAULTS</div>
 
-                    {/* Search / Scan Block */}
-                    <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>SCAN / LOOKUP CHECK</label>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <input
-                                ref={scanRef}
-                                className="input-field"
-                                style={{ flex: 1, fontFamily: 'monospace' }}
-                                placeholder="Scan Data..."
-                                value={formData.scanString}
-                                onChange={e => setFormData({ ...formData, scanString: e.target.value })}
-                                onKeyDown={e => e.key === 'Enter' && handleScanLookup()}
-                                autoFocus
-                            />
-                            <button className="btn-primary" style={{ padding: '0.5rem 1rem' }} onClick={handleScanLookup}>Search</button>
-                        </div>
+                    <div>
+                        <label style={labelStyle}>Platform</label>
+                        <select className="input-field" value={formData.platform} onChange={e => setFormData({ ...formData, platform: e.target.value })}>
+                            {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
                     </div>
 
-                    {/* Donor Info (Read Only) */}
-                    <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#64748b', fontSize: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>DONOR INFORMATION</div>
+                    <div>
+                        <label style={labelStyle}>Type</label>
+                        <select className="input-field" value={formData.giftType} onChange={e => setFormData({ ...formData, giftType: e.target.value })}>
+                            {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                            <div>
-                                <label style={labelStyle}>First Name</label>
-                                <input className="input-field" disabled value={donorInfo.firstName} style={disabledInputStyle} />
-                            </div>
-                            <div>
-                                <label style={labelStyle}>Last Name</label>
-                                <input className="input-field" disabled value={donorInfo.lastName} style={disabledInputStyle} />
-                            </div>
+                    <div>
+                        <label style={labelStyle}>Method</label>
+                        <select className="input-field" value={formData.method} onChange={e => setFormData({ ...formData, method: e.target.value })}>
+                            {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <div>
+                            <label style={labelStyle}>Year</label>
+                            <input className="input-field" type="number" value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} />
                         </div>
                         <div>
-                            <label style={labelStyle}>Address</label>
-                            <input className="input-field" disabled value={donorInfo.address} style={{ ...disabledInputStyle, marginBottom: '0.5rem' }} />
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <input className="input-field" disabled value={donorInfo.city} style={{ ...disabledInputStyle, flex: 2 }} />
-                                <input className="input-field" disabled value={donorInfo.state} style={{ ...disabledInputStyle, flex: 1 }} />
-                                <input className="input-field" disabled value={donorInfo.zip} style={{ ...disabledInputStyle, flex: 1 }} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Transaction Details (Editable) */}
-                    <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', flex: 1 }}>
-                        <div style={{ color: '#e2e8f0', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem', borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>TRANSACTION DETAILS</div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 2fr', gap: '0.75rem', alignItems: 'center' }}>
-
-                            <label style={labelStyle}>Platform</label>
-                            <select
-                                className="input-field"
-                                value={formData.platform}
-                                onChange={e => setFormData({ ...formData, platform: e.target.value })}
-                            >
-                                {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-                            </select>
-
-                            <label style={labelStyle}>Type</label>
-                            <select
-                                className="input-field"
-                                value={formData.giftType}
-                                onChange={e => setFormData({ ...formData, giftType: e.target.value })}
-                            >
-                                {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-
-                            <label style={labelStyle}>Method</label>
-                            <select
-                                className="input-field"
-                                value={formData.method}
-                                onChange={e => setFormData({ ...formData, method: e.target.value })}
-                            >
-                                {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                            </select>
-
-                            <div style={{ height: '1px', background: '#334155', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
-
-                            <label style={labelStyle}>Gift Year</label>
-                            <input
-                                className="input-field"
-                                type="number"
-                                value={formData.year}
-                                onChange={e => setFormData({ ...formData, year: e.target.value })}
-                            />
-
-                            <label style={labelStyle}>Gift Quarter</label>
-                            <select
-                                className="input-field"
-                                value={formData.quarter}
-                                onChange={e => setFormData({ ...formData, quarter: e.target.value })}
-                            >
+                            <label style={labelStyle}>Quarter</label>
+                            <select className="input-field" value={formData.quarter} onChange={e => setFormData({ ...formData, quarter: e.target.value })}>
                                 <option value="Q1">Q1</option>
                                 <option value="Q2">Q2</option>
                                 <option value="Q3">Q3</option>
                                 <option value="Q4">Q4</option>
                             </select>
+                        </div>
+                    </div>
 
-                            <div style={{ height: '1px', background: '#334155', gridColumn: 'span 2', margin: '0.5rem 0' }}></div>
+                    <div style={{ paddingTop: '1rem', borderTop: '1px solid #1e293b' }}>
+                        <label style={labelStyle}>Check # (Optional)</label>
+                        <input className="input-field" value={formData.checkNumber} onChange={e => setFormData({ ...formData, checkNumber: e.target.value })} placeholder="---" />
+                    </div>
 
-                            <label style={labelStyle}>Check #</label>
-                            <input
-                                className="input-field"
-                                value={formData.checkNumber}
-                                onChange={e => setFormData({ ...formData, checkNumber: e.target.value })}
-                            />
+                </div>
 
-                            <label style={{ ...labelStyle, color: '#4ade80', fontWeight: 600 }}>Gift Amount</label>
+                {/* COL 2: ACTIVE ENTRY (Center Focus) */}
+                <div style={{
+                    flex: 1,
+                    background: '#1e293b', // Slightly lighter for focus
+                    padding: '2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center', // Center vertically
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    gap: '2rem'
+                }}>
+
+                    {/* A. SCAN INPUT */}
+                    <div style={{ width: '100%', maxWidth: '500px' }}>
+                        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '0.5rem', textAlign: 'center' }}>1. SCAN BARCODE OR DATAMATRIX</label>
+                        <input
+                            ref={scanRef}
+                            className="input-field"
+                            style={{
+                                width: '100%',
+                                fontSize: '1.25rem',
+                                textAlign: 'center',
+                                padding: '1rem',
+                                height: 'auto',
+                                fontFamily: 'monospace',
+                                border: '2px solid #3b82f6', // distinct border for focus
+                                boxShadow: '0 0 15px rgba(59, 130, 246, 0.2)'
+                            }}
+                            placeholder="Ready to Scan..."
+                            value={formData.scanString}
+                            onChange={e => setFormData({ ...formData, scanString: e.target.value })}
+                            onKeyDown={e => e.key === 'Enter' && handleScanLookup()}
+                            autoFocus
+                        />
+                    </div>
+
+                    {/* B. DONOR RESULT CARD */}
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '500px',
+                        background: '#0f172a',
+                        borderRadius: '0.75rem',
+                        padding: '1.5rem',
+                        border: '1px solid #334155',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem',
+                        opacity: donorInfo.firstName ? 1 : 0.5
+                    }}>
+                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Donor Selected</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white' }}>
+                            {donorInfo.firstName || '---'} {donorInfo.lastName}
+                        </div>
+                        <div style={{ color: '#94a3b8' }}>
+                            {donorInfo.address || 'Waiting for scan...'}
+                        </div>
+                        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                            {donorInfo.city ? `${donorInfo.city}, ${donorInfo.state} ${donorInfo.zip}` : ''}
+                        </div>
+                    </div>
+
+                    {/* C. AMOUNT INPUT */}
+                    <div style={{ width: '100%', maxWidth: '500px' }}>
+                        <label style={{ display: 'block', color: '#4ade80', fontSize: '0.85rem', marginBottom: '0.5rem', textAlign: 'center', fontWeight: 600 }}>2. ENTER AMOUNT</label>
+                        <div style={{ position: 'relative' }}>
+                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.5rem', color: '#4ade80' }}>$</span>
                             <input
                                 ref={amountRef}
                                 className="input-field"
                                 type="number"
                                 placeholder="0.00"
-                                style={{ fontSize: '1.1rem', fontWeight: 600 }}
+                                style={{
+                                    width: '100%',
+                                    fontSize: '2rem',
+                                    textAlign: 'right',
+                                    padding: '1rem 1rem 1rem 3rem',
+                                    height: 'auto',
+                                    fontWeight: 700,
+                                    color: '#4ade80',
+                                    border: '1px solid #334155'
+                                }}
                                 value={formData.amount}
                                 onChange={e => setFormData({ ...formData, amount: e.target.value })}
                                 onKeyDown={handleKeyDown}
                             />
-
                         </div>
+                    </div>
 
-                        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-                            <button
-                                className="btn-primary"
-                                style={{ flex: 1, background: '#334155', border: '1px solid #475569' }}
-                                onClick={() => {
-                                    // Reset Fields
-                                    setFormData({
-                                        ...formData,
-                                        amount: '',
-                                        checkNumber: '',
-                                        scanString: ''
-                                    });
-                                    setDonorInfo({ firstName: '', lastName: '', address: '', city: '', state: '', zip: '' });
-                                    scanRef.current?.focus();
-                                }}
-                            >
-                                Reset
-                            </button>
-                            <button
-                                className="btn-primary"
-                                style={{ flex: 2 }}
-                                onClick={handleSave}
-                                disabled={saving}
-                            >
-                                {saving ? "Saving..." : "Save Record"}
-                            </button>
-                        </div>
+                    {/* D. SAVE ACTION */}
+                    <div style={{ width: '100%', maxWidth: '500px' }}>
+                        <button
+                            className="btn-primary"
+                            style={{
+                                width: '100%',
+                                padding: '1rem',
+                                fontSize: '1.1rem',
+                                background: saving ? '#475569' : '#3b82f6'
+                            }}
+                            onClick={handleSave}
+                            disabled={saving}
+                        >
+                            {saving ? "Saving..." : "Save Record (Enter)"}
+                        </button>
                     </div>
 
                 </div>
 
-                {/* RIGHT: DATA GRID */}
-                <div style={{ flex: 1, background: '#020617', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                        <thead style={{ position: 'sticky', top: 0, background: '#1e293b', color: '#94a3b8', textAlign: 'left', fontWeight: 500 }}>
-                            <tr>
-                                <th style={thStyle}>ID</th>
-                                <th style={thStyle}>Type</th>
-                                <th style={thStyle}>Method</th>
-                                <th style={thStyle}>Check #</th>
-                                <th style={thStyle}>Year/Q</th>
-                                <th style={{ ...thStyle, textAlign: 'right' }}>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {records.map(r => (
-                                <tr key={r.DonationID} style={{
-                                    borderBottom: '1px solid #1e293b',
-                                    background: r.DonationID === lastSavedId ? 'rgba(74, 222, 128, 0.1)' : 'transparent'
-                                }}>
-                                    <td style={tdStyle}>{r.DonationID}</td>
-                                    <td style={tdStyle}>{r.GiftType || '-'}</td>
-                                    <td style={tdStyle}>{r.GiftMethod}</td>
-                                    <td style={tdStyle}>{r.SecondaryID || '-'}</td>
-                                    <td style={tdStyle}>{r.CreatedAt.substring(0, 4)}</td>
-                                    <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: '#e2e8f0' }}>${Number(r.GiftAmount).toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                {/* COL 3: RECENT HISTORY (Right) */}
+                <div style={{
+                    width: '350px',
+                    background: '#0f172a',
+                    borderLeft: '1px solid #334155',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    <div style={{ padding: '1rem', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>RECENT SCANS</div>
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                            <tbody>
+                                {records.map(r => (
+                                    <tr key={r.DonationID} style={{
+                                        borderBottom: '1px solid #1e293b',
+                                        background: r.DonationID === lastSavedId ? 'rgba(74, 222, 128, 0.1)' : 'transparent'
+                                    }}>
+                                        <td style={{ padding: '0.75rem 1rem' }}>
+                                            <div style={{ color: 'white', fontWeight: 500 }}>${Number(r.GiftAmount).toFixed(2)}</div>
+                                            <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{r.SecondaryID || '#'} · {r.GiftMethod}</div>
+                                        </td>
+                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#64748b' }}>
+                                            {new Date(r.CreatedAt).toLocaleTimeString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
         </div>
     );
 }
+// Helper styles
+const labelStyle = { display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.25rem' };
+const thStyle = { padding: '0.5rem', textAlign: 'left', color: '#64748b' };
+const tdStyle = {};
 
-const labelStyle = {
-    display: 'block',
-    fontSize: '0.75rem',
-    color: '#94a3b8',
-    marginBottom: 0
-};
-
-const disabledInputStyle = {
-    background: '#334155',
-    color: '#94a3b8',
-    borderColor: 'transparent',
-    cursor: 'not-allowed'
-};
-
-const thStyle = {
-    padding: '0.75rem 1rem',
-    borderBottom: '1px solid #334155'
-};
-
-const tdStyle = {
-    padding: '0.5rem 1rem',
-    color: '#cbd5e1'
-};
