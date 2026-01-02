@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/compass_caging',
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:dadmy9-hoRqeg-budvyg@db.lrrlssecgkeqztwpkeca.supabase.co:5432/postgres',
+    ssl: { rejectUnauthorized: false }
 });
 
 export async function query(text: string, params?: unknown[]) {
