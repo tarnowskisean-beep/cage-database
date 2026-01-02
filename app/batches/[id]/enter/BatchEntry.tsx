@@ -109,9 +109,18 @@ export default function BatchEntry({ id }: { id: string }) {
     if (!isMounted) return <div style={{ padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>Loading Batch...</div>;
 
     return (
-        <div className="app-shell" style={{ height: '100vh', overflow: 'hidden' }}>
+        // Use negative margin to counteract the global layout padding for this immersive view
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            overflow: 'hidden',
+            margin: '-2rem',
+            width: 'calc(100% + 4rem)'
+        }}>
             {/* Header / Meta */}
             <div style={{
+                flexShrink: 0,
                 height: '60px', borderBottom: '1px solid hsla(var(--color-border), 0.5)',
                 display: 'flex', alignItems: 'center', padding: '0 2rem', justifyContent: 'space-between',
                 backgroundColor: 'hsla(var(--color-bg-base), 0.9)'
