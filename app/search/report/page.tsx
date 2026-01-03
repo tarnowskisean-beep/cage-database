@@ -93,10 +93,62 @@ function ReportContent() {
         methods[m].sum += Number(r.GiftAmount || 0);
     });
 
-    // Date Range (Simple min/max)
-    const dates = results.map(r => new Date(r.GiftDate).getTime());
-    const minDate = dates.length ? new Date(Math.min(...dates)).toLocaleDateString() : '-';
-    const maxDate = dates.length ? new Date(Math.max(...dates)).toLocaleDateString() : '-';
+    // Caging Activity Aggregation (MailCode + Method -> Count & Sum)
+    const cagingActivity: Record<string, { count: number, sum: number }> = {};
+
+    results.forEach(r => {
+        // Extract MailCode from ScanString (Method B) or use raw MailCode if available
+        let mailCode = r.MailCode || 'Unknown';
+        if (r.ScanString && r.ScanString.includes('\t')) {
+            mailCode = r.ScanString.split('\t')[0];
+        } else if (!mailCode || mailCode === '') {
+            mailCode = 'No Mail Code';
+        }
+
+        const method = r.GiftMethod || 'Unknown';
+        const key = `${mailCode}::${method}`; // Composite key
+
+        if (!cagingActivity[key]) cagingActivity[key] = { count: 0, sum: 0 };
+        cagingActivity[key].count++;
+        cagingActivity[key].sum += Number(r.GiftAmount || 0);
+    });
+
+    // Date Range Logic (Prioritize Query, Fallback to Data)
+    let minDate = '-';
+    let maxDate = '-';
+    const qParam = searchParams.get('q');
+
+    if (qParam) {
+        try {
+            const query = JSON.parse(decodeURIComponent(qParam));
+            // Find Date Rules
+            const findRule = (op: string) => {
+                const rules = query.rules || [];
+                // Simple search flattens rules, but let's check recursively if needed or just top level
+                // Our SearchPage sends a simple AND list for dates at top level mostly.
+                if (Array.isArray(rules)) {
+                    const rule = rules.find((r: any) => r.field === 'date' && r.operator === op);
+                    return rule ? rule.value : null;
+                }
+                return null;
+            };
+
+            const startQuery = findRule('gte');
+            const endQuery = findRule('lte');
+
+            if (startQuery) minDate = new Date(startQuery).toLocaleDateString();
+            if (endQuery) maxDate = new Date(endQuery).toLocaleDateString();
+        } catch (e) {
+            console.error("Error parsing query dates", e);
+        }
+    }
+
+    // Fallback if query didn't have dates (e.g. searched only by name)
+    if (minDate === '-' || maxDate === '-') {
+        const dates = results.map(r => new Date(r.GiftDate).getTime());
+        if (minDate === '-' && dates.length) minDate = new Date(Math.min(...dates)).toLocaleDateString();
+        if (maxDate === '-' && dates.length) maxDate = new Date(Math.max(...dates)).toLocaleDateString();
+    }
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif', color: 'black', background: 'white' }}>
@@ -111,8 +163,7 @@ function ReportContent() {
                         <img src={client.LogoURL} alt="Client Logo" style={{ height: '60px', objectFit: 'contain' }} />
                     ) : (
                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', fontStyle: 'italic', fontFamily: 'serif' }}>
-                            {/* Fallback or specific branding? User screenshot showed 'CPI'. We'll leave blank or show ClientCode if no logo. */}
-                            {client ? client.ClientCode : 'Mutli-Client Report'}
+                            {client ? client.ClientCode : 'Multi-Client Report'}
                         </div>
                     )}
                 </div>
@@ -146,7 +197,7 @@ function ReportContent() {
                             <td style={{ border: '1px solid black', padding: '4px' }}>Total Amount:</td>
                             <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${totalAmount.toFixed(2)}</td>
                         </tr>
-                        {/* Breakdown by Method (simplified from screenshot for now) */}
+                        {/* Breakdown by Method */}
                         {Object.entries(methods).map(([m, stats]) => (
                             <tr key={m}>
                                 <td style={{ border: '1px solid black', padding: '4px' }}>{m} Total:</td>
@@ -184,33 +235,38 @@ function ReportContent() {
             <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center', background: '#ccc', padding: '4px', border: '1px solid black' }}>
                 Caging Activity
             </h3>
-            {/* ... Assuming grouped by mailcode logic, complicated to do on frontend without pre-processing. 
-                For now, showing raw list or simplified. User screenshot shows Mailcode grouping.
-                Let's approximate it. 
-            */}
+
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '0.75rem' }}>
                 <thead>
                     <tr style={{ background: '#eee' }}>
-                        <th style={{ border: '1px solid black', padding: '4px' }}>Date</th>
-                        <th style={{ border: '1px solid black', padding: '4px' }}>Donor</th>
-                        <th style={{ border: '1px solid black', padding: '4px' }}>Platform</th>
-                        <th style={{ border: '1px solid black', padding: '4px' }}>Method</th>
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Amount</th>
+                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left' }}>Mail Code</th>
+                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left' }}>Method</th>
+                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Count</th>
+                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Sum</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {results.slice(0, 50).map(r => (
-                        <tr key={r.DonationID}>
-                            <td style={{ border: '1px solid black', padding: '2px' }}>{new Date(r.GiftDate).toLocaleDateString()}</td>
-                            <td style={{ border: '1px solid black', padding: '2px' }}>{r.ClientCode}</td>
-                            <td style={{ border: '1px solid black', padding: '2px' }}>{r.GiftPlatform}</td>
-                            <td style={{ border: '1px solid black', padding: '2px' }}>{r.GiftMethod}</td>
-                            <td style={{ border: '1px solid black', padding: '2px', textAlign: 'right' }}>${Number(r.GiftAmount).toFixed(2)}</td>
-                        </tr>
-                    ))}
+                    {Object.entries(cagingActivity)
+                        .sort((a, b) => a[0].localeCompare(b[0])) // Sort by MailCode
+                        .map(([key, stats]) => {
+                            const [mailCode, method] = key.split('::');
+                            return (
+                                <tr key={key}>
+                                    <td style={{ border: '1px solid black', padding: '4px' }}>{mailCode}</td>
+                                    <td style={{ border: '1px solid black', padding: '4px' }}>{method}</td>
+                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{stats.count}</td>
+                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${stats.sum.toFixed(2)}</td>
+                                </tr>
+                            );
+                        })}
+                    {/* Grand Total Row */}
+                    <tr style={{ fontWeight: 'bold', background: '#f9f9f9' }}>
+                        <td style={{ border: '1px solid black', padding: '4px' }} colSpan={2}>Grand Total</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{count}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${totalAmount.toFixed(2)}</td>
+                    </tr>
                 </tbody>
             </table>
-            {results.length > 50 && <div style={{ textAlign: 'center', marginTop: '1rem', fontStyle: 'italic' }}>...and {results.length - 50} more records (truncated for print preview)</div>}
         </div>
     );
 }
