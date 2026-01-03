@@ -27,7 +27,6 @@ export default function Home() {
     const day = today.getDay(); // 0 is Sunday, 6 is Saturday
 
     // Find most recent Saturday
-    // If today is Saturday (6), diff is 0. If Sunday (0), diff is 1. If Friday (5), diff is 6.
     const diff = (day + 1) % 7;
     const start = new Date(today);
     start.setDate(today.getDate() - diff);
@@ -36,9 +35,16 @@ export default function Home() {
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
+    const formatDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: formatDate(start),
+      end: formatDate(end)
     };
   };
 

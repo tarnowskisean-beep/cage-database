@@ -48,10 +48,17 @@ const FIELDS = [
     { value: 'donorName', label: 'Donor Name' },
     { value: 'amount', label: 'Gift Amount' },
     { value: 'date', label: 'Gift Date' },
+    { value: 'method', label: 'Payment Method' },
+    { value: 'platform', label: 'Platform' },
     { value: 'checkNumber', label: 'Check Number' },
     { value: 'donorCity', label: 'City' },
     { value: 'donorState', label: 'State' },
     { value: 'donorZip', label: 'Zip Code' },
+    { value: 'donorEmail', label: 'Email' },
+    { value: 'donorEmployer', label: 'Employer' },
+    { value: 'donorOccupation', label: 'Occupation' },
+    { value: 'orgName', label: 'Organization' },
+    { value: 'comment', label: 'Comment' },
     { value: 'clientCode', label: 'Client Code' },
     { value: 'batchCode', label: 'Batch Code' },
 ];
@@ -228,13 +235,13 @@ export default function SearchPage() {
 
                 <button
                     onClick={() => setQuery(prev => addRuleToGroup(prev, group.id))}
-                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px' }}
+                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px', color: 'var(--color-text-main)' }}
                 >
                     + Rule
                 </button>
                 <button
                     onClick={() => setQuery(prev => addGroupToGroup(prev, group.id))}
-                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px' }}
+                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px', color: 'var(--color-text-main)' }}
                 >
                     + Group
                 </button>

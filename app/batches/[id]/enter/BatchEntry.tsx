@@ -22,7 +22,9 @@ export default function BatchEntry({ id }: { id: string }) {
         manualEntryRef,
         handleScanLookup,
         handleSave,
-        resetForm
+        resetForm,
+        editingId,
+        loadRecord
     } = useBatchEntry({ id });
 
     if (!isMounted || loading) return <div className="p-8" style={{ color: 'var(--color-text-muted)' }}>Loading...</div>;
@@ -37,6 +39,7 @@ export default function BatchEntry({ id }: { id: string }) {
                     <span style={{ color: 'var(--color-border)' }}>|</span>
                     <span style={{ fontWeight: 600 }}>{batch?.BatchCode}</span>
                     <span style={{ color: 'var(--color-text-muted)' }}>{batch?.ClientCode}</span>
+                    {editingId && <span style={{ background: '#3b82f6', color: 'white', padding: '0.1rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>EDITING MODE</span>}
                 </div>
                 <div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginRight: '1rem' }}>Total: {records.length}</span>
@@ -247,7 +250,9 @@ export default function BatchEntry({ id }: { id: string }) {
 
                             <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
                                 <button className="btn-primary" style={{ flex: 1, background: 'var(--color-border)' }} onClick={resetForm}>Reset</button>
-                                <button className="btn-primary" style={{ flex: 2 }} onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+                                <button className="btn-primary" style={{ flex: 2, background: editingId ? 'var(--color-active)' : undefined }} onClick={handleSave} disabled={saving}>
+                                    {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
+                                </button>
                             </div>
                         </div>
 
@@ -259,7 +264,17 @@ export default function BatchEntry({ id }: { id: string }) {
                     <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>RECENT SCANS</div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {records.map(r => (
-                            <div key={r.DonationID} style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', background: r.DonationID === lastSavedId ? 'rgba(51, 204, 102, 0.1)' : 'transparent' }}>
+                            <div
+                                key={r.DonationID}
+                                onClick={() => loadRecord(r)}
+                                style={{
+                                    padding: '0.75rem',
+                                    borderBottom: '1px solid var(--color-border)',
+                                    background: r.DonationID === editingId ? 'rgba(59, 130, 246, 0.15)' : (r.DonationID === lastSavedId ? 'rgba(51, 204, 102, 0.1)' : 'transparent'),
+                                    cursor: 'pointer',
+                                    borderLeft: r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent'
+                                }}
+                            >
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>${Number(r.GiftAmount).toFixed(2)}</span>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>

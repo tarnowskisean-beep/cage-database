@@ -40,6 +40,16 @@ export interface DonationRecord {
     DonorState?: string;
     DonorZip?: string;
     DonorPhone?: string;
+    GiftPlatform?: string; // NEW
+    PostMarkYear?: number; // NEW
+    PostMarkQuarter?: string; // NEW
+    IsInactive?: boolean; // NEW
+    GiftYear?: number; // NEW
+    GiftQuarter?: string; // NEW
+    DonorPrefix?: string; // NEW
     DonorEmail?: string;
+    OrganizationName?: string;
     Comment?: string;
+    GiftCustodian?: string;
+    GiftConduit?: string;
 }
