@@ -372,8 +372,33 @@ export default function SearchPage() {
             };
 
             const rec = r as any;
-            // Robust check for ScanString casing
-            const scanString = rec.ScanString || rec.scanString || rec.scanstring || '';
+
+            // 1. Get explicit ScanString
+            let scanString = rec.ScanString || rec.scanString || rec.scanstring || '';
+
+            // 2. Fallback: Generate Composite ID if missing
+            // Format: ClientCode.CB.YYYY.MM.DD.BatchCode (where BatchCode = Initials.Seq)
+            if (!scanString && rec.ClientCode && rec.BatchCode) {
+                // Use BatchDate if available, else CreatedAt or Today? 
+                // Usually Batch Date. `rec.BatchDate` might be available if joined? 
+                // Check query: joined "Batches" b. `b."Date"`. 
+                // `FIELD_MAP` doesn't explicitly map `BatchDate` but `d.*` and `b."Date"` might be there?
+                // The query in route.ts selects `b."BatchCode"`. It does NOT select `b."Date"` explicitly in the SELECT list in route.ts?
+                // Wait, route.ts has: `b."BatchCode", c."ClientCode", c."ClientName"`. It does NOT have `b."Date"`.
+                // BUT `d.*` has `BatchDate` if it was saved in Donations table?
+                // Schema has `BatchDate` in Donations. And `Date` in Batches.
+                // Let's rely on `rec.BatchDate` (Donations table) or `rec.GiftDate` (Donations table). 
+                // User example `2025.12.31` implies the batch date.
+
+                const rawDate = rec.BatchDate || rec.GiftDate || new Date().toISOString();
+                const d = new Date(rawDate);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const dateStr = `${yyyy}.${mm}.${dd}`;
+
+                scanString = `${rec.ClientCode}.CB.${dateStr}.${rec.BatchCode}`;
+            }
 
             let mailCode = rec.MailCode || '';
             if (!mailCode && scanString && scanString.includes('\t')) {
