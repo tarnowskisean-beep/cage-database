@@ -83,7 +83,7 @@ export default function ImportPage() {
         if (!sessionId) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/import/process/${sessionId}`, { method: 'POST' });
+            const data = await res.json();
             if (res.ok) {
                 // Fetch Staging Data for Review
                 const dataRes = await fetch(`/api/import/staging/${sessionId}`);
@@ -91,7 +91,7 @@ export default function ImportPage() {
                 setStagingRows(rows);
                 setStep(3);
             } else {
-                alert('Processing Failed');
+                alert('Processing Failed: ' + (data.error || res.statusText));
             }
         } catch (err) {
             console.error(err);
