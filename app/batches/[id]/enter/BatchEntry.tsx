@@ -6,6 +6,7 @@ import { Label } from '@/app/components/ui/Label';
 import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
 import { useBatchEntry } from '@/app/hooks/useBatchEntry';
+import { faker } from '@faker-js/faker';
 
 export default function BatchEntry({ id }: { id: string }) {
     const {
@@ -24,8 +25,33 @@ export default function BatchEntry({ id }: { id: string }) {
         handleSave,
         resetForm,
         editingId,
-        loadRecord
+        loadRecord,
+        setFormData
     } = useBatchEntry({ id });
+
+    const handleFillFakeData = () => {
+        const fake = {
+            donorFirstName: faker.person.firstName(),
+            donorLastName: faker.person.lastName(),
+            donorAddress: faker.location.streetAddress(),
+            donorCity: faker.location.city(),
+            donorState: faker.location.state({ abbreviated: true }),
+            donorZip: faker.location.zipCode().substring(0, 5),
+            donorEmail: faker.internet.email(),
+            donorPhone: faker.phone.number(),
+            donorEmployer: faker.company.name(),
+            donorOccupation: faker.person.jobTitle(),
+            amount: faker.finance.amount({ min: 10, max: 1000, dec: 2 }),
+            checkNumber: faker.finance.accountNumber(),
+        };
+        setFormData(prev => ({
+            ...prev,
+            ...fake,
+            donorMiddleName: '',
+            donorSuffix: '',
+            donorPrefix: '',
+        }));
+    };
 
     if (!isMounted || loading) return <div className="p-8" style={{ color: 'var(--color-text-muted)' }}>Loading...</div>;
 
@@ -42,6 +68,13 @@ export default function BatchEntry({ id }: { id: string }) {
                     {editingId && <span style={{ background: '#3b82f6', color: 'white', padding: '0.1rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>EDITING MODE</span>}
                 </div>
                 <div>
+                    <button
+                        onClick={handleFillFakeData}
+                        style={{ background: 'transparent', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '1rem', cursor: 'pointer' }}
+                        title="Auto-fill with Fake Data"
+                    >
+                        ⚡ Fill Fake
+                    </button>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginRight: '1rem' }}>Total: {records.length}</span>
                     <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-active)' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
                 </div>

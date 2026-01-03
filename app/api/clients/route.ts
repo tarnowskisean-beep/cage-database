@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { code, name, logoUrl } = body;
+        const { code, name, logoUrl, clientType } = body;
 
         if (!code || !name) {
             return NextResponse.json({ error: 'Client Code and Name are required' }, { status: 400 });
@@ -26,9 +26,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Client Code already exists' }, { status: 409 });
         }
 
+        // Insert new client
         const result = await query(
-            'INSERT INTO "Clients" ("ClientCode", "ClientName", "LogoURL") VALUES ($1, $2, $3) RETURNING *',
-            [code, name, logoUrl || null]
+            'INSERT INTO "Clients" ("ClientCode", "ClientName", "LogoURL", "ClientType") VALUES ($1, $2, $3, $4) RETURNING *',
+            [code, name, logoUrl || null, clientType || null]
         );
 
         return NextResponse.json(result.rows[0], { status: 201 });
@@ -46,6 +47,7 @@ export async function PUT(request: Request) {
             const formData = await request.formData();
             const id = formData.get('id') as string;
             const name = formData.get('name') as string;
+            const clientType = formData.get('clientType') as string;
             const file = formData.get('logo') as File | null;
 
             if (!id || !name) {
@@ -58,15 +60,15 @@ export async function PUT(request: Request) {
 
                 // Update with Logo Data
                 const result = await query(
-                    'UPDATE "Clients" SET "ClientName" = $1, "LogoData" = $2, "MimeType" = $3, "LogoURL" = $4 WHERE "ClientID" = $5 RETURNING *',
-                    [name, buffer, mimeType, `/api/clients/${id}/logo`, id]
+                    'UPDATE "Clients" SET "ClientName" = $1, "LogoData" = $2, "MimeType" = $3, "LogoURL" = $4, "ClientType" = $5 WHERE "ClientID" = $6 RETURNING *',
+                    [name, buffer, mimeType, `/api/clients/${id}/logo`, clientType || null, id]
                 );
                 return NextResponse.json(result.rows[0]);
             } else {
-                // Update Name only (preserve existing logo if no file sent)
+                // Update Name/Type only (preserve existing logo if no file sent)
                 const result = await query(
-                    'UPDATE "Clients" SET "ClientName" = $1 WHERE "ClientID" = $2 RETURNING *',
-                    [name, id]
+                    'UPDATE "Clients" SET "ClientName" = $1, "ClientType" = $2 WHERE "ClientID" = $3 RETURNING *',
+                    [name, clientType || null, id]
                 );
                 return NextResponse.json(result.rows[0]);
             }

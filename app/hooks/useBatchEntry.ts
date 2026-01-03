@@ -108,8 +108,101 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
     }, [id, fetchBatch, fetchRecords]);
 
     // --- HANDLERS ---
-    const handleScanLookup = () => {
-        // ... (existing scan logic)
+    const handleScanLookup = async () => {
+        const scan = formData.scanString; // Don't trim immediately, tabs matter depending on scanner config, but usually safe to trim ends.
+        if (!scan) return;
+
+        console.log("Processing Scan:", scan.replace(/\t/g, '[TAB]'));
+
+        // DETECT SCAN TYPE
+        // METHOD B: Datamatrix (Contains Tabs)
+        if (scan.includes('\t')) {
+            console.log("Detected Datamatrix (Tab-delimited)");
+            const parts = scan.split('\t');
+
+            // Expected Format (based on common standards or previous context):
+            // 0: MailCode
+            // 1: CagingID / MasterID
+            // 2: Prefix
+            // 3: FirstName
+            // 4: MiddleName
+            // 5: LastName
+            // 6: Suffix
+            // 7: Address
+            // 8: City
+            // 9: State
+            // 10: Zip
+            // 11+: Extra params?
+
+            // For safety, let's map loosely by index
+            const [
+                mailCode,
+                cagingId,
+                prefix,
+                first,
+                middle,
+                last,
+                suffix,
+                address,
+                city,
+                state,
+                zip
+            ] = parts;
+
+            setFormData(prev => ({
+                ...prev,
+                mailCode: mailCode || '',
+                // If CagingID is present, we might technically lookup more info, 
+                // but usually the scan contains the Truth.
+                // We'll also treat CagingID as the checkNumber fallback if needed? 
+                // No, usually Check# is manually keyed for checks.
+
+                donorPrefix: prefix || '',
+                donorFirstName: first || '',
+                donorMiddleName: middle || '',
+                donorLastName: last || '',
+                donorSuffix: suffix || '',
+
+                donorAddress: address || '',
+                donorCity: city || '',
+                donorState: state || '',
+                donorZip: zip || '',
+
+                // Clear scan string or keep it? 
+                // Usually we keep it for reference.
+            }));
+
+            // Focus Amount
+            amountRef.current?.focus();
+            return;
+        }
+
+        // METHOD A: Barcode / Manual Lookup (Single Key)
+        console.log("Detected Barcode/Key Lookup");
+        try {
+            const res = await fetch(`/api/lookup/caging/${encodeURIComponent(scan.trim())}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.found && data.record) {
+                    const rec = data.record;
+                    setFormData(prev => ({
+                        ...prev,
+                        donorFirstName: rec.FirstName || '',
+                        donorLastName: rec.LastName || '',
+                        donorAddress: rec.Address || '',
+                        donorCity: rec.City || '',
+                        donorState: rec.State || '',
+                        donorZip: rec.Zip || '',
+                        mailCode: rec.MailCode || '',
+                    }));
+                } else {
+                    console.log("No match found in prospects.");
+                }
+            }
+        } catch (e) {
+            console.error("Lookup failed", e);
+        }
+
         amountRef.current?.focus();
     };
 
@@ -167,6 +260,18 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
 
     const handleSave = async () => {
         if (!formData.amount) return alert("Amount is required");
+
+        // Conditional Validation based on Gift Type
+        const giftType = formData.giftType;
+        const requiresOrgName = ['Corporate', 'Foundation', 'Donor-Advised Fund'].includes(giftType);
+
+        if (requiresOrgName && !formData.organizationName) {
+            return alert(`Organization Name is required for ${giftType}.`);
+        }
+
+        if (giftType === 'Donor-Advised Fund' && !formData.giftCustodian) {
+            return alert("Gift Custodian is required for Donor-Advised Funds.");
+        }
 
         setSaving(true);
         try {

@@ -98,6 +98,180 @@ export default function SearchPage() {
     const [amountMax, setAmountMax] = useState('');
     const [checkNumber, setCheckNumber] = useState('');
 
+    // Advanced Query Logic
+    // We need to extend the type locally for UI state (with IDs)
+    interface UISearchRule extends SearchRule { id: string; }
+    interface UISearchGroup { id: string; combinator: Operator; rules: (UISearchRule | UISearchGroup)[] }
+
+    const [uiQuery, setUiQuery] = useState<UISearchGroup>({
+        id: 'root',
+        combinator: 'AND',
+        rules: []
+    });
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
+    // --- RECURSIVE UPDATE HELPERS ---
+    const updateUIGroup = (group: UISearchGroup, targetId: string, transform: (g: UISearchGroup) => UISearchGroup): UISearchGroup => {
+        if (group.id === targetId) return transform(group);
+        return {
+            ...group,
+            rules: group.rules.map(r => {
+                if ('combinator' in r) return updateUIGroup(r as UISearchGroup, targetId, transform);
+                return r;
+            })
+        };
+    };
+
+    const updateUIRule = (group: UISearchGroup, ruleId: string, transform: (r: UISearchRule) => UISearchRule): UISearchGroup => {
+        return {
+            ...group,
+            rules: group.rules.map(r => {
+                if ('combinator' in r) return updateUIRule(r as UISearchGroup, ruleId, transform);
+                // @ts-ignore
+                if (r.id === ruleId) return transform(r as UISearchRule);
+                return r;
+            })
+        };
+    };
+
+    const addRuleToGroup = (group: UISearchGroup, targetGroupId: string): UISearchGroup => {
+        if (group.id === targetGroupId) {
+            return {
+                ...group,
+                rules: [...group.rules, { id: `rule-${Math.random()}`, field: 'donorName', operator: 'contains', value: '' }]
+            };
+        }
+        return {
+            ...group,
+            rules: group.rules.map(r => {
+                if ('combinator' in r) return addRuleToGroup(r as UISearchGroup, targetGroupId);
+                return r;
+            })
+        };
+    };
+
+    const removeNode = (group: UISearchGroup, targetId: string): UISearchGroup => {
+        return {
+            ...group,
+            rules: group.rules
+                .filter(r => (r as any).id !== targetId)
+                .map(r => {
+                    if ('combinator' in r) return removeNode(r as UISearchGroup, targetId);
+                    return r;
+                })
+        };
+    };
+
+    // Constants
+    const FIELDS = [
+        { value: 'donorName', label: 'Donor Name' },
+        { value: 'amount', label: 'Gift Amount' },
+        { value: 'date', label: 'Gift Date' },
+        { value: 'method', label: 'Payment Method' },
+        { value: 'platform', label: 'Platform' },
+        { value: 'checkNumber', label: 'Check Number' },
+        { value: 'donorCity', label: 'City' },
+        { value: 'donorState', label: 'State' },
+        { value: 'donorZip', label: 'Zip Code' },
+        { value: 'donorEmail', label: 'Email' },
+        { value: 'donorEmployer', label: 'Employer' },
+        { value: 'donorOccupation', label: 'Occupation' },
+        { value: 'orgName', label: 'Organization' },
+        { value: 'comment', label: 'Comment' },
+        { value: 'clientCode', label: 'Client Code' },
+        { value: 'batchCode', label: 'Batch Code' },
+    ];
+
+    const OPERATORS = [
+        { value: 'equals', label: 'Equals' },
+        { value: 'contains', label: 'Contains' },
+        { value: 'neq', label: 'Does Not Equal' },
+        { value: 'gt', label: 'Greater Than' },
+        { value: 'lt', label: 'Less Than' },
+        { value: 'gte', label: 'Greater/Equal' },
+        { value: 'lte', label: 'Less/Equal' },
+    ];
+
+    // --- RENDERERS ---
+    const renderRule = (rule: UISearchRule) => (
+        <div key={rule.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <select
+                className="input-field"
+                style={{ width: '150px' }}
+                value={rule.field}
+                onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, field: e.target.value })))}
+            >
+                {FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+
+            <select
+                className="input-field"
+                style={{ width: '150px' }}
+                value={rule.operator}
+                onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, operator: e.target.value as RuleOperator })))}
+            >
+                {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+
+            <input
+                className="input-field"
+                style={{ width: '200px' }}
+                value={rule.value}
+                onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, value: e.target.value })))}
+                placeholder="Value..."
+            />
+
+            <button
+                onClick={() => setUiQuery(prev => removeNode(prev, rule.id))}
+                style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '1.2rem' }}
+                title="Remove Rule"
+            >
+                ×
+            </button>
+        </div>
+    );
+
+    const renderGroup = (group: UISearchGroup, isRoot = false) => (
+        <div key={group.id} style={{
+            padding: '1rem',
+            border: isRoot ? 'none' : '1px solid var(--color-border)',
+            background: isRoot ? 'transparent' : 'var(--color-bg-elevated)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1rem',
+            position: 'relative'
+        }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600, color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Logic Group:</span>
+                <select
+                    className="input-field"
+                    style={{ width: '80px', fontWeight: 600, color: 'var(--color-primary)' }}
+                    value={group.combinator}
+                    onChange={e => setUiQuery(prev => updateUIGroup(prev, group.id, g => ({ ...g, combinator: e.target.value as Operator })))}
+                >
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
+
+                <div style={{ flex: 1 }}></div>
+
+                <button
+                    onClick={() => setUiQuery(prev => addRuleToGroup(prev, group.id))}
+                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px', color: 'var(--color-text-main)' }}
+                >
+                    + Rule
+                </button>
+            </div>
+
+            <div style={{ paddingLeft: isRoot ? 0 : '1rem' }}>
+                {group.rules.map(item => {
+                    if ('combinator' in item) return renderGroup(item as UISearchGroup);
+                    // @ts-ignore
+                    return renderRule(item as UISearchRule);
+                })}
+            </div>
+        </div>
+    );
+
     useEffect(() => {
         // Set Default Dates
         const range = getWeeklyRange();
@@ -115,24 +289,41 @@ export default function SearchPage() {
         setLoading(true);
         setSearched(true);
         try {
-            // Construct the Complex Group Object for the Backend
-            const rules: SearchRule[] = [];
+            // 1. Build Standard Rules
+            const standardRules: SearchRule[] = [];
+            if (startDate) standardRules.push({ field: 'date', operator: 'gte', value: startDate });
+            if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate });
+            if (clientCode) standardRules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
+            if (donorName) standardRules.push({ field: 'donorName', operator: 'contains', value: donorName });
+            if (amountMin) standardRules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
+            if (amountMax) standardRules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
+            if (checkNumber) standardRules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
 
-            if (startDate) rules.push({ field: 'date', operator: 'gte', value: startDate });
-            if (endDate) rules.push({ field: 'date', operator: 'lte', value: endDate });
+            // 2. Convert UI Query (with IDs) to Backend Query (clean)
+            const cleanIndices = (g: UISearchGroup): SearchGroup => ({
+                combinator: g.combinator,
+                rules: g.rules.map(r => {
+                    if ('combinator' in r) return cleanIndices(r as UISearchGroup);
+                    const rule = r as UISearchRule;
+                    return { field: rule.field, operator: rule.operator, value: rule.value };
+                })
+            });
+            const advancedPart = cleanIndices(uiQuery);
 
-            if (clientCode) rules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
+            // 3. Merge: Top Level is AND ( Standard Rules AND (Advanced Logic) )
+            // If no advanced rules exist, just send standard.
+            // If only advanced, send advanced.
 
-            if (donorName) rules.push({ field: 'donorName', operator: 'contains', value: donorName });
+            const finalRules: (SearchRule | SearchGroup)[] = [...standardRules];
 
-            if (amountMin) rules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
-            if (amountMax) rules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
-
-            if (checkNumber) rules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
+            // Only add advanced block if it has rules
+            if (advancedPart.rules.length > 0) {
+                finalRules.push(advancedPart);
+            }
 
             const query: SearchGroup = {
                 combinator: 'AND',
-                rules: rules
+                rules: finalRules
             };
 
             const res = await fetch('/api/search', {
@@ -233,16 +424,34 @@ export default function SearchPage() {
     const handleGenerateReport = () => {
         if (!searched) return alert('Please run a search first.');
         // We need to reconstruct the query for the report URL too
-        const rules: SearchRule[] = [];
-        if (startDate) rules.push({ field: 'date', operator: 'gte', value: startDate });
-        if (endDate) rules.push({ field: 'date', operator: 'lte', value: endDate });
-        if (clientCode) rules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
-        if (donorName) rules.push({ field: 'donorName', operator: 'contains', value: donorName });
-        if (amountMin) rules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
-        if (amountMax) rules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
-        if (checkNumber) rules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
+        const standardRules: SearchRule[] = [];
+        if (startDate) standardRules.push({ field: 'date', operator: 'gte', value: startDate });
+        if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate });
+        if (clientCode) standardRules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
+        if (donorName) standardRules.push({ field: 'donorName', operator: 'contains', value: donorName });
+        if (amountMin) standardRules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
+        if (amountMax) standardRules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
+        if (checkNumber) standardRules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
 
-        const query: SearchGroup = { combinator: 'AND', rules };
+        const cleanIndices = (g: UISearchGroup): SearchGroup => ({
+            combinator: g.combinator,
+            rules: g.rules.map(r => {
+                if ('combinator' in r) return cleanIndices(r as UISearchGroup);
+                const rule = r as UISearchRule;
+                return { field: rule.field, operator: rule.operator, value: rule.value };
+            })
+        });
+        const advancedPart = cleanIndices(uiQuery);
+
+        const finalRules: (SearchRule | SearchGroup)[] = [...standardRules];
+        if (advancedPart.rules.length > 0) {
+            finalRules.push(advancedPart);
+        }
+
+        const query: SearchGroup = {
+            combinator: 'AND',
+            rules: finalRules
+        };
 
         const url = `/search/report?q=${encodeURIComponent(JSON.stringify(query))}`;
         window.open(url, '_blank');
@@ -259,7 +468,7 @@ export default function SearchPage() {
             </header>
 
             {/* Simple Search Form matching Dashboard Style */}
-            <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="glass-panel" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '1.2rem' }}>🔍</span>
                     <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
@@ -355,6 +564,7 @@ export default function SearchPage() {
                                 setDonorName('');
                                 setAmountMin('');
                                 setAmountMax('');
+                                setUiQuery({ id: 'root', combinator: 'AND', rules: [] }); // Clear advanced rules
                             }}
                             style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
                         >
@@ -362,6 +572,22 @@ export default function SearchPage() {
                         </button>
                     )}
                 </div>
+            </div>
+
+            {/* Advanced Filters Toggle */}
+            <div style={{ marginBottom: '2rem' }}>
+                <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                    {showAdvanced ? '▼ Hide Advanced Rules' : '▶ Show Advanced Rules'}
+                </button>
+
+                {showAdvanced && (
+                    <div style={{ marginTop: '1rem' }}>
+                        {renderGroup(uiQuery, true)}
+                    </div>
+                )}
             </div>
 
             {/* Action Buttons Row (Only if results exist) */}

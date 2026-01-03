@@ -14,7 +14,7 @@ export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newClient, setNewClient] = useState({ code: '', name: '', logoUrl: '' });
+    const [newClient, setNewClient] = useState({ code: '', name: '', logoUrl: '', clientType: '' });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [importClient, setImportClient] = useState<Client | null>(null);
@@ -53,6 +53,7 @@ export default function ClientsPage() {
                 const formData = new FormData();
                 formData.append('id', String(editingClient.ClientID));
                 formData.append('name', newClient.name);
+                formData.append('clientType', newClient.clientType);
                 if (logoFile) {
                     formData.append('logo', logoFile);
                 }
@@ -67,7 +68,7 @@ export default function ClientsPage() {
             const res = await fetch(url, { method, headers, body });
 
             if (res.ok) {
-                setNewClient({ code: '', name: '', logoUrl: '' });
+                setNewClient({ code: '', name: '', logoUrl: '', clientType: '' });
                 setLogoFile(null);
                 setEditingClient(null);
                 setIsModalOpen(false);
@@ -85,7 +86,7 @@ export default function ClientsPage() {
 
     const openCreate = () => {
         setEditingClient(null);
-        setNewClient({ code: '', name: '', logoUrl: '' });
+        setNewClient({ code: '', name: '', logoUrl: '', clientType: '' });
         setIsModalOpen(true);
     };
 
@@ -94,7 +95,8 @@ export default function ClientsPage() {
         setNewClient({
             code: client.ClientCode,
             name: client.ClientName,
-            logoUrl: client.LogoURL || ''
+            logoUrl: client.LogoURL || '',
+            clientType: client.ClientType || ''
         });
         setIsModalOpen(true);
     };
@@ -210,6 +212,30 @@ export default function ClientsPage() {
                                         value={newClient.name}
                                         onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                                         required
+                                    />
+                                </div>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Client Type</label>
+                                    <select
+                                        className="input-field"
+                                        value={newClient.clientType} // Simple select for now, can make creatable if needed or add 'Other'
+                                        onChange={e => {
+                                            setNewClient({ ...newClient, clientType: e.target.value });
+                                        }}
+                                        style={{ marginBottom: '0.5rem' }}
+                                    >
+                                        <option value="">Select Type...</option>
+                                        <option value="501c3">501c3</option>
+                                        <option value="501c4">501c4</option>
+                                        <option value="527">527</option>
+                                        <option value="__OTHER__">Other (Enter below)</option>
+                                    </select>
+                                    {/* Simplified custom entry: always show input if value is not in standard list or if user types */}
+                                    <input
+                                        className="input-field"
+                                        placeholder="Or type custom..."
+                                        value={newClient.clientType}
+                                        onChange={e => setNewClient({ ...newClient, clientType: e.target.value })}
                                     />
                                 </div>
                                 <div style={{ marginBottom: '1.5rem' }}>
