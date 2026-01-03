@@ -99,7 +99,10 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
                                 <label style={{
                                     cursor: uploading ? 'wait' : 'pointer',
                                     fontSize: '0.75rem', padding: '0.2rem 0.5rem',
-                                    background: 'var(--color-primary)', color: 'white', borderRadius: '4px'
+                                    background: 'var(--color-primary)',
+                                    color: 'var(--color-primary-text)',
+                                    borderRadius: '4px',
+                                    fontWeight: 600
                                 }}>
                                     {uploading ? '...' : 'Upload'}
                                     <input
