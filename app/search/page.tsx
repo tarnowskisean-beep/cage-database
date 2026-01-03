@@ -66,9 +66,9 @@ const getWeeklyRange = () => {
     const start = new Date(today);
     start.setDate(today.getDate() - diff);
 
-    // End is start + 6 days (Friday)
+    // End is start + 7 days (Saturday) to buffer for UTC overlap
     const end = new Date(start);
-    end.setDate(start.getDate() + 6);
+    end.setDate(start.getDate() + 7);
 
     const formatDate = (d: Date) => {
         const year = d.getFullYear();
