@@ -273,6 +273,11 @@ export default function SearchPage() {
     );
 
     useEffect(() => {
+        // Set Default Dates
+        const range = getWeeklyRange();
+        setStartDate(range.start);
+        setEndDate(range.end);
+
         // Fetch Clients for dropdown
         fetch('/api/clients')
             .then(res => res.json())
@@ -287,7 +292,7 @@ export default function SearchPage() {
             // 1. Build Standard Rules
             const standardRules: SearchRule[] = [];
             if (startDate) standardRules.push({ field: 'date', operator: 'gte', value: startDate });
-            if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate });
+            if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate + ' 23:59:59' });
             if (clientCode) standardRules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
             if (donorName) standardRules.push({ field: 'donorName', operator: 'contains', value: donorName });
             if (amountMin) standardRules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
