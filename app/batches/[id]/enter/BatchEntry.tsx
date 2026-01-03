@@ -44,6 +44,7 @@ export default function BatchEntry({ id }: { id: string }) {
             organizationName: faker.company.name(),
             amount: faker.finance.amount({ min: 10, max: 1000, dec: 2 }),
             checkNumber: faker.finance.accountNumber(),
+            mailCode: faker.string.alphanumeric(6).toUpperCase(),
         };
         setFormData(prev => ({
             ...prev,
