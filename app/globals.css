@@ -2,36 +2,33 @@
 
 :root {
   /* Compass Professional Theme (Greyscale / Monochrome) */
-  --color-bg-base: 0, 0%, 5%;
-  /* #0d0d0d (Almost Black) */
-  --color-bg-surface: 0, 0%, 10%;
-  /* #1a1a1a (Dark Grey) */
-  --color-bg-elevated: 0, 0%, 15%;
-  /* #262626 (Lighter Grey) */
-  --color-bg-sidebar: 0, 0%, 8%;
-  /* #141414 */
+  --color-bg-base: #0d0d0d;
+  /* Almost Black */
+  --color-bg-surface: #1a1a1a;
+  /* Dark Grey */
+  --color-bg-elevated: #262626;
+  /* Lighter Grey */
+  --color-bg-sidebar: #141414;
 
-  --color-primary: 0, 0%, 90%;
-  /* #e5e5e5 (Off-White) */
-  --color-primary-glow: hsla(0, 0%, 100%, 0.1);
+  --color-primary: #e5e5e5;
+  /* Off-White */
+  --color-primary-glow: rgba(255, 255, 255, 0.1);
 
-  --color-accent: 0, 0%, 60%;
-  /* #999999 (Mid Grey) */
+  --color-accent: #999999;
+  /* Mid Grey */
 
-  --color-active: 142, 60%, 50%;
-  /* #33cc66 (Muted Green for Success) */
-  --color-error: 0, 60%, 50%;
-  /* #cc3333 (Muted Red) */
+  --color-active: #33cc66;
+  /* Muted Green */
+  --color-error: #cc3333;
+  /* Muted Red */
 
-  --color-text-main: 0, 0%, 95%;
-  /* #f2f2f2 */
-  --color-text-muted: 0, 0%, 60%;
-  /* #999999 */
+  --color-text-main: #f2f2f2;
+  /* White/Light Grey */
+  --color-text-muted: #a3a3a3;
+  /* Light Grey */
 
-  --color-border: 0, 0%, 20%;
-  /* #333333 */
-  --color-border-subtle: 0, 0%, 15%;
-  /* #262626 */
+  --color-border: #333333;
+  --color-border-subtle: #262626;
 
   --font-display: 'Playfair Display', serif;
   --font-logo: 'Cinzel', serif;
@@ -52,12 +49,13 @@
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  border-color: var(--color-border);
 }
 
 body {
   font-family: var(--font-body);
-  background-color: hsl(var(--color-bg-base));
-  color: hsl(var(--color-text-main));
+  background-color: var(--color-bg-base);
+  color: var(--color-text-main);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -81,8 +79,8 @@ h6 {
 
 .sidebar {
   width: var(--sidebar-width);
-  background-color: hsla(var(--color-bg-surface), 0.8);
-  border-right: 1px solid hsla(var(--color-border), 0.5);
+  background-color: var(--color-bg-surface);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -97,16 +95,18 @@ h6 {
   flex: 1;
   margin-left: var(--sidebar-width);
   padding: 2rem;
-  background: radial-gradient(circle at top right, hsla(var(--color-primary), 0.1), transparent 40%);
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 40%);
 }
 
 /* Component Classes */
 .glass-panel {
-  background: hsla(var(--color-bg-surface), 0.7);
+  background: var(--color-bg-surface);
   backdrop-filter: blur(12px);
-  border: 1px solid hsla(var(--color-border), 0.5);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
   border-radius: var(--radius-md);
+  color: var(--color-text-main);
+  /* Explicitly set color */
 }
 
 .brand-header {
@@ -116,8 +116,10 @@ h6 {
 .brand-text {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(to right, hsl(var(--color-primary)), hsl(var(--color-accent)));
+  background: linear-gradient(to right, var(--color-primary), var(--color-accent));
   -webkit-background-clip: text;
+  background-clip: text;
+  /* Fix lint */
   color: transparent;
   display: inline-block;
 }
@@ -136,27 +138,27 @@ h6 {
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
-  color: hsl(var(--color-text-muted));
+  color: var(--color-text-muted);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .nav-link:hover {
-  background-color: hsla(var(--color-bg-elevated), 0.8);
-  color: hsl(var(--color-text-main));
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-main);
   transform: translateX(4px);
 }
 
 .nav-link.active {
-  background-color: hsla(var(--color-primary), 0.15);
-  color: hsl(var(--color-primary));
-  border-left: 3px solid hsl(var(--color-primary));
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary);
+  border-left: 3px solid var(--color-primary);
 }
 
 .user-profile {
   padding: 1rem;
-  border-top: 1px solid hsla(var(--color-border), 0.5);
+  border-top: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -166,12 +168,13 @@ h6 {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background-color: hsl(var(--color-primary));
+  background-color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: white;
+  color: var(--color-bg-base);
+  /* Invert text for light avatar */
   box-shadow: 0 0 10px var(--color-primary-glow);
 }
 
@@ -181,13 +184,13 @@ h6 {
 }
 
 .user-info .role {
-  color: hsl(var(--color-text-muted));
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
 /* Button & Inputs */
 .btn-primary {
-  background: linear-gradient(135deg, hsl(var(--color-primary)), hsl(260, 60%, 55%));
+  background: linear-gradient(135deg, var(--color-active), #22aa55);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -204,9 +207,9 @@ h6 {
 }
 
 .input-field {
-  background: hsla(var(--color-bg-base), 0.5);
-  border: 1px solid hsl(var(--color-border));
-  color: hsl(var(--color-text-main));
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-main);
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
   width: 100%;
@@ -216,6 +219,6 @@ h6 {
 
 .input-field:focus {
   outline: none;
-  border-color: hsl(var(--color-primary));
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-glow);
 }

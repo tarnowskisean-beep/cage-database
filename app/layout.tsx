@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${outfit.variable}`} style={{ display: 'flex', background: 'hsl(var(--color-bg-base))', color: 'hsl(var(--color-text-base))' }}>
+      <body className={`${inter.variable} ${outfit.variable}`} style={{ display: 'flex', background: 'var(--color-bg-base)', color: 'var(--color-text-main)' }}>
         <Sidebar />
         <main style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '2rem' }}>
           {children}

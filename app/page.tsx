@@ -92,17 +92,17 @@ export default function Home() {
   return (
     <div>
       <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', background: 'linear-gradient(to right, #4ade80, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Executive Dashboard
+        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
+          Dashboard
         </h1>
-        <p style={{ color: 'hsl(var(--color-text-muted))' }}>Real-time donation insights and performance metrics</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>Real-time donation insights and performance metrics</p>
       </header>
 
       {/* Filter Bar */}
       <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.2rem' }}>🔍</span>
-          <span style={{ fontWeight: 600, color: 'hsl(var(--color-text-muted))' }}>Filters:</span>
+          <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
         </div>
 
         <select
@@ -118,7 +118,7 @@ export default function Home() {
         </select>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>From</span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
           <input
             type="date"
             className="input-field"
@@ -136,7 +136,7 @@ export default function Home() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>To</span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
           <input
             type="date"
             className="input-field"
@@ -154,7 +154,7 @@ export default function Home() {
         {(filters.clientId || filters.startDate || filters.endDate) && (
           <button
             onClick={() => setFilters({ clientId: '', startDate: '', endDate: '' })}
-            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
           >
             Clear Filters
           </button>
@@ -163,10 +163,10 @@ export default function Home() {
 
       {loading && !stats ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-          <div style={{ color: 'hsl(var(--color-text-muted))' }}>Loading Data...</div>
+          <div style={{ color: 'var(--color-text-muted)' }}>Loading Data...</div>
         </div>
       ) : (stats as any).error ? (
-        <div style={{ padding: '2rem', color: '#ef4444', textAlign: 'center' }}>
+        <div style={{ padding: '2rem', color: 'var(--color-error)', textAlign: 'center' }}>
           Error loading dashboard: {(stats as any).error}
         </div>
       ) : !stats ? null : (
@@ -204,14 +204,14 @@ export default function Home() {
               <div style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.byClient}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsla(var(--color-border), 0.3)" />
-                    <XAxis dataKey="ClientName" stroke="hsl(var(--color-text-muted))" />
-                    <YAxis stroke="hsl(var(--color-text-muted))" tickFormatter={(val) => `$${val}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="ClientName" stroke="var(--color-text-muted)" />
+                    <YAxis stroke="var(--color-text-muted)" tickFormatter={(val) => `$${val}`} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(var(--color-bg-surface))', border: '1px solid hsl(var(--color-border))' }}
+                      contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }}
                       formatter={(value: number | undefined) => formatCurrency(value || 0)}
                     />
-                    <Bar dataKey="total" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="total" fill="var(--color-active)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -237,7 +237,7 @@ export default function Home() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--color-bg-surface))', border: '1px solid hsl(var(--color-border))' }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -250,10 +250,10 @@ export default function Home() {
               <div style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.byPlatform} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsla(var(--color-border), 0.3)" />
-                    <XAxis type="number" stroke="hsl(var(--color-text-muted))" />
-                    <YAxis dataKey="GiftPlatform" type="category" stroke="hsl(var(--color-text-muted))" width={100} />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--color-bg-surface))', border: '1px solid hsl(var(--color-border))' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis type="number" stroke="var(--color-text-muted)" />
+                    <YAxis dataKey="GiftPlatform" type="category" stroke="var(--color-text-muted)" width={100} />
+                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }} />
                     <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -264,13 +264,13 @@ export default function Home() {
 
           {/* Quick Actions */}
           <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-            <Link href="/batches" className="glass-panel" style={{ padding: '1.5rem', flex: 1, textDecoration: 'none', color: 'inherit', border: '1px solid hsla(140, 60%, 40%, 0.3)' }}>
-              <h3 style={{ color: '#4ade80', marginBottom: '0.5rem' }}>Go to Batches &rarr;</h3>
-              <p style={{ color: 'hsl(var(--color-text-muted))' }}>Manage checking and donation batches</p>
+            <Link href="/batches" className="glass-panel" style={{ padding: '1.5rem', flex: 1, textDecoration: 'none', color: 'inherit', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ color: 'var(--color-active)', marginBottom: '0.5rem' }}>Go to Batches &rarr;</h3>
+              <p style={{ color: 'var(--color-text-muted)' }}>Manage checking and donation batches</p>
             </Link>
             <div className="glass-panel" style={{ padding: '1.5rem', flex: 1, opacity: 0.5 }}>
               <h3 style={{ marginBottom: '0.5rem' }}>Export Reports</h3>
-              <p style={{ color: 'hsl(var(--color-text-muted))' }}>Coming soon</p>
+              <p style={{ color: 'var(--color-text-muted)' }}>Coming soon</p>
             </div>
           </div>
         </>
@@ -283,14 +283,14 @@ function DashboardCard({ title, value, icon, trend }: { title: string, value: st
   return (
     <div className="glass-panel" style={{ padding: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-        <div style={{ color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>{title}</div>
+        <div style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>{title}</div>
         <div style={{ fontSize: '1.5rem' }}>{icon}</div>
       </div>
       <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: trend ? '0.5rem' : 0 }}>
         {value}
       </div>
       {trend && (
-        <div style={{ color: '#4ade80', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+        <div style={{ color: 'var(--color-active)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
           <span>↗</span> {trend}
         </div>
       )}

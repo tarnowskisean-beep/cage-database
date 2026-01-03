@@ -3,21 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-interface Batch {
-    BatchID: number;
-    BatchCode: string;
-    ClientCode: string;
-    Status: string;
-    EntryMode: string;
-    Date: string;
-}
-
-interface Client {
-    ClientID: number;
-    ClientCode: string;
-    ClientName: string;
-}
+import { Batch, Client } from '@/types';
 
 export default function BatchesPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -82,7 +68,7 @@ export default function BatchesPage() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Batches</h1>
-                    <p style={{ color: 'hsl(var(--color-text-muted))' }}>Manage and process donation batches</p>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Manage and process donation batches</p>
                 </div>
                 <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
                     + New Batch
@@ -93,7 +79,7 @@ export default function BatchesPage() {
             <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '1.2rem' }}>🔍</span>
-                    <span style={{ fontWeight: 600, color: 'hsl(var(--color-text-muted))' }}>Filters:</span>
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
                 </div>
 
                 <select
@@ -109,7 +95,7 @@ export default function BatchesPage() {
                 </select>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>From</span>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
                     <input
                         type="date"
                         className="input-field"
@@ -121,7 +107,7 @@ export default function BatchesPage() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>To</span>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
                     <input
                         type="date"
                         className="input-field"
@@ -135,7 +121,7 @@ export default function BatchesPage() {
                 {(filters.clientId || filters.startDate || filters.endDate) && (
                     <button
                         onClick={() => setFilters({ clientId: '', startDate: '', endDate: '' })}
-                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
                     >
                         Clear Filters
                     </button>
@@ -153,11 +139,11 @@ export default function BatchesPage() {
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
                 <h3 style={{ marginBottom: '1.5rem' }}>Active Batches</h3>
                 {batches.length === 0 ? (
-                    <div style={{ color: 'hsl(var(--color-text-muted))', textAlign: 'center', padding: '2rem' }}>No batches found. Create one to get started.</div>
+                    <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>No batches found. Create one to get started.</div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr style={{ borderBottom: '1px solid hsla(var(--color-border), 0.5)', color: 'hsl(var(--color-text-muted))' }}>
+                            <tr style={{ borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)' }}>
                                 <th style={{ padding: '1rem' }}>Batch ID</th>
                                 <th style={{ padding: '1rem' }}>Client</th>
                                 <th style={{ padding: '1rem' }}>Created</th>
@@ -238,7 +224,7 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <div className="glass-panel" style={{ width: '800px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
+            <div className="glass-panel" style={{ width: '800px', padding: '2rem', backgroundColor: 'var(--color-bg-surface)' }}>
                 <h2 style={{ marginBottom: '1.5rem' }}>Start New Batch</h2>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
@@ -340,13 +326,13 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         />
                     </div>
 
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid hsla(var(--color-border), 0.5)' }}>
+                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border-subtle)' }}>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button className="btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading}>
                                 {loading ? 'Creating...' : 'Create Batch'}
                             </button>
                             <button
-                                style={{ flex: 1, background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'white', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                                style={{ flex: 1, background: 'transparent', border: '1px solid var(--color-border)', color: 'white', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
                                 onClick={onClose}
                             >
                                 Cancel
@@ -365,7 +351,7 @@ function StatCard({ label, value, icon }: { label: string, value: string, icon: 
             <div style={{ fontSize: '2rem' }}>{icon}</div>
             <div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{value}</div>
-                <div style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>{label}</div>
+                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>{label}</div>
             </div>
         </div>
     );
@@ -373,22 +359,22 @@ function StatCard({ label, value, icon }: { label: string, value: string, icon: 
 
 function BatchRow({ batch }: { batch: Batch }) {
     return (
-        <tr style={{ borderBottom: '1px solid hsla(var(--color-border), 0.2)' }}>
+        <tr style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
             <td style={{ padding: '1rem', fontWeight: 600 }}>{batch.BatchCode}</td>
             <td style={{ padding: '1rem' }}>{batch.ClientCode}</td>
-            <td style={{ padding: '1rem', color: 'hsl(var(--color-text-muted))' }}>{new Date(batch.Date).toLocaleDateString()}</td>
+            <td style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>{new Date(batch.Date).toLocaleDateString()}</td>
             <td style={{ padding: '1rem' }}>
                 <span style={{
                     padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
-                    background: batch.Status === 'Open' ? 'hsla(140, 60%, 40%, 0.2)' : 'hsla(220, 20%, 30%, 0.5)',
-                    color: batch.Status === 'Open' ? '#4ade80' : 'hsl(var(--color-text-muted))'
+                    background: batch.Status === 'Open' ? 'rgba(74, 222, 128, 0.2)' : 'rgba(148, 163, 184, 0.2)',
+                    color: batch.Status === 'Open' ? '#4ade80' : 'var(--color-text-muted)'
                 }}>
                     {batch.Status}
                 </span>
             </td>
             <td style={{ padding: '1rem' }}>{batch.EntryMode}</td>
             <td style={{ padding: '1rem' }}>
-                <Link href={`/batches/${batch.BatchID}/enter`} style={{ color: 'hsl(var(--color-primary))', textDecoration: 'none', fontWeight: 500 }}>
+                <Link href={`/batches/${batch.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
                     Open &rarr;
                 </Link>
             </td>
@@ -418,7 +404,7 @@ function CreatableSelect({ label, value, options, onChange }: { label: string, v
                     }}
                 >
                     {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    <option style={{ fontWeight: 600, color: 'hsl(var(--color-primary))' }} value="__NEW__">+ Add New...</option>
+                    <option style={{ fontWeight: 600, color: 'var(--color-primary)' }} value="__NEW__">+ Add New...</option>
                 </select>
             ) : (
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -431,7 +417,7 @@ function CreatableSelect({ label, value, options, onChange }: { label: string, v
                     />
                     <button
                         onClick={() => setMode('select')}
-                        style={{ padding: '0 1rem', background: 'hsl(var(--color-bg-elevated))', border: '1px solid hsl(var(--color-border))', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                        style={{ padding: '0 1rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
                         title="Cancel custom entry"
                     >
                         ✕
@@ -449,9 +435,9 @@ function ModeOption({ label, selected, onClick }: { label: string, selected?: bo
             style={{
                 padding: '0.75rem',
                 borderRadius: 'var(--radius-sm)',
-                border: `1px solid ${selected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                backgroundColor: selected ? 'hsla(var(--color-primary), 0.1)' : 'transparent',
-                color: selected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-text-muted))',
+                border: `1px solid ${selected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                backgroundColor: selected ? 'color-mix(in srgb, var(--color-primary) 10%, transparent)' : 'transparent',
+                color: selected ? 'var(--color-primary)' : 'var(--color-text-muted)',
                 cursor: 'pointer',
                 fontWeight: 500
             }}>

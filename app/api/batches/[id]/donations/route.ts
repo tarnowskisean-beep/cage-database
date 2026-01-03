@@ -5,7 +5,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     try {
         const { id } = await params;
         const result = await query(`
-        SELECT "DonationID", "GiftAmount", "CheckNumber", "SecondaryID", "ScanString", "CreatedAt", "GiftMethod"
+        SELECT "DonationID", "GiftAmount", "CheckNumber", "SecondaryID", "ScanString", "CreatedAt", "GiftMethod",
+               "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix", 
+               "DonorAddress", "DonorCity", "DonorState", "DonorZip", "DonorEmployer", "DonorOccupation",
+               "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
+               "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment"
         FROM "Donations" 
         WHERE "BatchID" = $1 
         ORDER BY "CreatedAt" DESC
@@ -24,8 +28,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const body = await request.json();
-        const { amount, checkNumber, scanString, giftMethod, giftPlatform, giftType, giftYear, giftQuarter, donorEmail, donorPhone, organizationName } = body;
-        const { id: batchId } = await params; // Renamed 'id' to 'batchId' to avoid conflict with batch.ClientID
+        const {
+            amount, checkNumber, scanString, giftMethod, giftPlatform, giftType, giftYear, giftQuarter,
+            donorEmail, donorPhone, organizationName,
+            // New Fields
+            donorPrefix, donorFirstName, donorMiddleName, donorLastName, donorSuffix,
+            donorAddress, donorCity, donorState, donorZip,
+            donorEmployer, donorOccupation,
+            giftPledgeAmount, giftFee, giftCustodian, giftConduit,
+            postMarkYear, postMarkQuarter, isInactive, comment
+        } = body;
+        const { id: batchId } = await params;
 
         if (!amount) {
             return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
@@ -47,8 +60,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", 
              "TransactionType", "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate",
              "GiftType", "GiftYear", "GiftQuarter", 
-             "DonorEmail", "DonorPhone", "OrganizationName")
-            VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14)
+             "DonorEmail", "DonorPhone", "OrganizationName",
+             "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix",
+             "DonorAddress", "DonorCity", "DonorState", "DonorZip",
+             "DonorEmployer", "DonorOccupation",
+             "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
+             "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment"
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
             RETURNING *`,
             [
                 batch.ClientID,
@@ -61,11 +80,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 finalPlatform,
                 batch.Date, // BatchDate
                 finalType,
-                giftYear || batch.DefaultGiftYear, // Use provided giftYear or batch default
-                giftQuarter || batch.DefaultGiftQuarter, // Use provided giftQuarter or batch default
+                giftYear || batch.DefaultGiftYear,
+                giftQuarter || batch.DefaultGiftQuarter,
                 donorEmail,
                 donorPhone,
-                String(organizationName || '')
+                String(organizationName || ''),
+                // New Fields Mapped to Params
+                donorPrefix, donorFirstName, donorMiddleName, donorLastName, donorSuffix,
+                donorAddress, donorCity, donorState, donorZip,
+                donorEmployer, donorOccupation,
+                giftPledgeAmount || 0, giftFee || 0, giftCustodian, giftConduit,
+                postMarkYear, postMarkQuarter, isInactive || false, comment
             ]
         );
 

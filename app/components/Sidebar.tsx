@@ -11,8 +11,8 @@ export default function Sidebar() {
     return (
         <aside style={{
             width: isCollapsed ? '80px' : '280px',
-            background: 'hsl(var(--color-bg-sidebar))',
-            borderRight: '1px solid hsla(var(--color-border), 0.1)',
+            background: 'var(--color-bg-sidebar)',
+            borderRight: '1px solid var(--color-border-subtle)',
             display: 'flex',
             flexDirection: 'column',
             transition: 'width 0.3s ease',
@@ -29,9 +29,9 @@ export default function Sidebar() {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: 'hsl(var(--color-primary))',
+                    background: 'var(--color-primary)',
                     color: 'white',
-                    border: '2px solid hsl(var(--color-bg-base))',
+                    border: '2px solid var(--color-bg-base)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -81,7 +81,7 @@ export default function Sidebar() {
             </nav>
 
             {/* User Profile */}
-            <div style={{ padding: '1.5rem', borderTop: '1px solid hsla(var(--color-border), 0.1)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border-subtle)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'white', flexShrink: 0 }}></div>
                 {!isCollapsed && (
                     <div style={{ overflow: 'hidden' }}>
