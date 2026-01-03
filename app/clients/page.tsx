@@ -17,6 +17,7 @@ export default function ClientsPage() {
     const [newClient, setNewClient] = useState({ code: '', name: '', logoUrl: '' });
     const [submitting, setSubmitting] = useState(false);
     const [importClient, setImportClient] = useState<Client | null>(null);
+    const [editingClient, setEditingClient] = useState<Client | null>(null);
 
     const fetchClients = async () => {
         try {
@@ -36,29 +37,52 @@ export default function ClientsPage() {
         fetchClients();
     }, []);
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            const res = await fetch('/api/clients', {
-                method: 'POST',
+            const url = editingClient ? '/api/clients' : '/api/clients';
+            const method = editingClient ? 'PUT' : 'POST';
+            const body = editingClient
+                ? { id: editingClient.ClientID, name: newClient.name, logoUrl: newClient.logoUrl }
+                : newClient;
+
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newClient)
+                body: JSON.stringify(body)
             });
 
             if (res.ok) {
                 setNewClient({ code: '', name: '', logoUrl: '' });
+                setEditingClient(null);
                 setIsModalOpen(false);
                 fetchClients(); // Refresh list
             } else {
-                alert('Failed to create client');
+                alert('Failed to save client');
             }
         } catch (error) {
             console.error(error);
-            alert('Error creating client');
+            alert('Error saving client');
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const openCreate = () => {
+        setEditingClient(null);
+        setNewClient({ code: '', name: '', logoUrl: '' });
+        setIsModalOpen(true);
+    };
+
+    const openEdit = (client: Client) => {
+        setEditingClient(client);
+        setNewClient({
+            code: client.ClientCode,
+            name: client.ClientName,
+            logoUrl: client.LogoURL || ''
+        });
+        setIsModalOpen(true);
     };
 
     return (
@@ -69,7 +93,7 @@ export default function ClientsPage() {
                     <p style={{ color: 'var(--color-text-muted)' }}>Manage and view all registered clients</p>
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={openCreate}
                     className="btn-primary"
                     style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
@@ -96,7 +120,21 @@ export default function ClientsPage() {
                                     <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-active)' }}>{client.ClientCode}</td>
                                     <td style={{ padding: '1rem', fontWeight: 500, color: 'var(--color-text-main)' }}>{client.ClientName}</td>
                                     <td style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>{client.ClientType || '-'}</td>
-                                    <td style={{ padding: '1rem' }}>
+                                    <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={() => openEdit(client)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: '1px solid var(--color-border)',
+                                                color: 'var(--color-text-main)',
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8rem'
+                                            }}
+                                        >
+                                            ✏️ Edit
+                                        </button>
                                         <button
                                             title="Upload Finder File CSV (CagingID, Name, Address...)"
                                             onClick={() => setImportClient(client)}
@@ -135,8 +173,8 @@ export default function ClientsPage() {
                         display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50
                     }}>
                         <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-                            <h2 style={{ marginBottom: '1.5rem' }}>Add New Client</h2>
-                            <form onSubmit={handleCreate}>
+                            <h2 style={{ marginBottom: '1.5rem' }}>{editingClient ? 'Edit Client' : 'Add New Client'}</h2>
+                            <form onSubmit={handleSave}>
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Client Code</label>
                                     <input
@@ -146,6 +184,8 @@ export default function ClientsPage() {
                                         onChange={e => setNewClient({ ...newClient, code: e.target.value.toUpperCase() })}
                                         required
                                         maxLength={10}
+                                        disabled={!!editingClient} // Code is immutable
+                                        style={{ opacity: editingClient ? 0.7 : 1 }}
                                     />
                                 </div>
                                 <div style={{ marginBottom: '1.5rem' }}>
@@ -181,7 +221,7 @@ export default function ClientsPage() {
                                         className="btn-primary"
                                         style={{ padding: '0.5rem 1.5rem' }}
                                     >
-                                        {submitting ? 'Saving...' : 'Create'}
+                                        {submitting ? 'Saving...' : (editingClient ? 'Update' : 'Create')}
                                     </button>
                                 </div>
                             </form>

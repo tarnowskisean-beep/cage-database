@@ -237,9 +237,9 @@ export default function SearchPage() {
 
             return [
                 esc(rec.DonationID),
-                esc(rec.ClientID || rec.ClientCode), // Using ID if avail, else Code
-                esc(rec.CreatedAt),
-                esc(rec.DonationID), // CagingID = DonationID usually
+                esc(rec.ClientCode), // User requested Client Code instead of ID number
+                esc(rec.CreatedAt ? new Date(rec.CreatedAt).toLocaleDateString('en-US') : ''),
+                esc(rec.DonationID),
                 esc(mailCode),
                 esc(rec.DonorPrefix),
                 esc(rec.DonorFirstName),
@@ -259,17 +259,16 @@ export default function SearchPage() {
                 esc(rec.GiftPlatform),
                 esc(rec.OrganizationName),
                 esc(rec.GiftCustodian),
-                esc(rec.GiftAmount),
-                esc(rec.GiftFee),
-                esc(rec.GiftPledgeAmount),
+                esc(Number(rec.GiftAmount || 0).toFixed(2)),
+                esc(Number(rec.GiftFee || 0).toFixed(2)),
+                esc(Number(rec.GiftPledgeAmount || 0).toFixed(2)),
                 esc(rec.IsInactive ? 'Yes' : 'No'),
                 esc(rec.GiftYear),
                 esc(rec.GiftQuarter),
                 esc(rec.GiftConduit),
                 esc(rec.Comment),
-                esc(rec.BatchID),
-                esc(rec.BatchCode), // Using BatchCode as date proxy or actual needed? Headers say 'Batch Date'.
-                // If backend sends BatchDate use it, else empty
+                esc(rec.BatchID), // BatchID is fine as number? Headers say BatchID. Or BatchCode? Keeping ID.
+                esc(rec.BatchCode), // Batch Date header... mapping to Code? 
                 '', // CC Account
                 '', // CVV
                 ''  // Exp

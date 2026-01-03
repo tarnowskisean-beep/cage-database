@@ -37,3 +37,28 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PUT(request: Request) {
+    try {
+        const body = await request.json();
+        const { id, name, logoUrl } = body;
+
+        if (!id || !name) {
+            return NextResponse.json({ error: 'Client ID and Name are required' }, { status: 400 });
+        }
+
+        const result = await query(
+            'UPDATE "Clients" SET "ClientName" = $1, "LogoURL" = $2 WHERE "ClientID" = $3 RETURNING *',
+            [name, logoUrl || null, id]
+        );
+
+        if (result.rowCount === 0) {
+            return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+        }
+
+        return NextResponse.json(result.rows[0]);
+    } catch (error) {
+        console.error('PUT /api/clients error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
