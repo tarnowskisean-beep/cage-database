@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { formatName, formatAddress, formatState, formatZip, cleanText } from '@/lib/cleaners';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,20 +28,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const body = await request.json();
-        console.log("DEBUG: POST /donations Body:", JSON.stringify(body, null, 2));
+
+        // Clean & Standardize Inputs
+        const donorFirstName = formatName(body.donorFirstName);
+        const donorMiddleName = formatName(body.donorMiddleName);
+        const donorLastName = formatName(body.donorLastName);
+        const donorSuffix = cleanText(body.donorSuffix);
+        const donorAddress = formatAddress(body.donorAddress);
+        const donorCity = formatName(body.donorCity);
+        const donorState = formatState(body.donorState);
+        const donorZip = formatZip(body.donorZip);
+        const donorEmployer = formatName(body.donorEmployer);
+        const donorOccupation = formatName(body.donorOccupation);
+
         const {
             amount, checkNumber, scanString, giftMethod, giftPlatform, giftType, giftYear, giftQuarter,
             donorEmail, donorPhone, organizationName,
-            // New Fields
-            donorPrefix, donorFirstName, donorMiddleName, donorLastName, donorSuffix,
-            donorAddress, donorCity, donorState, donorZip,
-            donorEmployer, donorOccupation,
+            // (Used above clean variables instead of direct body access)
+            donorPrefix,
             giftPledgeAmount, giftFee, giftCustodian, giftConduit,
             postMarkYear, postMarkQuarter, isInactive, comment,
-            mailCode // <--- Added
+            mailCode
         } = body;
         const { id: batchId } = await params;
 
@@ -90,7 +101,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 donorEmail,
                 donorPhone,
                 String(organizationName || ''),
-                // New Fields Mapped to Params
+                // New Fields Mapped to Params (Using Standardized Variables)
                 donorPrefix, donorFirstName, donorMiddleName, donorLastName, donorSuffix,
                 donorAddress, donorCity, donorState, donorZip,
                 donorEmployer, donorOccupation,

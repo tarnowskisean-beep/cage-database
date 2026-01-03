@@ -261,19 +261,7 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
                         />
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Transform (Optional)</label>
-                        <select
-                            className="input-field"
-                            value={formData.transformation_rule}
-                            onChange={e => setFormData({ ...formData, transformation_rule: e.target.value })}
-                        >
-                            <option value="">None</option>
-                            <option value="uppercase">Uppercase</option>
-                            <option value="trim">Trim Whitespace</option>
-                            <option value="date_format">Date Format (YYYY-MM-DD)</option>
-                        </select>
-                    </div>
+
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input

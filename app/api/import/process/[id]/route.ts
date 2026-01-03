@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getServerSession } from 'next-auth';
+import { formatName, formatAddress, formatState, formatZip } from '@/lib/cleaners';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // Helper: Normalize Keys (remove spaces, lowercase) for robust matching
@@ -96,27 +97,50 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             `;
 
             // Batch the promises (in real prod, use pg-promise or similar for massive batches)
-            updates.push(query(updateSql, [
-                JSON.stringify(normalized),
-                defaultsApplied,
-                errors.length > 0 ? 'Invalid' : 'Valid',
-                row.id
-            ]));
+        } else if (rule.default_value) {
+            normalized[rule.target_column] = rule.default_value;
+            defaultsApplied.push(`${rule.target_column}=${rule.default_value}`);
         }
+    });
 
-        await Promise.all(updates);
+    // GLOBAL STANDARDIZATION
+    // Applied after mapping rules to ensure consistent formatting regardless of source
+    if (normalized['First Name']) normalized['First Name'] = formatName(normalized['First Name']);
+    if (normalized['Last Name']) normalized['Last Name'] = formatName(normalized['Last Name']);
+    if (normalized['Address']) normalized['Address'] = formatAddress(normalized['Address']);
+    if (normalized['City']) normalized['City'] = formatName(normalized['City']);
+    if (normalized['State']) normalized['State'] = formatState(normalized['State']);
+    if (normalized['Zip']) normalized['Zip'] = formatZip(normalized['Zip']);
 
-        // Update Session Status
-        // Status 'Processing' indicates rules have been applied and it is waiting for Commit.
-        await query('UPDATE "import_sessions" SET "status" = \'Processing\', "processed_count" = $1 WHERE "id" = $2', [
-            stagingRows.length,
-            sessionId
-        ]);
+    const updateSql = `
+                        UPDATE "staging_revenue"
+                        SET "normalized_data" = $1,
+                            "defaults_applied" = $2,
+                            "validation_status" = $3
+                        WHERE "id" = $4
+                    `;
 
-        return NextResponse.json({ success: true, processed: stagingRows.length });
+    updates.push(query(updateSql, [
+        JSON.stringify(normalized, null, 2), // Pretty print for easier debugging/viewing
+        defaultsApplied,
+        errors.length > 0 ? 'Invalid' : 'Valid',
+        row.id
+    ]));
+}
+
+await Promise.all(updates);
+
+// Update Session Status
+// Status 'Processing' indicates rules have been applied and it is waiting for Commit.
+await query('UPDATE "import_sessions" SET "status" = \'Processing\', "processed_count" = $1 WHERE "id" = $2', [
+    stagingRows.length,
+    sessionId
+]);
+
+return NextResponse.json({ success: true, processed: stagingRows.length });
 
     } catch (error: any) {
-        console.error('POST /api/import/process error:', error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
-    }
+    console.error('POST /api/import/process error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+}
 }
