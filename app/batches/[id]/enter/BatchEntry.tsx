@@ -147,10 +147,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 <Label>Zip</Label>
                                 <Input value={formData.donorZip} onChange={handleChange('donorZip')} />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Fee</Label>
-                                <Input type="number" value={formData.giftFee} onChange={handleChange('giftFee')} />
-                            </div>
+
                         </div>
 
                         {/* RIGHT COLUMN: TRANSACTION */}
@@ -221,6 +218,10 @@ export default function BatchEntry({ id }: { id: string }) {
                                     onChange={handleChange('amount')}
                                     onKeyDown={e => e.key === 'Enter' && handleSave()}
                                 />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                <Label>Fee</Label>
+                                <Input type="number" value={formData.giftFee} onChange={handleChange('giftFee')} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label>Pledge Amount</Label>

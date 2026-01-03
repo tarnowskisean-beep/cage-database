@@ -26,7 +26,7 @@ const CLIENTS = [
 ];
 
 const PLATFORMS = ['Cage', 'Stripe', 'Propay', 'WinRed', 'Anedot'];
-const METHODS = ['Check', 'Credit Card', 'Cash', 'EFT'];
+const METHODS = ['Check', 'Credit Card', 'Cash', 'EFT', 'Online'];
 
 function randomDate(start, end) {
     return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
@@ -101,8 +101,12 @@ async function seed() {
                 const numDonations = Math.floor(Math.random() * 10) + 1;
                 for (let j = 0; j < numDonations; j++) {
                     const amount = randomAmount();
-                    const method = randomChoice(METHODS);
+                    let method = randomChoice(METHODS);
                     const platform = randomChoice(PLATFORMS);
+
+                    if (['WinRed', 'Stripe', 'Anedot'].includes(platform)) {
+                        method = 'Online';
+                    }
 
                     await pool.query(`
                         INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType", "GiftYear", "GiftQuarter", "GiftType")
@@ -146,8 +150,12 @@ async function seed() {
                 const numDonations = Math.floor(Math.random() * 15) + 5;
                 for (let j = 0; j < numDonations; j++) {
                     const amount = randomAmount();
-                    const method = randomChoice(METHODS);
+                    let method = randomChoice(METHODS);
                     const platform = randomChoice(PLATFORMS);
+
+                    if (['WinRed', 'Stripe', 'Anedot'].includes(platform)) {
+                        method = 'Online';
+                    }
 
                     await pool.query(`
                         INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType", "GiftYear", "GiftQuarter", "GiftType")

@@ -4,7 +4,12 @@ import { query } from '@/lib/db';
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        const result = await query('SELECT * FROM "Batches" WHERE "BatchID" = $1', [id]);
+        const result = await query(`
+            SELECT b.*, c."ClientCode" 
+            FROM "Batches" b
+            LEFT JOIN "Clients" c ON b."ClientID" = c."ClientID"
+            WHERE b."BatchID" = $1
+        `, [id]);
 
         if (result.rows.length === 0) {
             return NextResponse.json({ error: 'Batch not found' }, { status: 404 });

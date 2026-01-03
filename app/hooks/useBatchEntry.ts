@@ -42,7 +42,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         method: '',
         isInactive: 'False',
         postMarkYear: new Date().getFullYear().toString(),
-        postMarkQuarter: 'Q1',
+        postMarkQuarter: `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
         organizationName: '',
         giftCustodian: '',
         giftConduit: '',
@@ -83,7 +83,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     giftYear: data.DefaultGiftYear?.toString(),
                     giftQuarter: data.DefaultGiftQuarter,
                     postMarkYear: data.DefaultGiftYear?.toString() || new Date().getFullYear().toString(),
-                    postMarkQuarter: data.DefaultGiftQuarter || 'Q1'
+                    postMarkQuarter: data.DefaultGiftQuarter || `Q${Math.floor(new Date().getMonth() / 3) + 1}`
                 }));
             }
         } catch (e) { console.error(e); }
