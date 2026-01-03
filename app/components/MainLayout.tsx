@@ -3,6 +3,8 @@
 import { useSidebar } from '@/app/hooks/useSidebar';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+    // Subscribing to context creates a dependency on SidebarProvider
+    // Even if we don't use 'isCollapsed', checking it ensures we re-render if needed (though flex handles it)
     const { isCollapsed } = useSidebar();
 
     return (
@@ -11,14 +13,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             style={{
                 flex: 1,
                 height: '100vh',
-                overflowY: 'auto',
-                flex: 1,
-                height: '100vh',
                 overflowY: 'auto'
             }}
-            }}
         >
-    { children }
-        </main >
+            {children}
+        </main>
     );
 }
