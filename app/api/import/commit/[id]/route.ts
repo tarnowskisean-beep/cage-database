@@ -138,10 +138,11 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                 data['Gift Amount'] || 0,
                 data['Gift Date'] || batchDate,
                 data['Gift Type'] || 'Online Source',
-                data['Gift Method'] || 'Credit Card'
+                data['Gift Method'] || 'Credit Card',
+                sessionId
             );
 
-            insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
+            insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
         }
 
         if (insertValues.length > 0) {
@@ -149,7 +150,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             // For this demo, we assume small batches.
             const queryStr = `
                 INSERT INTO "Donations" (
-                    "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod"
+                    "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID"
                 )
                 VALUES ${insertValues.join(', ')}
             `;
