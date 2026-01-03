@@ -57,6 +57,8 @@ export default function BatchesPage() {
         } catch (err) { console.error(err); }
     };
 
+    const [platforms, setPlatforms] = useState<string[]>([]);
+
     const fetchClients = async () => {
         try {
             const res = await fetch('/api/clients');
@@ -64,10 +66,17 @@ export default function BatchesPage() {
         } catch (err) { console.error(err); }
     };
 
+    const fetchPlatforms = async () => {
+        try {
+            const res = await fetch('/api/platforms');
+            if (res.ok) setPlatforms(await res.json());
+        } catch (err) { console.error(err); }
+    };
+
     // Load Data
     useEffect(() => {
-        // eslint-disable-next-line
         fetchClients();
+        fetchPlatforms();
     }, []);
 
     useEffect(() => {
@@ -125,15 +134,9 @@ export default function BatchesPage() {
                     onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
                 >
                     <option value="">All Platforms</option>
-                    <option value="Winred">Winred</option>
-                    <option value="Stripe">Stripe</option>
-                    <option value="Anedot">Anedot</option>
-                    <option value="Cage">Cage</option>
-                    <option value="Import">Import</option>
-                    <option value="Chainbridge">Chainbridge</option>
-                    <option value="National Capital">National Capital</option>
-                    <option value="City National">City National</option>
-                    <option value="Propay">Propay</option>
+                    {platforms.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                    ))}
                 </select>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
