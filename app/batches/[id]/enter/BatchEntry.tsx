@@ -342,7 +342,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 <Select
                                     value={formData.method}
                                     onChange={handleChange('method')}
-                                    disabled={batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)}
+                                    disabled={!!batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)}
                                     style={{
                                         background: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 'var(--color-bg-base)' : undefined,
                                         opacity: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 0.7 : 1
