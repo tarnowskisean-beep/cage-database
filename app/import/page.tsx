@@ -233,20 +233,40 @@ export default function ImportPage() {
             <h1 style={{ marginBottom: '2rem' }}>Import Wizard</h1>
 
             {/* Top Navigation */}
-            <div className="tab-nav" style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+            <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', background: 'var(--color-bg-elevated)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
                 <button
-                    className={`btn-secondary ${activeTab === 'wizard' ? 'active-tab' : ''}`}
-                    style={activeTab === 'wizard' ? { background: 'var(--color-primary)', color: 'white', borderColor: 'var(--color-primary)' } : {}}
                     onClick={() => setActiveTab('wizard')}
+                    style={{
+                        flex: 1,
+                        padding: '1rem',
+                        border: 'none',
+                        background: activeTab === 'wizard' ? 'var(--color-primary)' : 'transparent',
+                        color: activeTab === 'wizard' ? '#000' : 'var(--color-text)',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                    }}
                 >
-                    🧙 Import Wizard
+                    <span>🧙</span> Import Wizard
                 </button>
                 <button
-                    className={`btn-secondary ${activeTab === 'history' ? 'active-tab' : ''}`}
-                    style={activeTab === 'history' ? { background: 'var(--color-primary)', color: 'white', borderColor: 'var(--color-primary)' } : {}}
                     onClick={() => setActiveTab('history')}
+                    style={{
+                        flex: 1,
+                        padding: '1rem',
+                        border: 'none',
+                        background: activeTab === 'history' ? 'var(--color-primary)' : 'transparent',
+                        color: activeTab === 'history' ? '#000' : 'var(--color-text)',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                    }}
                 >
-                    📜 History & Revert
+                    <span>📜</span> History & Revert
                 </button>
             </div>
 
