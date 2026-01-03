@@ -151,7 +151,7 @@ export default function BatchesPage() {
             </div>
 
             {/* Batch Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="stats-grid">
                 <StatCard label="Open Batches" value={batches.filter(b => b.Status === 'Open').length.toString()} icon="📂" />
                 <StatCard label="Pending Review" value={batches.filter(b => b.Status === 'Submitted').length.toString()} icon="👀" />
                 <StatCard label="Total Batches" value={batches.length.toString()} icon="📊" />
