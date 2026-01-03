@@ -11,16 +11,18 @@ export default function ImportPage() {
     const [sessionId, setSessionId] = useState<number | null>(null);
     const [uploadMetrics, setUploadMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [availableSources, setAvailableSources] = useState<string[]>([]);
 
     // Staging Data
     const [stagingRows, setStagingRows] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [selectedClientId, setSelectedClientId] = useState<number | ''>('');
 
-    // Load Clients on Mount
+    // Load Clients and Sources on Mount
     // FIX: Use useEffect to avoid running fetch during server-side prerendering
     useEffect(() => {
         fetch('/api/clients').then(res => res.json()).then(data => setClients(data));
+        fetch('/api/import/sources').then(res => res.json()).then(data => setAvailableSources(data));
     }, []);
 
     const handleCommit = async () => {
@@ -120,16 +122,16 @@ export default function ImportPage() {
                     <form onSubmit={handleUpload}>
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem' }}>Source System</label>
-                            <select
+                            <input
+                                list="import_sources"
                                 className="input-field"
                                 value={source}
                                 onChange={e => setSource(e.target.value)}
-                            >
-                                <option value="Winred">Winred</option>
-                                <option value="Stripe">Stripe</option>
-                                <option value="Anedot">Anedot</option>
-                                <option value="Cage">Cage</option>
-                            </select>
+                                placeholder="Select or Type Source"
+                            />
+                            <datalist id="import_sources">
+                                {availableSources.map(s => <option key={s} value={s} />)}
+                            </datalist>
                         </div>
 
                         <div style={{ marginBottom: '1.5rem' }}>

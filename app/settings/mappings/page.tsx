@@ -216,17 +216,20 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
 
                     <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Source System</label>
-                        <select
+                        <input
+                            list="source_systems"
                             className="input-field"
                             value={formData.source_system}
                             onChange={e => setFormData({ ...formData, source_system: e.target.value })}
-                        >
-                            <option value="Winred">Winred</option>
-                            <option value="Stripe">Stripe</option>
-                            <option value="Anedot">Anedot</option>
-                            <option value="Cage">Cage</option>
-                            <option value="*">Global Default (*)</option>
-                        </select>
+                            placeholder="Select or Type Source Name"
+                        />
+                        <datalist id="source_systems">
+                            <option value="Winred" />
+                            <option value="Stripe" />
+                            <option value="Anedot" />
+                            <option value="Cage" />
+                            <option value="*" label="Global Default" />
+                        </datalist>
                     </div>
 
                     <div>
