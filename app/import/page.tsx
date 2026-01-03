@@ -12,8 +12,18 @@ export default function ImportPage() {
         if (activeTab === 'history') {
             fetch('/api/import/history')
                 .then(res => res.json())
-                .then(setHistory)
-                .catch(console.error);
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        setHistory(data);
+                    } else {
+                        console.error('History API Error:', data);
+                        setHistory([]);
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to load history:', err);
+                    setHistory([]);
+                });
         }
     }, [activeTab]);
 
