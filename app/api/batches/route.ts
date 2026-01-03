@@ -65,6 +65,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = parseInt(session.user.id);
+    if (isNaN(userId)) {
+      console.error('Invalid User ID in session:', session.user);
+      return NextResponse.json({ error: 'Invalid Session' }, { status: 401 });
+    }
     // Initials from session if available, else derive from name, else fallback
     const userInitials = (session.user.name || 'Unknown').slice(0, 2).toUpperCase();
 
