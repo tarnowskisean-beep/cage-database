@@ -31,6 +31,13 @@ export default function SettingsLayout({
                     }}>
                         Security
                     </a>
+                    <a href="/settings/mappings" style={{
+                        padding: '0.75rem 1rem', background: 'transparent',
+                        border: '1px solid transparent', borderRadius: '4px',
+                        color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none'
+                    }}>
+                        Import Mappings
+                    </a>
                     {/* Placeholder for future settings */}
                     <div style={{
                         padding: '0.75rem 1rem', color: 'var(--color-text-muted)',
