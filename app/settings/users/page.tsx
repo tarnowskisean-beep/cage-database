@@ -166,9 +166,24 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
         username: user?.Username || '',
         email: user?.Email || '',
         role: user?.Role || 'Clerk',
-        password: '' // Only for new users or password reset
+        password: '', // Only for new users or password reset
+        sendInvite: true, // Default to sending invite
+        allowedClientIds: [] as number[]
     });
+    const [clients, setClients] = useState<{ ClientID: number, ClientName: string, ClientCode: string }[]>([]);
     const [saving, setSaving] = useState(false);
+
+    // Fetch Clients on mount
+    useEffect(() => {
+        fetch('/api/clients').then(res => res.json()).then(data => setClients(data));
+
+        // If editing, fetch current user's allowed clients
+        if (user && user.Role === 'ClientUser') {
+            fetch(`/api/users/${user.UserID}/clients`).then(res => res.json()).then(ids => {
+                setFormData(prev => ({ ...prev, allowedClientIds: ids }));
+            }).catch(() => { });
+        }
+    }, [user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,10 +192,29 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
             const url = user ? `/api/users/${user.UserID}` : '/api/users';
             const method = user ? 'PUT' : 'POST';
 
+            // Prepare payload
+            const payload: any = {
+                username: formData.username,
+                email: formData.email,
+                role: formData.role,
+                allowedClientIds: formData.role === 'ClientUser' ? formData.allowedClientIds : []
+            };
+
+            if (!user) {
+                // New User logic
+                payload.sendInvite = formData.sendInvite;
+                if (!formData.sendInvite) {
+                    payload.password = formData.password;
+                }
+            } else {
+                // Edit User logic
+                if (formData.password) payload.password = formData.password;
+            }
+
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             const data = await res.json();
@@ -197,12 +231,22 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
         }
     };
 
+    const toggleClient = (id: number) => {
+        setFormData(prev => {
+            if (prev.allowedClientIds.includes(id)) {
+                return { ...prev, allowedClientIds: prev.allowedClientIds.filter(cid => cid !== id) };
+            } else {
+                return { ...prev, allowedClientIds: [...prev.allowedClientIds, id] };
+            }
+        });
+    };
+
     return (
         <div style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <div className="glass-panel" style={{ width: '450px', padding: '2rem', backgroundColor: 'var(--color-bg-surface)' }}>
+            <div className="glass-panel" style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', backgroundColor: 'var(--color-bg-surface)' }}>
                 <h3 style={{ marginBottom: '1.5rem' }}>{user ? 'Edit User' : 'Add New User'}</h3>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -242,19 +286,54 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
                         </select>
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-                            {user ? 'Reset Password (Optional)' : 'Password'}
-                        </label>
-                        <input
-                            type="password"
-                            className="input-field"
-                            value={formData.password}
-                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                            placeholder={user ? "Leave empty to keep current" : "Set initial password"}
-                            required={!user}
-                        />
-                    </div>
+                    {/* Client Selection (Only for ClientUser) */}
+                    {formData.role === 'ClientUser' && (
+                        <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Allowed Clients</label>
+                            <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {clients.map(client => (
+                                    <label key={client.ClientID} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.allowedClientIds.includes(client.ClientID)}
+                                            onChange={() => toggleClient(client.ClientID)}
+                                        />
+                                        <span>{client.ClientName} ({client.ClientCode})</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <small style={{ color: 'var(--color-text-muted)' }}>Select which clients this user can access.</small>
+                        </div>
+                    )}
+
+                    {!user && (
+                        <div style={{ margin: '0.5rem 0' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.sendInvite}
+                                    onChange={e => setFormData({ ...formData, sendInvite: e.target.checked })}
+                                />
+                                <span>Send Invitation Email (Recommended)</span>
+                            </label>
+                        </div>
+                    )}
+
+                    {(!formData.sendInvite) && (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+                                {user ? 'Reset Password (Optional)' : 'Initial Password'}
+                            </label>
+                            <input
+                                type="password"
+                                className="input-field"
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                placeholder={user ? "Leave empty to keep current" : "Set password"}
+                                required={!user && !formData.sendInvite}
+                            />
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                         <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={saving}>
