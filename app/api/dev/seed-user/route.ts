@@ -24,19 +24,27 @@ export async function GET() {
 
         const passwordHash = await bcrypt.hash('password123', 10);
 
-        // 1. Wipe all users
-        await query('DELETE FROM "Users"');
+        // 1. Check if 'starnowski' exists
+        const userCheck = await query('SELECT "UserID" FROM "Users" WHERE "Username" = $1', ['starnowski']);
 
-        // 2. Create Admin Sean
-        await query(
-            `INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials")
-             VALUES ($1, $2, $3, $4, $5)`,
-            ['starnowski', 'tarnowski.sean@gmail.com', passwordHash, 'Admin', 'ST']
-        );
-
-        return NextResponse.json({ success: true, message: 'Database Wiped. Admin starnowski created with password123' });
-
+        if (userCheck.rows.length === 0) {
+            // 2. Create if missing
+            await query(
+                `INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials")
+                 VALUES ($1, $2, $3, $4, $5)`,
+                ['starnowski', 'tarnowski.sean@gmail.com', passwordHash, 'Admin', 'ST']
+            );
+            return NextResponse.json({ success: true, message: 'Tables Created. User starnowski CREATED with password123' });
+        } else {
+            // 3. Update if exists
+            await query(
+                'UPDATE "Users" SET "PasswordHash" = $1, "Role" = $2 WHERE "Username" = $3',
+                [passwordHash, 'Admin', 'starnowski']
+            );
+            return NextResponse.json({ success: true, message: 'Tables Created. User starnowski UPDATED with password123' });
+        }
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
+```
