@@ -18,6 +18,12 @@ export default function ImportPage() {
     const [clients, setClients] = useState<any[]>([]);
     const [selectedClientId, setSelectedClientId] = useState<number | ''>('');
 
+    // Quick Map State
+    const [missingRules, setMissingRules] = useState(false);
+    const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+    const [quickMappings, setQuickMappings] = useState<Record<string, string>>({}); // Header -> Target
+    const [savingRules, setSavingRules] = useState(false);
+
     // Load Clients and Sources on Mount
     // FIX: Use useEffect to avoid running fetch during server-side prerendering
     useEffect(() => {
@@ -104,6 +110,87 @@ export default function ImportPage() {
         }
     };
 
+    // Check for existing rules when entering Step 2
+    useEffect(() => {
+        if (step === 2 && source && sessionId) {
+            checkRules();
+        }
+    }, [step, source, sessionId]);
+
+    const checkRules = async () => {
+        try {
+            const res = await fetch(`/api/settings/mappings?source=${encodeURIComponent(source)}`);
+            const rules = await res.json();
+            // Check if there are ANY rules specific to this source
+            const specificRules = rules.filter((r: any) => r.source_system === source);
+
+            if (specificRules.length === 0) {
+                setMissingRules(true);
+                fetchHeaders();
+            } else {
+                setMissingRules(false);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const fetchHeaders = async () => {
+        try {
+            // Re-using staging endpoint. Optimization: Creating a dedicated 'preview' endpoint would be better for large files.
+            const res = await fetch(`/api/import/staging/${sessionId}`);
+            const rows = await res.json();
+            if (rows.length > 0) {
+                const firstRow = rows[0].source_row_data || {};
+                const headers = Object.keys(firstRow);
+                setCsvHeaders(headers);
+
+                // Initialize mappings with exact matches (case-insensitive)
+                const initialMap: Record<string, string> = {};
+                const commonTargets = ['Gift Date', 'Gift Amount', 'First Name', 'Last Name', 'External Batch ID'];
+
+                headers.forEach(h => {
+                    const normalized = h.toLowerCase().replace(/_/g, ' ');
+                    const match = commonTargets.find(t => t.toLowerCase() === normalized);
+                    if (match) initialMap[h] = match;
+                });
+                setQuickMappings(initialMap);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const handleSaveMappings = async () => {
+        setSavingRules(true);
+        try {
+            // Convert quick mappings to Rules
+            const newRules = Object.entries(quickMappings).map(([header, target]) => ({
+                source_system: source,
+                source_column: header,
+                target_column: target,
+                is_active: true,
+                default_value: null,
+                transformation_rule: null
+            }));
+
+            // Also add a default "Gift Platform" rule
+            // newRules.push({ source_column: null, target_column: 'Gift Platform', default_value: 'Online', ... });
+
+            for (const rule of newRules) {
+                await fetch('/api/settings/mappings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(rule)
+                });
+            }
+
+            setMissingRules(false);
+            alert('Mappings saved! You can now run normalization.');
+        } catch (e) {
+            console.error(e);
+            alert('Failed to save mappings.');
+        } finally {
+            setSavingRules(false);
+        }
+    };
+
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <h1 style={{ marginBottom: '2rem' }}>Import Wizard</h1>
@@ -155,20 +242,83 @@ export default function ImportPage() {
 
             {/* Step 2: Processing */}
             {step === 2 && (
-                <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '3rem' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚙️</div>
-                    <h3 style={{ marginBottom: '1rem' }}>Ready to Process</h3>
-                    <p style={{ marginBottom: '2rem', color: 'var(--color-text-muted)' }}>
-                        Uploaded <strong>{uploadMetrics?.rowCount}</strong> rows from <strong>{source}</strong>.
-                        We will now apply mapping rules and defaults.
-                    </p>
-                    <button
-                        onClick={handleProcess}
-                        className="btn-primary"
-                        disabled={loading}
-                    >
-                        {loading ? 'Processing Rules...' : 'Run Normalization'}
-                    </button>
+                <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚙️</div>
+                        <h3 style={{ marginBottom: '1rem' }}>Processing Data</h3>
+                        <p style={{ marginBottom: '2rem', color: 'var(--color-text-muted)' }}>
+                            Uploaded <strong>{uploadMetrics?.rowCount}</strong> rows from <strong>{source}</strong>.
+                        </p>
+                    </div>
+
+                    {missingRules ? (
+                        <div style={{ background: 'var(--color-bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--color-warning)' }}>
+                                <span>⚠️</span>
+                                <strong>Configuration Required</strong>
+                            </div>
+                            <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                                This appears to be a new source. Please map the CSV columns to the database fields below.
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', fontWeight: 600, borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem' }}>
+                                <div>CSV Header</div>
+                                <div>Target Field</div>
+                            </div>
+
+                            <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1.5rem' }}>
+                                {csvHeaders.map(header => (
+                                    <div key={header} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                                        <code style={{ fontSize: '0.85rem' }}>{header}</code>
+                                        <select
+                                            className="input-field"
+                                            value={quickMappings[header] || ''}
+                                            onChange={e => {
+                                                const val = e.target.value;
+                                                const newMap = { ...quickMappings };
+                                                if (val) newMap[header] = val;
+                                                else delete newMap[header];
+                                                setQuickMappings(newMap);
+                                            }}
+                                            style={{ padding: '0.4rem' }}
+                                        >
+                                            <option value="">-- Ignore --</option>
+                                            <option value="Gift Date">Gift Date</option>
+                                            <option value="Gift Amount">Gift Amount</option>
+                                            <option value="First Name">First Name</option>
+                                            <option value="Last Name">Last Name</option>
+                                            <option value="External Batch ID">External Batch ID</option>
+                                            <option value="Gift Type">Gift Type</option>
+                                            <option value="Address">Address</option>
+                                            <option value="City">City</option>
+                                            <option value="State">State</option>
+                                            <option value="Zip">Zip</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={handleSaveMappings}
+                                className="btn-primary"
+                                style={{ width: '100%' }}
+                                disabled={savingRules || Object.keys(quickMappings).length === 0}
+                            >
+                                {savingRules ? 'Saving...' : 'Save Mappings & Continue'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ marginBottom: '2rem' }}>Ready to apply normalization rules.</p>
+                            <button
+                                onClick={handleProcess}
+                                className="btn-primary"
+                                disabled={loading}
+                            >
+                                {loading ? 'Processing Rules...' : 'Run Normalization'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
