@@ -91,7 +91,15 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             'Revv': 'REVV',
             'ActBlue': 'AB'
         };
-        const platformCode = platformMap[importSession.source_system] || 'IMP';
+
+        let platformCode = platformMap[importSession.source_system];
+
+        if (!platformCode) {
+            // dynamic generation: "XYZ Bank" -> "XY"
+            const clean = importSession.source_system.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            platformCode = clean.substring(0, 2);
+            if (platformCode.length === 0) platformCode = 'IM';
+        }
 
         // Custom Batch Code: [Client].[Platform].[Date].[Suffix]
         // Ex: AFL.WR.2025.12.25.nijn33
