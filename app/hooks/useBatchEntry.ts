@@ -197,10 +197,14 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     }));
                 } else {
                     console.log("No match found in prospects.");
+                    alert(`No prospect found for ID: ${scan.trim()}`);
                 }
+            } else {
+                alert(`Lookup failed. Server returned ${res.status}`);
             }
         } catch (e) {
             console.error("Lookup failed", e);
+            alert("Lookup failed due to network error.");
         }
 
         amountRef.current?.focus();
