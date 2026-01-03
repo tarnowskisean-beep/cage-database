@@ -464,6 +464,16 @@ export default function SearchPage() {
         link.setAttribute('download', `search_export_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
+
+        // SOC 2 Audit Log
+        fetch('/api/audit/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'ExportCSV',
+                details: `Exported ${results.length} records. Filters: ${JSON.stringify({ clientCode, startDate, endDate })}`
+            })
+        }).catch(err => console.error('Audit Log Failed', err));
     };
 
     const handleGenerateReport = () => {

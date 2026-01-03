@@ -280,10 +280,10 @@ export default function Home() {
               <h3 style={{ color: 'var(--color-active)', marginBottom: '0.5rem' }}>Go to Batches &rarr;</h3>
               <p style={{ color: 'var(--color-text-muted)' }}>Manage checking and donation batches</p>
             </Link>
-            <div className="glass-panel" style={{ padding: '1.5rem', flex: 1, opacity: 0.5 }}>
+            <Link href="/search" className="glass-panel" style={{ padding: '1.5rem', flex: 1, textDecoration: 'none', color: 'inherit', border: '1px solid var(--color-border)' }}>
               <h3 style={{ marginBottom: '0.5rem' }}>Export Reports</h3>
-              <p style={{ color: 'var(--color-text-muted)' }}>Coming soon</p>
-            </div>
+              <p style={{ color: 'var(--color-text-muted)' }}>Generate CSV exports via Search</p>
+            </Link>
           </div>
         </>
       )}
