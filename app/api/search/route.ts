@@ -113,13 +113,13 @@ export async function POST(request: Request) {
 
         // Enforce Client Access Control
         if (session.user.role === 'ClientUser') {
-            if (!session.user.clientId) {
-                return NextResponse.json({ error: 'Client User has no assigned Client ID' }, { status: 403 });
+            if (!session.user.allowedClientIds || session.user.allowedClientIds.length === 0) {
+                return NextResponse.json({ error: 'Client User has no assigned Clients' }, { status: 403 });
             }
             // Add AND condition to existing whereClause
             const paramIndex = params.length + 1;
-            params.push(session.user.clientId);
-            whereClause = `(${whereClause}) AND d."ClientID" = $${paramIndex}`;
+            params.push(session.user.allowedClientIds);
+            whereClause = `(${whereClause}) AND d."ClientID" = ANY($${paramIndex})`;
         }
 
         // Use the requested limit or default

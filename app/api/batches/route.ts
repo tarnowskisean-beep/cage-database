@@ -21,11 +21,11 @@ export async function GET(request: Request) {
 
     // Enforce Client Access Control
     if (session.user.role === 'ClientUser') {
-      if (!session.user.clientId) {
-        return NextResponse.json({ error: 'Client User has no assigned Client ID' }, { status: 403 });
+      if (!session.user.allowedClientIds || session.user.allowedClientIds.length === 0) {
+        return NextResponse.json({ error: 'Client User has no assigned Clients' }, { status: 403 });
       }
-      conditions.push(`b."ClientID" = $${paramIndex++}`);
-      params.push(session.user.clientId);
+      conditions.push(`b."ClientID" = ANY($${paramIndex++})`);
+      params.push(session.user.allowedClientIds);
     } else if (clientIdParam) {
       // Only allow filtering by param if NOT restricted
       conditions.push(`b."ClientID" = $${paramIndex++}`);

@@ -39,12 +39,15 @@ export const authOptions: NextAuthOptions = {
                             }
                         }
 
+                        const resClients = await query('SELECT "ClientID" FROM "UserClients" WHERE "UserID" = $1', [user.UserID]);
+                        const clientIds = resClients.rows.map(r => r.ClientID);
+
                         return {
                             id: user.UserID.toString(),
                             name: user.Username,
                             email: user.Email,
                             role: user.Role,
-                            clientId: user.ClientID // Pass from DB
+                            allowedClientIds: clientIds
                         };
                     }
                 } catch (e: any) {
@@ -65,7 +68,7 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.role = (user as any).role;
-                token.clientId = (user as any).clientId;
+                token.allowedClientIds = (user as any).allowedClientIds;
             }
             return token;
         },
@@ -73,7 +76,7 @@ export const authOptions: NextAuthOptions = {
             if (session?.user) {
                 (session.user as any).role = token.role;
                 (session.user as any).id = token.sub;
-                session.user.clientId = token.clientId as number | undefined;
+                session.user.allowedClientIds = token.allowedClientIds as number[] | undefined;
             }
             return session;
         }
