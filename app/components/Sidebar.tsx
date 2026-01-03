@@ -83,49 +83,47 @@ export default function Sidebar() {
                 </ul>
             </nav>
 
-            {/* User Profile */}
-            <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0 }}></div>
-                <div style={{
-                    marginTop: 'auto',
-                    padding: '1rem',
-                    borderTop: '1px solid var(--color-border)'
+            {/* User Profile & Settings */}
+            <div style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)' }}>
+                {/* Settings Link */}
+                <Link href="/settings/users" style={{
+                    display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem',
+                    color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'all 0.2s',
+                    justifyContent: isCollapsed ? 'center' : 'flex-start'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: isCollapsed ? 'center' : 'start' }}>
-                        <div style={{
-                            width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-primary)', color: 'var(--color-primary-text)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem'
-                        }}>
-                            {session?.user?.name ? session.user.name.slice(0, 1).toUpperCase() : 'AG'}
-                        </div>
+                    <span style={{ fontSize: '1.25rem' }}>⚙️</span>
+                    {!isCollapsed && <span style={{ fontSize: '0.9rem' }}>Settings</span>}
+                </Link>
 
-                        {!isCollapsed && (
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-text-main)' }}>
-                                    {session?.user?.name || 'Alyssa Graham'}
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                    {session?.user?.email ? 'Clerk' : 'Clerk'}
-                                </div>
+                {/* User Info */}
+                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-primary)', color: 'var(--color-primary-text)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0
+                    }}>
+                        {session?.user?.name ? session.user.name.slice(0, 1).toUpperCase() : 'AG'}
+                    </div>
+
+                    {!isCollapsed && (
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <div style={{ fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-text-main)' }}>
+                                {session?.user?.name || 'Alyssa Graham'}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Clerk</span>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
                                     style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: 'var(--color-error)',
-                                        fontSize: '0.75rem',
-                                        cursor: 'pointer',
-                                        padding: '0',
-                                        marginTop: '0.25rem',
-                                        textDecoration: 'underline',
-                                        fontFamily: 'inherit'
+                                        background: 'none', border: 'none', color: 'var(--color-error)',
+                                        fontSize: '0.7rem', cursor: 'pointer', padding: 0,
+                                        textDecoration: 'none', fontFamily: 'inherit'
                                     }}
                                 >
                                     Sign Out
                                 </button>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </aside>
