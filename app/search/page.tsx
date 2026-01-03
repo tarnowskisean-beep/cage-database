@@ -30,6 +30,7 @@ interface SearchResult {
     ClientCode: string;
     BatchCode: string;
     BatchID: number;
+    MailCode?: string; // Added from DB column
     // Export Fields
     ScanString?: string;
     ClientID?: number;
@@ -367,9 +368,8 @@ export default function SearchPage() {
                 return str;
             };
 
-            let mailCode = '';
-            const rec = r as any;
-            if (rec.ScanString && rec.ScanString.includes('\t')) {
+            let mailCode = rec.MailCode || '';
+            if (!mailCode && rec.ScanString && rec.ScanString.includes('\t')) {
                 mailCode = rec.ScanString.split('\t')[0];
             }
 
@@ -426,7 +426,7 @@ export default function SearchPage() {
         // We need to reconstruct the query for the report URL too
         const standardRules: SearchRule[] = [];
         if (startDate) standardRules.push({ field: 'date', operator: 'gte', value: startDate });
-        if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate });
+        if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate + ' 23:59:59' });
         if (clientCode) standardRules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
         if (donorName) standardRules.push({ field: 'donorName', operator: 'contains', value: donorName });
         if (amountMin) standardRules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
