@@ -5,6 +5,33 @@ import { useRouter } from 'next/navigation';
 
 export default function ImportPage() {
     const router = useRouter();
+    const [activeTab, setActiveTab] = useState<'wizard' | 'history'>('wizard');
+    const [history, setHistory] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (activeTab === 'history') {
+            fetch('/api/import/history')
+                .then(res => res.json())
+                .then(setHistory)
+                .catch(console.error);
+        }
+    }, [activeTab]);
+
+    const handleRevert = async (id: number) => {
+        if (!confirm('CAUTION: This will permanently DELETE all Batches and Donations created by this import. Are you sure?')) return;
+        try {
+            const res = await fetch(`/api/import/revert/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                alert(`Reverted! Deleted ${data.deletedDonations} donations.`);
+                // Refresh
+                fetch('/api/import/history').then(r => r.json()).then(setHistory);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (e) { alert('Network error'); }
+    };
+
     const [step, setStep] = useState<1 | 2 | 3>(1); // 1=Upload, 2=Processing, 3=Review
     const [file, setFile] = useState<File | null>(null);
     const [source, setSource] = useState('Winred');
@@ -195,285 +222,354 @@ export default function ImportPage() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <h1 style={{ marginBottom: '2rem' }}>Import Wizard</h1>
 
-            {/* Steps Indicator */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
-                <StepBadge num={1} active={step === 1} label="Upload CSV" />
-                <StepBadge num={2} active={step === 2} label="Normalize Data" />
-                <StepBadge num={3} active={step === 3} label="Review & Commit" />
+            {/* Top Navigation */}
+            <div className="tab-nav" style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+                <button
+                    className={`btn-secondary ${activeTab === 'wizard' ? 'active-tab' : ''}`}
+                    style={activeTab === 'wizard' ? { background: 'var(--color-primary)', color: 'white', borderColor: 'var(--color-primary)' } : {}}
+                    onClick={() => setActiveTab('wizard')}
+                >
+                    🧙 Import Wizard
+                </button>
+                <button
+                    className={`btn-secondary ${activeTab === 'history' ? 'active-tab' : ''}`}
+                    style={activeTab === 'history' ? { background: 'var(--color-primary)', color: 'white', borderColor: 'var(--color-primary)' } : {}}
+                    onClick={() => setActiveTab('history')}
+                >
+                    📜 History & Revert
+                </button>
             </div>
 
-            {/* Step 1: Upload */}
-            {step === 1 && (
-                <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>Select File Source</h3>
-                    <form onSubmit={handleUpload}>
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <CreatableSelect
-                                label="Source System"
-                                value={source}
-                                options={availableSources}
-                                onChange={setSource}
-                                placeholder="Enter Source Name (e.g. PayPal)"
-                            />
-                        </div>
-
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem' }}>CSV File</label>
-                            <input
-                                type="file"
-                                accept=".csv"
-                                onChange={e => setFile(e.target.files?.[0] || null)}
-                                className="input-field"
-                                style={{ padding: '1rem' }}
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="btn-primary"
-                            style={{ width: '100%' }}
-                            disabled={!file || loading}
-                        >
-                            {loading ? 'Uploading...' : 'Start Import'}
-                        </button>
-                    </form>
+            {/* HISTORY TAB */}
+            {activeTab === 'history' && (
+                <div className="glass-panel">
+                    <h2 style={{ marginBottom: '1rem' }}>Import History</h2>
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>System</th>
+                                <th>Status</th>
+                                <th>Created By</th>
+                                <th>Batches</th>
+                                <th>Donations</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {history.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No history found</td></tr>}
+                            {history.map(h => (
+                                <tr key={h.id}>
+                                    <td>{new Date(h.created_at).toLocaleDateString()} {new Date(h.created_at).toLocaleTimeString()}</td>
+                                    <td>{h.source_system}</td>
+                                    <td>
+                                        <span className={`badge ${h.status === 'Completed' ? 'badge-success' : h.status === 'Reverted' ? 'badge-error' : 'badge-neutral'}`}>
+                                            {h.status}
+                                        </span>
+                                    </td>
+                                    <td>{h.CreatedByName || 'Unknown'}</td>
+                                    <td>{h.BatchesCreated}</td>
+                                    <td>{h.DonationsCreated}</td>
+                                    <td>
+                                        {h.status === 'Completed' && (
+                                            <button
+                                                className="btn-secondary"
+                                                style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)', fontSize: '0.8rem', padding: '0.2rem 0.5rem' }}
+                                                onClick={() => handleRevert(h.id)}
+                                            >
+                                                Undo / Revert
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
 
-            {/* Step 2: Processing */}
-            {step === 2 && (
-                <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚙️</div>
-                        <h3 style={{ marginBottom: '1rem' }}>Processing Data</h3>
-                        <p style={{ marginBottom: '2rem', color: 'var(--color-text-muted)' }}>
-                            Uploaded <strong>{uploadMetrics?.rowCount}</strong> rows from <strong>{source}</strong>.
-                        </p>
+            {/* WIZARD TAB */}
+            {activeTab === 'wizard' && (
+                <>
+                    {/* Steps Indicator */}
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+                        <StepBadge num={1} active={step === 1} label="Upload CSV" />
+                        <StepBadge num={2} active={step === 2} label="Normalize Data" />
+                        <StepBadge num={3} active={step === 3} label="Review & Commit" />
                     </div>
 
-                    {missingRules ? (
-                        <div style={{ background: 'var(--color-bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--color-warning)' }}>
-                                <span>⚠️</span>
-                                <strong>Configuration Required</strong>
-                            </div>
-                            <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                                This appears to be a new source. Please map the CSV columns to the database fields below.
-                            </p>
+                    {/* Step 1: Upload */}
+                    {step === 1 && (
+                        <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
+                            <h3 style={{ marginBottom: '1rem' }}>Select File Source</h3>
+                            <form onSubmit={handleUpload}>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <CreatableSelect
+                                        label="Source System"
+                                        value={source}
+                                        options={availableSources}
+                                        onChange={setSource}
+                                        placeholder="Enter Source Name (e.g. PayPal)"
+                                    />
+                                </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', fontWeight: 600, borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem' }}>
-                                <div>CSV Header</div>
-                                <div>Target Field</div>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem' }}>CSV File</label>
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        onChange={e => setFile(e.target.files?.[0] || null)}
+                                        className="input-field"
+                                        style={{ padding: '1rem' }}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    style={{ width: '100%' }}
+                                    disabled={!file || loading}
+                                >
+                                    {loading ? 'Uploading...' : 'Start Import'}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Step 2: Processing */}
+                    {step === 2 && (
+                        <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem' }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚙️</div>
+                                <h3 style={{ marginBottom: '1rem' }}>Processing Data</h3>
+                                <p style={{ marginBottom: '2rem', color: 'var(--color-text-muted)' }}>
+                                    Uploaded <strong>{uploadMetrics?.rowCount}</strong> rows from <strong>{source}</strong>.
+                                </p>
                             </div>
 
-                            <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1.5rem' }}>
-                                {csvHeaders.map(header => (
-                                    <div key={header} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', alignItems: 'center' }}>
-                                        <code style={{ fontSize: '0.85rem' }}>{header}</code>
+                            {missingRules ? (
+                                <div style={{ background: 'var(--color-bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--color-warning)' }}>
+                                        <span>⚠️</span>
+                                        <strong>Configuration Required</strong>
+                                    </div>
+                                    <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                                        This appears to be a new source. Please map the CSV columns to the database fields below.
+                                    </p>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', fontWeight: 600, borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem' }}>
+                                        <div>CSV Header</div>
+                                        <div>Target Field</div>
+                                    </div>
+
+                                    <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1.5rem' }}>
+                                        {csvHeaders.map(header => (
+                                            <div key={header} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                                                <code style={{ fontSize: '0.85rem' }}>{header}</code>
+                                                <select
+                                                    className="input-field"
+                                                    value={quickMappings[header] || ''}
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        const newMap = { ...quickMappings };
+                                                        if (val) newMap[header] = val;
+                                                        else delete newMap[header];
+                                                        setQuickMappings(newMap);
+                                                    }}
+                                                    style={{ padding: '0.4rem' }}
+                                                >
+                                                    <option value="">-- Ignore --</option>
+                                                    <optgroup label="Transaction Data">
+                                                        <option value="Gift Date">Gift Date</option>
+                                                        <option value="Gift Amount">Gift Amount</option>
+                                                        <option value="Gift Fee">Gift Fee</option>
+                                                        <option value="Gift Platform">Gift Platform</option>
+                                                        <option value="Gift Method">Gift Method</option>
+                                                        <option value="Transaction Type">Transaction Type</option>
+                                                        <option value="Check Number">Check Number</option>
+                                                        <option value="Secondary ID">Secondary ID (Source ID)</option>
+                                                    </optgroup>
+                                                    <optgroup label="Donor Data">
+                                                        <option value="First Name">First Name</option>
+                                                        <option value="Last Name">Last Name</option>
+                                                        <option value="Address">Address</option>
+                                                        <option value="City">City</option>
+                                                        <option value="State">State</option>
+                                                        <option value="Zip">Zip</option>
+                                                        <option value="Email">Email</option>
+                                                        <option value="Phone">Phone</option>
+                                                        <option value="Employer">Employer</option>
+                                                        <option value="Occupation">Occupation</option>
+                                                    </optgroup>
+                                                    <optgroup label="System">
+                                                        <option value="External Batch ID">External Batch ID</option>
+                                                        <option value="Yes Inactive">Yes Inactive</option>
+                                                    </optgroup>
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={handleSaveMappings}
+                                        className="btn-primary"
+                                        style={{ width: '100%' }}
+                                        disabled={savingRules || Object.keys(quickMappings).length === 0}
+                                    >
+                                        {savingRules ? 'Saving...' : 'Save Mappings & Continue'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ marginBottom: '2rem' }}>Ready to apply normalization rules.</p>
+                                    <button
+                                        onClick={handleProcess}
+                                        className="btn-primary"
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Processing Rules...' : 'Run Normalization'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Step 3: Review */}
+                    {step === 3 && (
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h3>Review Data</h3>
+
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '0.8rem', fontWeight: 500 }}>Assign to Client</label>
                                         <select
                                             className="input-field"
-                                            value={quickMappings[header] || ''}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                const newMap = { ...quickMappings };
-                                                if (val) newMap[header] = val;
-                                                else delete newMap[header];
-                                                setQuickMappings(newMap);
-                                            }}
-                                            style={{ padding: '0.4rem' }}
+                                            style={{ padding: '0.5rem' }}
+                                            value={selectedClientId}
+                                            onChange={e => setSelectedClientId(Number(e.target.value))}
                                         >
-                                            <option value="">-- Ignore --</option>
-                                            <optgroup label="Transaction Data">
-                                                <option value="Gift Date">Gift Date</option>
-                                                <option value="Gift Amount">Gift Amount</option>
-                                                <option value="Gift Fee">Gift Fee</option>
-                                                <option value="Gift Platform">Gift Platform</option>
-                                                <option value="Gift Method">Gift Method</option>
-                                                <option value="Transaction Type">Transaction Type</option>
-                                                <option value="Check Number">Check Number</option>
-                                                <option value="Secondary ID">Secondary ID (Source ID)</option>
-                                            </optgroup>
-                                            <optgroup label="Donor Data">
-                                                <option value="First Name">First Name</option>
-                                                <option value="Last Name">Last Name</option>
-                                                <option value="Address">Address</option>
-                                                <option value="City">City</option>
-                                                <option value="State">State</option>
-                                                <option value="Zip">Zip</option>
-                                                <option value="Email">Email</option>
-                                                <option value="Phone">Phone</option>
-                                                <option value="Employer">Employer</option>
-                                                <option value="Occupation">Occupation</option>
-                                            </optgroup>
-                                            <optgroup label="System">
-                                                <option value="External Batch ID">External Batch ID</option>
-                                                <option value="Yes Inactive">Yes Inactive</option>
-                                            </optgroup>
+                                            <option value="">Select Client...</option>
+                                            {clients.map(c => (
+                                                <option key={c.ClientID} value={c.ClientID}>{c.ClientName} ({c.ClientCode})</option>
+                                            ))}
                                         </select>
                                     </div>
-                                ))}
+
+                                    <button
+                                        onClick={handleCommit}
+                                        className="btn-primary"
+                                        disabled={loading || !selectedClientId}
+                                        style={{ height: '42px', marginTop: 'auto' }}
+                                    >
+                                        {loading ? 'Committing...' : 'Commit to Database'}
+                                    </button>
+                                </div>
                             </div>
 
-                            <button
-                                onClick={handleSaveMappings}
-                                className="btn-primary"
-                                style={{ width: '100%' }}
-                                disabled={savingRules || Object.keys(quickMappings).length === 0}
-                            >
-                                {savingRules ? 'Saving...' : 'Save Mappings & Continue'}
-                            </button>
-                        </div>
-                    ) : (
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ marginBottom: '2rem' }}>Ready to apply normalization rules.</p>
-                            <button
-                                onClick={handleProcess}
-                                className="btn-primary"
-                                disabled={loading}
-                            >
-                                {loading ? 'Processing Rules...' : 'Run Normalization'}
-                            </button>
+                            <div className="glass-panel" style={{ overflowX: 'auto', padding: '0' }}>
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>First Name</th>
+                                            <th>Last Name</th>
+                                            <th>Amount</th>
+                                            <th>Defaults Applied</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {stagingRows.map((row: any) => {
+                                            const data = row.normalized_data || {};
+                                            return (
+                                                <tr key={row.id}>
+                                                    <td>
+                                                        <span style={{
+                                                            color: row.validation_status === 'Valid' ? '#4ade80' : '#ef4444',
+                                                            fontWeight: 600
+                                                        }}>
+                                                            {row.validation_status}
+                                                        </span>
+                                                    </td>
+                                                    <td>{data['First Name'] || '-'}</td>
+                                                    <td>{data['Last Name'] || '-'}</td>
+                                                    <td>{data['Gift Amount'] || '-'}</td>
+                                                    <td>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', maxWidth: '300px' }}>
+                                                            {row.defaults_applied?.join(', ')}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                 </div>
-            )}
-
-            {/* Step 3: Review */}
-            {step === 3 && (
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h3>Review Data</h3>
-
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 500 }}>Assign to Client</label>
-                                <select
-                                    className="input-field"
-                                    style={{ padding: '0.5rem' }}
-                                    value={selectedClientId}
-                                    onChange={e => setSelectedClientId(Number(e.target.value))}
-                                >
-                                    <option value="">Select Client...</option>
-                                    {clients.map(c => (
-                                        <option key={c.ClientID} value={c.ClientID}>{c.ClientName} ({c.ClientCode})</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <button
-                                onClick={handleCommit}
-                                className="btn-primary"
-                                disabled={loading || !selectedClientId}
-                                style={{ height: '42px', marginTop: 'auto' }}
-                            >
-                                {loading ? 'Committing...' : 'Commit to Database'}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="glass-panel" style={{ overflowX: 'auto', padding: '0' }}>
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Status</th>
-                                    <th>First Name</th>
-                                    <th>Last Name</th>
-                                    <th>Amount</th>
-                                    <th>Defaults Applied</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stagingRows.map((row: any) => {
-                                    const data = row.normalized_data || {};
-                                    return (
-                                        <tr key={row.id}>
-                                            <td>
-                                                <span style={{
-                                                    color: row.validation_status === 'Valid' ? '#4ade80' : '#ef4444',
-                                                    fontWeight: 600
-                                                }}>
-                                                    {row.validation_status}
-                                                </span>
-                                            </td>
-                                            <td>{data['First Name'] || '-'}</td>
-                                            <td>{data['Last Name'] || '-'}</td>
-                                            <td>{data['Gift Amount'] || '-'}</td>
-                                            <td>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', maxWidth: '300px' }}>
-                                                    {row.defaults_applied?.join(', ')}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+            );
 }
 
-// Reusable Component for Select + Custom Entry
-function CreatableSelect({ label, value, options, onChange, placeholder = "Select or Type..." }: { label: string, value: string, options: string[], onChange: (val: string) => void, placeholder?: string }) {
+            // Reusable Component for Select + Custom Entry
+            function CreatableSelect({label, value, options, onChange, placeholder = "Select or Type..."}: {label: string, value: string, options: string[], onChange: (val: string) => void, placeholder?: string }) {
     const isCustom = value && !options.includes(value);
-    const [mode, setMode] = useState<'select' | 'input'>(isCustom ? 'input' : 'select');
+            const [mode, setMode] = useState<'select' | 'input'>(isCustom ? 'input' : 'select');
 
-    return (
-        <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>
-            {mode === 'select' ? (
-                <select
-                    className="input-field"
-                    value={options.includes(value) ? value : ''}
-                    onChange={(e) => {
-                        if (e.target.value === '__NEW__') {
-                            setMode('input');
-                            onChange('');
-                        } else {
-                            onChange(e.target.value);
-                        }
-                    }}
-                >
-                    <option value="" disabled>Select Source...</option>
-                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    <option style={{ fontWeight: 600, color: 'var(--color-primary)' }} value="__NEW__">+ Add New Source...</option>
-                </select>
-            ) : (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
+            return (
+            <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>
+                {mode === 'select' ? (
+                    <select
                         className="input-field"
-                        value={value}
-                        onChange={e => onChange(e.target.value)}
-                        placeholder={placeholder}
-                        autoFocus
-                    />
-                    <button
-                        type="button"
-                        onClick={() => { setMode('select'); onChange(options[0] || ''); }}
-                        style={{ padding: '0 1rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
-                        title="Cancel custom entry"
+                        value={options.includes(value) ? value : ''}
+                        onChange={(e) => {
+                            if (e.target.value === '__NEW__') {
+                                setMode('input');
+                                onChange('');
+                            } else {
+                                onChange(e.target.value);
+                            }
+                        }}
                     >
-                        ✕
-                    </button>
-                </div>
-            )}
-        </div>
-    );
+                        <option value="" disabled>Select Source...</option>
+                        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        <option style={{ fontWeight: 600, color: 'var(--color-primary)' }} value="__NEW__">+ Add New Source...</option>
+                    </select>
+                ) : (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input
+                            className="input-field"
+                            value={value}
+                            onChange={e => onChange(e.target.value)}
+                            placeholder={placeholder}
+                            autoFocus
+                        />
+                        <button
+                            type="button"
+                            onClick={() => { setMode('select'); onChange(options[0] || ''); }}
+                            style={{ padding: '0 1rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                            title="Cancel custom entry"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
+            </div>
+            );
 }
 
-function StepBadge({ num, active, label }: { num: number, active: boolean, label: string }) {
+            function StepBadge({num, active, label}: {num: number, active: boolean, label: string }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: active ? 1 : 0.5 }}>
-            <div style={{
-                width: '30px', height: '30px', borderRadius: '50%',
-                background: active ? 'var(--color-primary)' : 'var(--color-bg-elevated)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
-            }}>
-                {num}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: active ? 1 : 0.5 }}>
+                <div style={{
+                    width: '30px', height: '30px', borderRadius: '50%',
+                    background: active ? 'var(--color-primary)' : 'var(--color-bg-elevated)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                }}>
+                    {num}
+                </div>
+                <span style={{ fontWeight: 500 }}>{label}</span>
             </div>
-            <span style={{ fontWeight: 500 }}>{label}</span>
-        </div>
-    );
+            );
 }
