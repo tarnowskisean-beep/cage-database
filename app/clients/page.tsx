@@ -215,7 +215,7 @@ function ImportFinderFileModal({ client, onClose }: { client: Client, onClose: (
         }
     };
 
-    const templateCsv = "CagingID,MailerID,MailCode,FirstName,LastName,Address,City,State,Zip";
+    const templateCsv = "CagingID,MailCode,FirstName,LastName,Address,City,State,Zip";
     const blob = new Blob([templateCsv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
 

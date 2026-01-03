@@ -16,6 +16,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
     // Refs
     const scanRef = useRef<HTMLInputElement>(null);
     const amountRef = useRef<HTMLInputElement>(null);
+    const manualEntryRef = useRef<HTMLInputElement>(null);
 
     // Form State
     const initialFormState = {
@@ -190,7 +191,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 }));
 
                 if (batch?.EntryMode === 'Manual') {
-                    amountRef.current?.focus();
+                    manualEntryRef.current?.focus();
                 } else {
                     scanRef.current?.focus();
                 }
@@ -219,6 +220,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         handleChange,
         scanRef,
         amountRef,
+        manualEntryRef,
         handleScanLookup,
         handleSave,
         resetForm

@@ -19,6 +19,7 @@ export default function BatchEntry({ id }: { id: string }) {
         handleChange,
         scanRef,
         amountRef,
+        manualEntryRef,
         handleScanLookup,
         handleSave,
         resetForm
@@ -64,7 +65,7 @@ export default function BatchEntry({ id }: { id: string }) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label>ClientID</Label>
-                                <Input disabled value={batch?.ClientID || ''} />
+                                <Input disabled value={batch?.ClientCode || ''} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label>CagingID / Scan</Label>
@@ -95,7 +96,12 @@ export default function BatchEntry({ id }: { id: string }) {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label>Mail Code</Label>
-                                <Input value={formData.mailCode} onChange={handleChange('mailCode')} />
+                                <Input
+                                    ref={manualEntryRef}
+                                    value={formData.mailCode}
+                                    onChange={handleChange('mailCode')}
+                                    autoFocus={batch?.EntryMode === 'Manual'}
+                                />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label>Prefix</Label>
