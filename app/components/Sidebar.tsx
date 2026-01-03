@@ -56,19 +56,33 @@ export default function Sidebar() {
                     transition: 'transform 0.3s ease'
                 }}>
                     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="24" cy="24" r="23" stroke="white" strokeWidth="1.5" />
-                        <path d="M24 8L27 21L40 24L27 27L24 40L21 27L8 24L21 21L24 8Z" fill="white" />
+                        <circle cx="24" cy="24" r="23" stroke="#C0A062" strokeWidth="1.5" />
+                        <path d="M24 8L27 21L40 24L27 27L24 40L21 27L8 24L21 21L24 8Z" fill="#C0A062" />
                     </svg>
                 </div>
                 {!isCollapsed && (
-                    <>
-                        <h1 style={{ fontSize: '1.25rem', fontWeight: 400, letterSpacing: '0.1em', color: 'var(--color-text-main)', marginBottom: '0.25rem', fontFamily: 'var(--font-display)' }}>
+                    <div style={{ animation: 'fadeIn 0.5s ease' }}>
+                        <h2 style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.1em',
+                            margin: 0,
+                            fontFamily: 'var(--font-serif)',
+                            color: 'white'
+                        }}>
                             COMPASS
-                        </h1>
-                        <p style={{ fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-display)' }}>
-                            PROFESSIONAL
-                        </p>
-                    </>
+                        </h2>
+                        <span style={{
+                            fontSize: '0.65rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.2em',
+                            color: '#C0A062',
+                            display: 'block',
+                            marginTop: '0.25rem'
+                        }}>
+                            Professional Services
+                        </span>
+                    </div>
                 )}
             </div>
 
