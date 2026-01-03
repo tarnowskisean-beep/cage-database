@@ -457,7 +457,13 @@ export default function SearchPage() {
             rules: finalRules
         };
 
-        const url = `/search/report?q=${encodeURIComponent(JSON.stringify(query))}`;
+        const queryPayload = {
+            ...query,
+            startDate,
+            endDate
+        };
+
+        const url = `/search/report?q=${encodeURIComponent(JSON.stringify(queryPayload))}`;
         window.open(url, '_blank');
     };
 
