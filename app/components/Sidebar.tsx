@@ -85,15 +85,17 @@ export default function Sidebar() {
 
             {/* User Profile & Settings */}
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)' }}>
-                {/* Settings Link */}
-                <Link href="/settings/users" style={{
-                    display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem',
-                    color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'all 0.2s',
-                    justifyContent: isCollapsed ? 'center' : 'flex-start'
-                }}>
-                    <span style={{ fontSize: '1.25rem' }}>⚙️</span>
-                    {!isCollapsed && <span style={{ fontSize: '0.9rem' }}>Settings</span>}
-                </Link>
+                {/* Settings Link - ADMIN ONLY */}
+                {session?.user?.role === 'Admin' && (
+                    <Link href="/settings/users" style={{
+                        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem',
+                        color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'all 0.2s',
+                        justifyContent: isCollapsed ? 'center' : 'flex-start'
+                    }}>
+                        <span style={{ fontSize: '1.25rem' }}>⚙️</span>
+                        {!isCollapsed && <span style={{ fontSize: '0.9rem' }}>Settings</span>}
+                    </Link>
+                )}
 
                 {/* User Info */}
                 <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -110,7 +112,7 @@ export default function Sidebar() {
                                 {session?.user?.name || 'Alyssa Graham'}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Clerk</span>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{session?.user?.role || 'Clerk'}</span>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
                                     style={{

@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'Admin') {
+        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+    }
+
     try {
         const result = await query(`
             SELECT "UserID", "Username", "Email", "Role", "Initials", "CreatedAt"
@@ -19,6 +27,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'Admin') {
+        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+    }
+
     try {
         const body = await request.json();
         const { username, email, password, role } = body;

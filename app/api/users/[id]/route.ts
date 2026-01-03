@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'Admin') {
+        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+    }
+
     try {
         const { id } = await params;
         const body = await request.json();
@@ -36,6 +44,11 @@ export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'Admin') {
+        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+    }
+
     try {
         const { id } = await params;
 
