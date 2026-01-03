@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function ImportPage() {
@@ -18,9 +18,10 @@ export default function ImportPage() {
     const [selectedClientId, setSelectedClientId] = useState<number | ''>('');
 
     // Load Clients on Mount
-    useState(() => {
+    // FIX: Use useEffect to avoid running fetch during server-side prerendering
+    useEffect(() => {
         fetch('/api/clients').then(res => res.json()).then(data => setClients(data));
-    });
+    }, []);
 
     const handleCommit = async () => {
         if (!sessionId || !selectedClientId) return;
