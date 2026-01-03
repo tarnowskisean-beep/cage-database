@@ -61,7 +61,6 @@ export default function MappingsPage() {
                 >+ Add Rule</button>
             </div>
 
-            {/* Filters */}
             <div className="glass-panel" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
                 <select
                     className="input-field"
@@ -70,11 +69,13 @@ export default function MappingsPage() {
                     onChange={e => setFilterSource(e.target.value)}
                 >
                     <option value="">All Sources</option>
-                    <option value="Winred">Winred</option>
-                    <option value="Stripe">Stripe</option>
-                    <option value="Anedot">Anedot</option>
-                    <option value="Cage">Cage</option>
-                    <option value="*">Global Defaults (*)</option>
+                    {/* Always show known sources plus any new ones found in rules */}
+                    {Array.from(new Set([
+                        'Winred', 'Stripe', 'Anedot', 'Cage',
+                        ...rules.map(r => r.source_system).filter(s => s !== '*')
+                    ])).sort().map(s => (
+                        <option key={s} value={s}>{s}</option>
+                    ))}
                 </select>
             </div>
 
@@ -218,7 +219,7 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
                         <CreatableSelect
                             label="Source System"
                             value={formData.source_system}
-                            options={['Winred', 'Stripe', 'Anedot', 'Cage', '*']}
+                            options={['Winred', 'Stripe', 'Anedot', 'Cage']}
                             onChange={val => setFormData({ ...formData, source_system: val })}
                             placeholder="Enter Source Name"
                         />
