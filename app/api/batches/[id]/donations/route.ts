@@ -28,6 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const body = await request.json();
+        console.log("DEBUG: POST /donations Body:", JSON.stringify(body, null, 2));
         const {
             amount, checkNumber, scanString, giftMethod, giftPlatform, giftType, giftYear, giftQuarter,
             donorEmail, donorPhone, organizationName,

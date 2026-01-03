@@ -18,7 +18,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             DonorPhone, DonorEmail, OrganizationName
         } = body;
 
-        // Note: We map frontend props to DB columns
+
+        // 1. Fetch existing record to ensure we don't overwrite with NULLs on partial update
+        const existingRes = await query('SELECT * FROM "Donations" WHERE "DonationID" = $1', [id]);
+        if (existingRes.rows.length === 0) {
+            return NextResponse.json({ error: 'Donation not found' }, { status: 404 });
+        }
+        const current = existingRes.rows[0];
+
+        // 2. Merge existing data with new data (new data takes precedence if defined)
+        // Helper to check if value is valid to update (not undefined)
+        const val = (v: any, cur: any) => v === undefined ? cur : v;
+
         const result = await query(
             `UPDATE "Donations" SET
                 "GiftAmount" = $1,
@@ -55,14 +66,37 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             WHERE "DonationID" = $32
             RETURNING *`,
             [
-                GiftAmount, SecondaryID, CheckNumber, ScanString,
-                GiftMethod, GiftPlatform, GiftType, GiftYear, GiftQuarter,
-                DonorPrefix, DonorFirstName, DonorMiddleName, DonorLastName, DonorSuffix,
-                DonorAddress, DonorCity, DonorState, DonorZip,
-                DonorEmployer, DonorOccupation,
-                GiftPledgeAmount, GiftFee, GiftCustodian, GiftConduit,
-                PostMarkYear, PostMarkQuarter, IsInactive, Comment,
-                DonorPhone, DonorEmail, OrganizationName,
+                val(GiftAmount, current.GiftAmount),
+                val(SecondaryID, current.SecondaryID),
+                val(CheckNumber, current.CheckNumber),
+                val(ScanString, current.ScanString),
+                val(GiftMethod, current.GiftMethod),
+                val(GiftPlatform, current.GiftPlatform),
+                val(GiftType, current.GiftType),
+                val(GiftYear, current.GiftYear),
+                val(GiftQuarter, current.GiftQuarter),
+                val(DonorPrefix, current.DonorPrefix),
+                val(DonorFirstName, current.DonorFirstName),
+                val(DonorMiddleName, current.DonorMiddleName),
+                val(DonorLastName, current.DonorLastName),
+                val(DonorSuffix, current.DonorSuffix),
+                val(DonorAddress, current.DonorAddress),
+                val(DonorCity, current.DonorCity),
+                val(DonorState, current.DonorState),
+                val(DonorZip, current.DonorZip),
+                val(DonorEmployer, current.DonorEmployer),
+                val(DonorOccupation, current.DonorOccupation),
+                val(GiftPledgeAmount, current.GiftPledgeAmount),
+                val(GiftFee, current.GiftFee),
+                val(GiftCustodian, current.GiftCustodian),
+                val(GiftConduit, current.GiftConduit),
+                val(PostMarkYear, current.PostMarkYear),
+                val(PostMarkQuarter, current.PostMarkQuarter),
+                val(IsInactive, current.IsInactive),
+                val(Comment, current.Comment),
+                val(DonorPhone, current.DonorPhone),
+                val(DonorEmail, current.DonorEmail),
+                val(OrganizationName, current.OrganizationName),
                 id
             ]
         );
@@ -74,6 +108,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         return NextResponse.json(result.rows[0]);
     } catch (error) {
         console.error('PUT /api/donations/[id] error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: (error as Error).message }, { status: 500 });
     }
 }
