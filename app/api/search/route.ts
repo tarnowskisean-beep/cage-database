@@ -94,12 +94,18 @@ function buildWhereClause(group: SearchGroup, params: (string | number | boolean
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const searchGroup = body as SearchGroup;
+        // Extract limit if present, default to 1000 for general use, but Search UI might want smaller?
+        // Let's default to 100 IF not specified to match previous behavior vs UI performance, 
+        // OR better yet, let's bump default to 500. 100 is too small for a "page".
+        const { limit = 100, ...searchGroupData } = body;
+        const searchGroup = searchGroupData as SearchGroup;
 
         const params: (string | number | boolean | null)[] = [];
         const whereClause = buildWhereClause(searchGroup, params);
 
-        // Safety limit 100
+        // Use the requested limit or default
+        const limitClause = limit === 'all' ? '' : `LIMIT ${Number(limit) || 100}`;
+
         const sql = `
             SELECT 
                 d.*,
@@ -110,7 +116,7 @@ export async function POST(request: Request) {
             JOIN "Clients" c ON d."ClientID" = c."ClientID"
             WHERE ${whereClause}
             ORDER BY d."GiftDate" DESC
-            LIMIT 100
+            ${limitClause}
         `;
 
         console.log('Search SQL:', sql);

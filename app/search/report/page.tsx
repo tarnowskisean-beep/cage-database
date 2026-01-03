@@ -45,7 +45,7 @@ function ReportContent() {
                 const res = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(query)
+                    body: JSON.stringify({ ...query, limit: 10000 })
                 });
                 const data = await res.json();
                 const rows = Array.isArray(data) ? data : [];
