@@ -83,6 +83,7 @@ export default function ImportPage() {
         if (!sessionId) return;
         setLoading(true);
         try {
+            const res = await fetch(`/api/import/process/${sessionId}`, { method: 'POST' });
             const data = await res.json();
             if (res.ok) {
                 // Fetch Staging Data for Review
