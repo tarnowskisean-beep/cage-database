@@ -14,7 +14,7 @@ export async function GET(
         // For now, we assume authenticated users can view.
 
         const result = await query(
-            `SELECT "FileName", "FileContent", "DocumentType" 
+            `SELECT "FileName", "FileContent", "DocumentType", "BlobUrl" 
              FROM "BatchDocuments" 
              WHERE "BatchDocumentID" = $1`,
             [id]
@@ -29,7 +29,12 @@ export async function GET(
         // SOC 2: Audit Log
         await logAction(userId, 'ViewDocument', id, `Viewed ${doc.FileName}`);
 
-        // Return Data Stream
+        // Blob Redirect
+        if (doc.BlobUrl) {
+            return NextResponse.redirect(doc.BlobUrl);
+        }
+
+        // Return Data Stream (Database Fallback)
         const headers = new Headers();
         headers.set('Content-Type', 'application/pdf'); // Simplified mime type handling
         if (doc.DocumentType === 'CheckImages') headers.set('Content-Type', 'image/png'); // fallback

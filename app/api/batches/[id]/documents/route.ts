@@ -28,6 +28,8 @@ export async function GET(
     }
 }
 
+import { put } from '@vercel/blob';
+
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -48,28 +50,41 @@ export async function POST(
             return NextResponse.json({ error: 'Missing file or type' }, { status: 400 });
         }
 
-        // Vercel Limit Check (4.5MB safe limit)
-        if (file.size > 4.5 * 1024 * 1024) {
-            return NextResponse.json({ error: 'File too large. Max size is 4.5MB.' }, { status: 413 });
-        }
-
-        const buffer = Buffer.from(await file.arrayBuffer());
         const filename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        let blobUrl = null;
+        let buffer = null;
+        let storageKey = 'db-stored';
+
+        // Check if environment is configured for Blob
+        if (process.env.BLOB_READ_WRITE_TOKEN) {
+            // Upload to Vercel Blob (No 4.5MB limit)
+            const blob = await put(`batches/${id}/${filename}`, file, {
+                access: 'public',
+            });
+            blobUrl = blob.url;
+            storageKey = 'vercel-blob';
+        } else {
+            // Fallback to Database (4.5MB Limit Applies)
+            if (file.size > 4.5 * 1024 * 1024) {
+                return NextResponse.json({ error: 'File too large for database storage. Configure Vercel Blob for >4.5MB.' }, { status: 413 });
+            }
+            buffer = Buffer.from(await file.arrayBuffer());
+        }
 
         // Check if Batch Exists
         const batchCheck = await query('SELECT "BatchID" FROM "Batches" WHERE "BatchID" = $1', [id]);
         if (batchCheck.rows.length === 0) return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
 
         await query(
-            `INSERT INTO "BatchDocuments" ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent")
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [id, type, filename, 'db-stored', userId, buffer]
+            `INSERT INTO "BatchDocuments" ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent", "BlobUrl")
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [id, type, filename, storageKey, userId, buffer, blobUrl]
         );
 
         // SOC 2: Audit Log
-        await logAction(userId, 'UploadDocument', id, `Uploaded ${filename} as ${type} (${file.size} bytes)`);
+        await logAction(userId, 'UploadDocument', id, `Uploaded ${filename} as ${type} (${file.size} bytes) via ${storageKey}`);
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, url: blobUrl });
     } catch (e: any) {
         console.error('Upload Error:', e);
         return NextResponse.json({ error: e.message || 'Upload failed' }, { status: 500 });
