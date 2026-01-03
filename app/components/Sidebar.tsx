@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useSidebar } from '@/app/hooks/useSidebar';
 
 export default function Sidebar() {
     const { data: session } = useSession();
     const pathname = usePathname();
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const { isCollapsed, toggleSidebar } = useSidebar();
 
     if (pathname === '/login') return null;
 
@@ -25,7 +25,7 @@ export default function Sidebar() {
         }}>
             {/* Collapse Toggle */}
             <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
+                onClick={toggleSidebar}
                 style={{
                     position: 'absolute',
                     right: '-12px',

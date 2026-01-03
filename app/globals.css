@@ -98,14 +98,14 @@ h6 {
   z-index: 100;
 }
 
+
+/* Main Content Wrapper */
 .main-content {
-  flex: 1;
-  margin-left: var(--sidebar-width);
   padding: 2rem;
   background-color: var(--color-bg-base);
+  /* margin-left is handled by MainLayout.tsx for dynamic collapse */
 }
 
-/* Component Classes */
 .glass-panel {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter_Tight, Old_Standard_TT } from 'next/font/google';
 import Sidebar from './components/Sidebar';
 import { Providers } from './providers';
+import MainLayout from './components/MainLayout';
 
 const inter = Inter_Tight({ subsets: ['latin'], variable: '--font-inter' });
 const oldStandard = Old_Standard_TT({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-old-standard' });
@@ -22,9 +23,9 @@ export default function RootLayout({
       <body className={`${inter.variable} ${oldStandard.variable}`} style={{ display: 'flex' }}>
         <Providers>
           <Sidebar />
-          <main className="main-content" style={{ flex: 1, height: '100vh', overflowY: 'auto' }}>
+          <MainLayout>
             {children}
-          </main>
+          </MainLayout>
         </Providers>
       </body>
     </html>
