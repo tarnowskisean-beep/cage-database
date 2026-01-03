@@ -76,9 +76,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                         if (!isNaN(d.getTime())) {
                             normalized[rule.target_column] = d.toISOString().split('T')[0];
                         }
-                    } catch (e) { }
+                    } catch (e) { /* ignore date parsing errors for now */ }
                 }
-            }
+            });
 
             // Hardcoded Logic: Derive Year/Quarter if missing
             if (!normalized['Gift Year'] && normalized['Gift Date']) {
@@ -86,8 +86,17 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                     const y = new Date(normalized['Gift Date']).getFullYear();
                     normalized['Gift Year'] = y;
                     defaultsApplied.push(`Gift Year: ${y} (Derived)`);
-                } catch (e) { }
+                } catch (e) { /* ignore date parsing errors for now */ }
             }
+
+            // GLOBAL STANDARDIZATION
+            // Applied after mapping rules to ensure consistent formatting regardless of source
+            if (normalized['First Name']) normalized['First Name'] = formatName(normalized['First Name']);
+            if (normalized['Last Name']) normalized['Last Name'] = formatName(normalized['Last Name']);
+            if (normalized['Address']) normalized['Address'] = formatAddress(normalized['Address']);
+            if (normalized['City']) normalized['City'] = formatName(normalized['City']);
+            if (normalized['State']) normalized['State'] = formatState(normalized['State']);
+            if (normalized['Zip']) normalized['Zip'] = formatZip(normalized['Zip']);
 
             const updateSql = `
                 UPDATE "staging_revenue" 
@@ -95,23 +104,18 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                 WHERE "id" = $4
             `;
 
-            // Batch the promises (in real prod, use pg-promise or similar for massive batches)
-        } else if (rule.default_value) {
-            normalized[rule.target_column] = rule.default_value;
-            defaultsApplied.push(`${rule.target_column}=${rule.default_value}`);
+            updates.push(query(updateSql, [
+                JSON.stringify(normalized, null, 2), // Pretty print for easier debugging/viewing
+                defaultsApplied,
+                errors.length > 0 ? 'Invalid' : 'Valid',
+                row.id
+            ]));
         }
-    });
+        if (normalized['City']) normalized['City'] = formatName(normalized['City']);
+        if (normalized['State']) normalized['State'] = formatState(normalized['State']);
+        if (normalized['Zip']) normalized['Zip'] = formatZip(normalized['Zip']);
 
-    // GLOBAL STANDARDIZATION
-    // Applied after mapping rules to ensure consistent formatting regardless of source
-    if (normalized['First Name']) normalized['First Name'] = formatName(normalized['First Name']);
-    if (normalized['Last Name']) normalized['Last Name'] = formatName(normalized['Last Name']);
-    if (normalized['Address']) normalized['Address'] = formatAddress(normalized['Address']);
-    if (normalized['City']) normalized['City'] = formatName(normalized['City']);
-    if (normalized['State']) normalized['State'] = formatState(normalized['State']);
-    if (normalized['Zip']) normalized['Zip'] = formatZip(normalized['Zip']);
-
-    const updateSql = `
+        const updateSql = `
                         UPDATE "staging_revenue"
                         SET "normalized_data" = $1,
                             "defaults_applied" = $2,
@@ -119,26 +123,26 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                         WHERE "id" = $4
                     `;
 
-    updates.push(query(updateSql, [
-        JSON.stringify(normalized, null, 2), // Pretty print for easier debugging/viewing
-        defaultsApplied,
-        errors.length > 0 ? 'Invalid' : 'Valid',
-        row.id
-    ]));
-}
+        updates.push(query(updateSql, [
+            JSON.stringify(normalized, null, 2), // Pretty print for easier debugging/viewing
+            defaultsApplied,
+            errors.length > 0 ? 'Invalid' : 'Valid',
+            row.id
+        ]));
+    }
 
 await Promise.all(updates);
 
-// Update Session Status
-// Status 'Processing' indicates rules have been applied and it is waiting for Commit.
-await query('UPDATE "import_sessions" SET "status" = \'Processing\', "processed_count" = $1 WHERE "id" = $2', [
-    stagingRows.length,
-    sessionId
-]);
+    // Update Session Status
+    // Status 'Processing' indicates rules have been applied and it is waiting for Commit.
+    await query('UPDATE "import_sessions" SET "status" = \'Processing\', "processed_count" = $1 WHERE "id" = $2', [
+        stagingRows.length,
+        sessionId
+    ]);
 
-return NextResponse.json({ success: true, processed: stagingRows.length });
+    return NextResponse.json({ success: true, processed: stagingRows.length });
 
-    } catch (error: any) {
+} catch (error: any) {
     console.error('POST /api/import/process error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
 }
