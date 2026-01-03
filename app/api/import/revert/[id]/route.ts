@@ -44,7 +44,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
         await query(`UPDATE "import_sessions" SET "status" = 'Reverted' WHERE "id" = $1`, [sessionId]);
 
-        const count = delDonationsDirect.rowCount + delDonationsBatch.rowCount;
+        const count = (delDonationsDirect.rowCount || 0) + (delDonationsBatch.rowCount || 0);
 
         // Log Audit
         await logAction(
