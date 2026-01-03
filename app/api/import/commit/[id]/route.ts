@@ -25,11 +25,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         // 2. Create a New Batch for this Import
         // We'll use a special "Import" batch code format or just standard format
         // For simplicity, let's reuse standard logic but hardcode "Import" platform
-        const date = new Date();
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const batchDate = `${yyyy}-${mm}-${dd}`;
+        // For simplicity, let's reuse standard logic but hardcode "Import" platform
+
 
         // Generate Batch Code (Simplified for Import - reusing Logic API would be better but keeping it self-contained for speed)
         // Let's assume User has a valid ClientID. We might need to ask the user for ClientID in the Import Wizard?
