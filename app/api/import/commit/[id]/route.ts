@@ -17,8 +17,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         if (sessionRes.rows.length === 0) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         const importSession = sessionRes.rows[0];
 
-        if (importSession.status !== 'Processed') {
-            return NextResponse.json({ error: 'Session must be processed before committing' }, { status: 400 });
+        // We accept 'Processing' as the state where rules are applied but not yet committed.
+        if (importSession.status !== 'Processing') {
+            return NextResponse.json({ error: 'Session must be processed (normalized) before committing' }, { status: 400 });
         }
 
         // 2. Create a New Batch for this Import

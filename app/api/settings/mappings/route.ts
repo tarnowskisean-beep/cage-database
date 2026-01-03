@@ -8,6 +8,9 @@ export async function GET(request: Request) {
         const session = await getServerSession(authOptions);
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+        // Debug: Log role
+        console.log('GET /settings/mappings User:', (session.user as any).id, 'Role:', (session.user as any).role);
+
         const { searchParams } = new URL(request.url);
         const source = searchParams.get('source');
 

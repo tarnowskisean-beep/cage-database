@@ -100,7 +100,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         await Promise.all(updates);
 
         // Update Session Status
-        await query('UPDATE "import_sessions" SET "status" = \'Processed\', "processed_count" = $1 WHERE "id" = $2', [
+        // Status 'Processing' indicates rules have been applied and it is waiting for Commit.
+        await query('UPDATE "import_sessions" SET "status" = \'Processing\', "processed_count" = $1 WHERE "id" = $2', [
             stagingRows.length,
             sessionId
         ]);
