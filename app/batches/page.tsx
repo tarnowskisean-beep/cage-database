@@ -203,6 +203,9 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
         entryMode: 'Barcode',
         paymentCategory: 'Checks',
         zerosType: '',
+        defaultGiftMethod: 'Check',
+        defaultGiftPlatform: 'Cage',
+        defaultTransactionType: 'Donation',
         defaultGiftType: 'Individual/Trust/IRA',
         date: new Date().toLocaleDateString('en-CA'), // Returns YYYY-MM-DD in local time
         defaultGiftYear: currentYear,
