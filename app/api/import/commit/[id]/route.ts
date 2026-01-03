@@ -56,6 +56,26 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
         const firstRowData = rows[0].normalized_data || {};
         const externalBatchId = firstRowData['External Batch ID'];
+        const csvGiftDate = firstRowData['Gift Date'];
+
+        // Date Logic: Prefer CSV 'Gift Date', fallback to Today
+        // We want YYYY.MM.DD format
+        let dateObj = new Date(); // Default to today
+
+        if (csvGiftDate) {
+            // Try parsing the CSV date
+            // Standard parsing usually handles "YYYY-MM-DD", "YYYY.MM.DD", "MM/DD/YYYY"
+            const parsed = new Date(csvGiftDate);
+            if (!isNaN(parsed.getTime())) {
+                dateObj = parsed;
+            }
+        }
+
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const batchDate = `${yyyy}-${mm}-${dd}`; // For DB Date column
+        const batchDateStr = `${yyyy}.${mm}.${dd}`; // For Batch Code string
 
         // Suffix: Right 6 digits of External Batch ID, or fallback to Session ID
         let suffix = String(sessionId);
@@ -78,7 +98,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
         // Custom Batch Code: [Client].[Platform].[Date].[Suffix]
         // Ex: AFL.WR.2025.12.25.nijn33
-        const batchCode = `${clientCode}.${platformCode}.${yyyy}.${mm}.${dd}.${suffix}`;
+        const batchCode = `${clientCode}.${platformCode}.${batchDateStr}.${suffix}`;
 
         // Create Batch
         const batchRes = await query(`

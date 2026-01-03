@@ -42,15 +42,16 @@ export async function GET(request: Request) {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    SELECT
-    b."BatchID", b."BatchCode", b."EntryMode", b."PaymentCategory", b."Status", b."Date", b."CreatedAt",
-      b."ImportSessionID",
+    const result = await query(`
+      SELECT
+        b."BatchID", b."BatchCode", b."EntryMode", b."PaymentCategory", b."Status", b."Date", b."CreatedAt",
+        b."ImportSessionID",
         c."ClientCode", c."ClientName",
-          u."Username" as "CreatedBy"
+        u."Username" as "CreatedBy"
       FROM "Batches" b
       JOIN "Clients" c ON b."ClientID" = c."ClientID"
       JOIN "Users" u ON b."CreatedBy" = u."UserID"
-      ${ whereClause }
+      ${whereClause}
       ORDER BY b."CreatedAt" DESC
     `, params);
 
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
     const yyyy = dateObj.getFullYear();
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const dd = String(dateObj.getDate()).padStart(2, '0');
-    const dateStr = `${ yyyy }.${ mm }.${ dd } `;
+    const dateStr = `${yyyy}.${mm}.${dd} `;
 
     // 4. Daily Sequence
     const countRes = await query(`
@@ -126,10 +127,10 @@ export async function POST(request: Request) {
       `, [userId, body.date || new Date().toISOString()]);
 
     const dailyCount = parseInt(countRes.rows[0].count) + 1;
-    const suffix = `${ userInitials }.${ dailyCount.toString().padStart(2, '0') } `;
+    const suffix = `${userInitials}.${dailyCount.toString().padStart(2, '0')} `;
 
     // 5. Final Batch Code
-    const batchCode = `${ clientCode }.${ platCode }.${ dateStr }.${ suffix } `;
+    const batchCode = `${clientCode}.${platCode}.${dateStr}.${suffix} `;
 
     const result = await query(`
         INSERT INTO "Batches"(
