@@ -335,7 +335,6 @@ export default function SearchPage() {
             });
             const data = await res.json();
             const rows = Array.isArray(data) ? data : [];
-            console.log('Search Results:', rows.slice(0, 3)); // Debug log
             setResults(rows);
         } catch (e) {
             console.error(e);
@@ -376,8 +375,6 @@ export default function SearchPage() {
             // 1. Get explicit ScanString
             let scanString = rec.ScanString || rec.scanString || rec.scanstring || '';
 
-            // 2. Fallback: Generate Composite ID if missing
-            // Format: ClientCode.PlatformAbbrev.YYYY.MM.DD.BatchCode
             // 2. Fallback: Generate Composite ID if missing
             // Priority: Explicit ScanString -> Full Batch Code -> Constructed Legacy Code
             if (!scanString && rec.BatchCode) {
