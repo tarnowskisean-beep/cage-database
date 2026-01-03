@@ -39,7 +39,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             donorAddress, donorCity, donorState, donorZip,
             donorEmployer, donorOccupation,
             giftPledgeAmount, giftFee, giftCustodian, giftConduit,
-            postMarkYear, postMarkQuarter, isInactive, comment
+            postMarkYear, postMarkQuarter, isInactive, comment,
+            mailCode // <--- Added
         } = body;
         const { id: batchId } = await params;
 
@@ -68,9 +69,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
              "DonorAddress", "DonorCity", "DonorState", "DonorZip",
              "DonorEmployer", "DonorOccupation",
              "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
-             "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment"
+             "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment",
+             "MailCode"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
+            VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
             RETURNING *`,
             [
                 batch.ClientID,
@@ -93,7 +95,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 donorAddress, donorCity, donorState, donorZip,
                 donorEmployer, donorOccupation,
                 giftPledgeAmount || 0, giftFee || 0, giftCustodian, giftConduit,
-                postMarkYear, postMarkQuarter, isInactive || false, comment
+                postMarkYear, postMarkQuarter, isInactive || false, comment,
+                mailCode || '' // Fail-safe
             ]
         );
 
