@@ -339,7 +339,15 @@ export default function BatchEntry({ id }: { id: string }) {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label>Method</Label>
-                                <Select value={formData.method} onChange={handleChange('method')}>
+                                <Select
+                                    value={formData.method}
+                                    onChange={handleChange('method')}
+                                    disabled={batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)}
+                                    style={{
+                                        background: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 'var(--color-bg-base)' : undefined,
+                                        opacity: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 0.7 : 1
+                                    }}
+                                >
                                     {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                                 </Select>
                             </div>

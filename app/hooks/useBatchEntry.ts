@@ -69,18 +69,34 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
     };
 
     // --- DATA FETCHING ---
+    // Helper to map Batch Category to strict Gift Method
+    const getForcedMethod = (category: string) => {
+        switch (category) {
+            case 'Checks': return 'Check';
+            case 'Cash': return 'Cash';
+            case 'CC': return 'Credit Card';
+            case 'EFT': return 'EFT';
+            default: return null; // Mixed or Zeros or others allow selection
+        }
+    };
+
     const fetchBatch = useCallback(async () => {
         try {
             const res = await fetch(`/api/batches/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setBatch(data);
+
+                // Determine forced method
+                const forced = getForcedMethod(data.PaymentCategory);
+                const defaultMethod = forced || data.DefaultGiftMethod || 'Check';
+
                 // Initialize defaults
                 setFormData(prev => ({
                     ...prev,
                     platform: data.DefaultGiftPlatform || 'Cage',
                     giftType: data.DefaultGiftType || 'Individual/Trust/IRA',
-                    method: data.DefaultGiftMethod || 'Check',
+                    method: defaultMethod,
                     giftYear: data.DefaultGiftYear?.toString(),
                     giftQuarter: data.DefaultGiftQuarter,
                     postMarkYear: data.DefaultGiftYear?.toString() || new Date().getFullYear().toString(),
@@ -363,11 +379,12 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 await fetchRecords();
 
                 // RESET FORM
+                const forced = batch ? getForcedMethod(batch.PaymentCategory) : null;
                 setFormData(prev => ({
                     ...initialFormState,
                     platform: prev.platform,
                     giftType: prev.giftType,
-                    method: prev.method,
+                    method: forced || prev.method, // Keep current if not forced, or reset to forced
                     postMarkYear: prev.postMarkYear,
                     postMarkQuarter: prev.postMarkQuarter,
                     giftYear: prev.giftYear,
