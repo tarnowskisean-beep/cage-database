@@ -12,11 +12,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 flex: 1,
                 height: '100vh',
                 overflowY: 'auto',
-                marginLeft: isCollapsed ? '80px' : 'var(--sidebar-width)',
-                transition: 'margin-left 0.3s ease'
+                flex: 1,
+                height: '100vh',
+                overflowY: 'auto'
+            }}
             }}
         >
-            {children}
-        </main>
+    { children }
+        </main >
     );
 }
