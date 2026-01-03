@@ -152,13 +152,38 @@ function ReportContent() {
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif', color: 'black', background: 'white' }}>
+            {/* Print Styles */}
+            <style jsx global>{`
+                @media print {
+                    .no-print { display: none !important; }
+                    body { background: white; }
+                    @page { margin: 0.5cm; }
+                }
+            `}</style>
+
             {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'flex-start' }}>
                 <div>
                     <h1 style={{ fontWeight: 'bold', fontSize: '1.5rem', marginBottom: '0.25rem' }}>COMPASS</h1>
                     <div style={{ fontSize: '0.9rem', letterSpacing: '2px' }}>PROFESSIONAL</div>
                 </div>
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
+                    <button
+                        className="no-print"
+                        onClick={() => window.print()}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            background: '#0ea5e9',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            display: 'flex', alignItems: 'center', gap: '0.5rem'
+                        }}
+                    >
+                        🖨️ Print / Save PDF
+                    </button>
                     {client?.LogoURL ? (
                         <img src={client.LogoURL} alt="Client Logo" style={{ height: '60px', objectFit: 'contain' }} />
                     ) : (
