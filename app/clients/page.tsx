@@ -7,13 +7,14 @@ interface Client {
     ClientCode: string;
     ClientName: string;
     ClientType?: string;
+    LogoURL?: string;
 }
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newClient, setNewClient] = useState({ code: '', name: '' });
+    const [newClient, setNewClient] = useState({ code: '', name: '', logoUrl: '' });
     const [submitting, setSubmitting] = useState(false);
     const [importClient, setImportClient] = useState<Client | null>(null);
 
@@ -46,7 +47,7 @@ export default function ClientsPage() {
             });
 
             if (res.ok) {
-                setNewClient({ code: '', name: '' });
+                setNewClient({ code: '', name: '', logoUrl: '' });
                 setIsModalOpen(false);
                 fetchClients(); // Refresh list
             } else {
@@ -155,6 +156,15 @@ export default function ClientsPage() {
                                         value={newClient.name}
                                         onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                                         required
+                                    />
+                                </div>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Logo URL (Optional)</label>
+                                    <input
+                                        className="input-field"
+                                        placeholder="https://example.com/logo.png"
+                                        value={newClient.logoUrl}
+                                        onChange={e => setNewClient({ ...newClient, logoUrl: e.target.value })}
                                     />
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>

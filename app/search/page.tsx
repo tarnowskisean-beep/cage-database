@@ -32,6 +32,30 @@ interface SearchResult {
     ClientCode: string;
     BatchCode: string;
     BatchID: number;
+    // Export Fields
+    ScanString?: string;
+    ClientID?: number;
+    CreatedAt?: string;
+    DonorPrefix?: string;
+    DonorMiddleName?: string;
+    DonorSuffix?: string;
+    DonorAddress?: string;
+    DonorZip?: string;
+    DonorPhone?: string;
+    DonorEmail?: string;
+    DonorEmployer?: string;
+    DonorOccupation?: string;
+    GiftType?: string;
+    GiftPlatform?: string;
+    OrganizationName?: string;
+    GiftCustodian?: string;
+    GiftFee?: number;
+    GiftPledgeAmount?: number;
+    IsInactive?: boolean;
+    GiftYear?: number;
+    GiftQuarter?: string;
+    GiftConduit?: string;
+    Comment?: string;
 }
 
 // Default initial state
@@ -171,6 +195,103 @@ export default function SearchPage() {
         }
     };
 
+    // --- EXPORT ---
+    const handleExportCSV = () => {
+        if (!results || results.length === 0) return alert('No results to export');
+
+        // Headers as requested
+        const headers = [
+            'DonationID', 'ClientID', 'Date Created', 'CagingID', 'MailCode', 'Prefix',
+            'First Name', 'Middle Name', 'Last Name', 'Suffix', 'Address', 'City', 'State', 'Zip',
+            'Phone', 'Email', 'Occupation', 'Employer',
+            'Gift Type', 'Gift Method', 'Gift Platform', 'Gift Organization', 'Gift Custodian',
+            'Gift Amount', 'Gift Fee', 'Pledge Amount', 'Yes Inactive',
+            'Gift Year', 'Gift Quarter',
+            'Conduit', 'Comment', 'BatchID', 'Batch Date',
+            'CC Account#', 'CC CVV#', 'CC Expiration Date'
+        ];
+
+        // Mapped Rows
+        const csvRows = results.map(r => {
+            // Helper to escape CSV content
+            const esc = (val: string | number | null | undefined) => {
+                if (val === null || val === undefined) return '';
+                const str = String(val);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            };
+
+            // Parse Scan String for MailCode (assuming tab sep or similar, simple logic for now)
+            // If ScanString contains TAB, part 0 is Mail Code.
+            let mailCode = '';
+            // We need ScanString in SearchResult! (Types need update)
+            // But 'r' is SearchResult. Let's use 'any' cast if fields missing or update types in next step.
+            // Using 'any' for now to safely access fields that backend sends but strict type might miss until updated.
+            const rec = r as any;
+
+            if (rec.ScanString && rec.ScanString.includes('\t')) {
+                mailCode = rec.ScanString.split('\t')[0];
+            }
+
+            return [
+                esc(rec.DonationID),
+                esc(rec.ClientID || rec.ClientCode), // Using ID if avail, else Code
+                esc(rec.CreatedAt),
+                esc(rec.DonationID), // CagingID = DonationID usually
+                esc(mailCode),
+                esc(rec.DonorPrefix),
+                esc(rec.DonorFirstName),
+                esc(rec.DonorMiddleName),
+                esc(rec.DonorLastName),
+                esc(rec.DonorSuffix),
+                esc(rec.DonorAddress),
+                esc(rec.DonorCity),
+                esc(rec.DonorState),
+                esc(rec.DonorZip),
+                esc(rec.DonorPhone),
+                esc(rec.DonorEmail),
+                esc(rec.DonorOccupation),
+                esc(rec.DonorEmployer),
+                esc(rec.GiftType),
+                esc(rec.GiftMethod),
+                esc(rec.GiftPlatform),
+                esc(rec.OrganizationName),
+                esc(rec.GiftCustodian),
+                esc(rec.GiftAmount),
+                esc(rec.GiftFee),
+                esc(rec.GiftPledgeAmount),
+                esc(rec.IsInactive ? 'Yes' : 'No'),
+                esc(rec.GiftYear),
+                esc(rec.GiftQuarter),
+                esc(rec.GiftConduit),
+                esc(rec.Comment),
+                esc(rec.BatchID),
+                esc(rec.BatchCode), // Using BatchCode as date proxy or actual needed? Headers say 'Batch Date'.
+                // If backend sends BatchDate use it, else empty
+                '', // CC Account
+                '', // CVV
+                ''  // Exp
+            ].join(',');
+        });
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `search_export_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+    };
+
+    const handleGenerateReport = () => {
+        if (!searched) return alert('Please run a search first.');
+        const url = `/search/report?q=${encodeURIComponent(JSON.stringify(query))}`;
+        window.open(url, '_blank');
+    };
+
     // --- RENDERERS ---
     const renderRule = (rule: SearchRule) => (
         <div key={rule.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -278,10 +399,20 @@ export default function SearchPage() {
 
             <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
                 {renderGroup(query, true)}
-                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem', display: 'flex', gap: '1rem' }}>
                     <button className="btn-primary" onClick={handleSearch} disabled={loading}>
                         {loading ? 'Searching...' : 'Run Search'}
                     </button>
+                    {results.length > 0 && (
+                        <>
+                            <button className="btn-secondary" onClick={handleExportCSV}>
+                                Export CSV
+                            </button>
+                            <button className="btn-secondary" onClick={handleGenerateReport}>
+                                📄 Report
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
