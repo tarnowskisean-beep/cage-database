@@ -197,9 +197,23 @@ function ReportContent() {
     // ... (Date logic omitted for brevity, reusing existing fallback logic)
     const dates = results.map(r => new Date(r.GiftDate).getTime());
     if (dates.length) {
-        minDate = new Date(Math.min(...dates)).toLocaleDateString();
         maxDate = new Date(Math.max(...dates)).toLocaleDateString();
     }
+
+    // Calculate Matrix Totals
+    const matrixTotals = Object.values(matrix).reduce((acc, row) => ({
+        donors: acc.donors + row.donors,
+        nonDonors: acc.nonDonors + row.nonDonors,
+        amount: acc.amount + row.amount,
+        check: { count: acc.check.count + row.check.count, sum: acc.check.sum + row.check.sum },
+        cash: { count: acc.cash.count + row.cash.count, sum: acc.cash.sum + row.cash.sum },
+        cc: { count: acc.cc.count + row.cc.count, sum: acc.cc.sum + row.cc.sum }
+    }), {
+        donors: 0, nonDonors: 0, amount: 0,
+        check: { count: 0, sum: 0 },
+        cash: { count: 0, sum: 0 },
+        cc: { count: 0, sum: 0 }
+    });
 
     // Helper to render currency
     const fmt = (n: number) => `$${n.toFixed(2)}`;
@@ -382,6 +396,22 @@ function ReportContent() {
                                 </tr>
                             );
                         })}
+                        {/* Totals Row */}
+                        <tr className="bg-gray font-bold" style={{ borderTop: '2px solid black' }}>
+                            <td className="text-right">TOTALS:</td>
+                            <td className="text-center">{matrixTotals.donors}</td>
+                            <td className="text-center">{matrixTotals.nonDonors}</td>
+                            <td className="text-right">{fmt(matrixTotals.amount)}</td>
+
+                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{matrixTotals.check.count}</td>
+                            <td className="text-right">{fmt(matrixTotals.check.sum)}</td>
+
+                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{matrixTotals.cash.count}</td>
+                            <td className="text-right">{fmt(matrixTotals.cash.sum)}</td>
+
+                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{matrixTotals.cc.count}</td>
+                            <td className="text-right">{fmt(matrixTotals.cc.sum)}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
