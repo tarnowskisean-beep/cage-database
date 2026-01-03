@@ -83,9 +83,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid Session: No ID or Email' }, { status: 401 });
       }
     }
-    // Initials from session if available, else derive from name, else fallback
-    const userInitials = (session.user.name || 'Unknown').slice(0, 2).toUpperCase();
-
     // 1. Get Client Code
     const clientRes = await query('SELECT "ClientCode" FROM "Clients" WHERE "ClientID" = $1', [clientId]);
     if (clientRes.rows.length === 0) throw new Error('Client not found');
