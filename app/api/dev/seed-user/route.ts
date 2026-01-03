@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export async function GET() {
+    console.log('SEED ROUTE V3 - UPSERT ONLY (NO DELETE)');
     try {
         // 0. Ensure Migrations (Create Tables if missing)
         await query(`
