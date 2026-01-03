@@ -511,42 +511,7 @@ export default function SearchPage() {
                     />
                 </div>
 
-                {/* Additional Filters inline */}
-                <input
-                    className="input-field"
-                    placeholder="Ref #"
-                    style={{ width: '120px' }}
-                    value={checkNumber}
-                    onChange={e => setCheckNumber(e.target.value)}
-                />
-
-                <input
-                    className="input-field"
-                    placeholder="Donor Name"
-                    style={{ width: '150px' }}
-                    value={donorName}
-                    onChange={e => setDonorName(e.target.value)}
-                />
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <input
-                        type="number"
-                        className="input-field"
-                        placeholder="Min $"
-                        style={{ width: '80px' }}
-                        value={amountMin}
-                        onChange={e => setAmountMin(e.target.value)}
-                    />
-                    <span style={{ color: 'var(--color-text-muted)' }}>-</span>
-                    <input
-                        type="number"
-                        className="input-field"
-                        placeholder="Max $"
-                        style={{ width: '80px' }}
-                        value={amountMax}
-                        onChange={e => setAmountMax(e.target.value)}
-                    />
-                </div>
+                {/* Filters Removed: Ref #, Donor Name, Min $, Max $ */}
 
                 <div style={{ flex: 1 }}></div>
 
