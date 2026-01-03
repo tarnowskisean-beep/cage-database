@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { source_system, target_column, default_value, transformation_rule, is_active } = body;
+        const { source_system, source_column, target_column, default_value, transformation_rule, is_active } = body;
 
         // Basic Validation
         if (!source_system || !target_column) {
@@ -47,10 +47,10 @@ export async function POST(request: Request) {
 
         const result = await query(`
             INSERT INTO "mapping_rules" 
-            ("source_system", "target_column", "default_value", "transformation_rule", "is_active")
-            VALUES ($1, $2, $3, $4, $5)
+            ("source_system", "source_column", "target_column", "default_value", "transformation_rule", "is_active")
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
-        `, [source_system, target_column, default_value || null, transformation_rule || null, is_active ?? true]);
+        `, [source_system, source_column || null, target_column, default_value || null, transformation_rule || null, is_active ?? true]);
 
         return NextResponse.json(result.rows[0]);
     } catch (error) {
@@ -67,17 +67,17 @@ export async function PUT(request: Request) {
         }
 
         const body = await request.json();
-        const { id, source_system, target_column, default_value, transformation_rule, is_active } = body;
+        const { id, source_system, source_column, target_column, default_value, transformation_rule, is_active } = body;
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
         const result = await query(`
             UPDATE "mapping_rules" 
-            SET "source_system" = $1, "target_column" = $2, "default_value" = $3, 
-                "transformation_rule" = $4, "is_active" = $5, "updated_at" = CURRENT_TIMESTAMP
-            WHERE "id" = $6
+            SET "source_system" = $1, "source_column" = $2, "target_column" = $3, "default_value" = $4, 
+                "transformation_rule" = $5, "is_active" = $6, "updated_at" = CURRENT_TIMESTAMP
+            WHERE "id" = $7
             RETURNING *
-        `, [source_system, target_column, default_value || null, transformation_rule || null, is_active ?? true, id]);
+        `, [source_system, source_column || null, target_column, default_value || null, transformation_rule || null, is_active ?? true, id]);
 
         if (result.rowCount === 0) return NextResponse.json({ error: 'Rule not found' }, { status: 404 });
 

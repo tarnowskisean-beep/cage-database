@@ -43,11 +43,18 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
             // Apply Rules
             for (const rule of rules) {
-                // If target already exists in raw data (and is not empty), skip default unless it's a force transform
-                // BUT, often CSV headers don't match our Schema.
-                // For now, we assume if the Target Column is MISSING in our normalized object, we apply the default.
+                // 1. Column Mapping (Source -> Target)
+                if (rule.source_column) {
+                    // Try to find the source column in raw data (case-insensitive fuzzy match could be added later)
+                    // For now, exact match or simple clean
+                    const sourceVal = raw[rule.source_column];
+                    if (sourceVal !== undefined && sourceVal !== null && sourceVal !== '') {
+                        normalized[rule.target_column] = sourceVal;
+                    }
+                }
 
-                // Check if target column has a value
+                // 2. Defaults
+                // Check if target column has a value (either from mapping above or raw data)
                 const existingVal = normalized[rule.target_column];
 
                 // If empty or null, apply default

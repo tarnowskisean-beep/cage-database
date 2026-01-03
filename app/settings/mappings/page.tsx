@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 type MappingRule = {
     id: number;
     source_system: string;
+    source_column: string | null;
     target_column: string;
     default_value: string | null;
     transformation_rule: string | null;
@@ -83,6 +84,7 @@ export default function MappingsPage() {
                     <thead>
                         <tr>
                             <th>Source System</th>
+                            <th>Source Column</th>
                             <th>Target Column</th>
                             <th>Default Value</th>
                             <th>Transform</th>
@@ -92,9 +94,9 @@ export default function MappingsPage() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
                         ) : rules.length === 0 ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>No rules found.</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>No rules found.</td></tr>
                         ) : (
                             rules.map(rule => (
                                 <tr key={rule.id}>
@@ -105,6 +107,11 @@ export default function MappingsPage() {
                                         }}>
                                             {rule.source_system}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {rule.source_column ? (
+                                            <code>{rule.source_column}</code>
+                                        ) : <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>-</span>}
                                     </td>
                                     <td>{rule.target_column}</td>
                                     <td>
@@ -156,6 +163,7 @@ export default function MappingsPage() {
 function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClose: () => void, onSave: () => void }) {
     const [formData, setFormData] = useState({
         source_system: rule?.source_system || 'Winred',
+        source_column: rule?.source_column || '',
         target_column: rule?.target_column || '',
         default_value: rule?.default_value || '',
         transformation_rule: rule?.transformation_rule || '',
@@ -222,13 +230,23 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Target Column</label>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Source Column (from CSV)</label>
+                        <input
+                            className="input-field"
+                            value={formData.source_column}
+                            onChange={e => setFormData({ ...formData, source_column: e.target.value })}
+                            placeholder="e.g. amount (Leave empty for default-only rules)"
+                        />
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Target Column (Database)</label>
                         <input
                             list="targets"
                             className="input-field"
                             value={formData.target_column}
                             onChange={e => setFormData({ ...formData, target_column: e.target.value })}
-                            placeholder="e.g. Gift Type"
+                            placeholder="e.g. Gift Amount"
                             required
                         />
                         <datalist id="targets">
