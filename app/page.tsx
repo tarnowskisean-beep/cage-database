@@ -209,15 +209,15 @@ export default function Home() {
               <h3 style={{ marginBottom: '1.5rem' }}>Revenue by Client</h3>
               <div style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.byClient}>
+                  <BarChart data={stats.byClient} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                    <XAxis dataKey="ClientName" stroke="var(--color-text-muted)" />
-                    <YAxis stroke="var(--color-text-muted)" tickFormatter={(val) => `$${val}`} />
+                    <XAxis type="number" stroke="var(--color-text-muted)" tickFormatter={(val) => `$${val}`} />
+                    <YAxis dataKey="ClientName" type="category" stroke="var(--color-text-muted)" width={150} />
                     <Tooltip
                       contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }}
                       formatter={(value: number | undefined) => formatCurrency(value || 0)}
                     />
-                    <Bar dataKey="total" fill="var(--color-active)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="total" fill="var(--color-active)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
