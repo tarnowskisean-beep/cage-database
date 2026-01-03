@@ -35,16 +35,12 @@ export async function GET() {
                  VALUES ($1, $2, $3, $4, $5)`,
                 ['starnowski', 'tarnowski.sean@gmail.com', passwordHash, 'Admin', 'ST']
             );
-            return NextResponse.json({ success: true, message: 'Tables Created. User starnowski CREATED with password123' });
-        } else {
-            // 3. Update if exists
-            await query(
-                'UPDATE "Users" SET "PasswordHash" = $1, "Role" = $2 WHERE "Username" = $3',
-                [passwordHash, 'Admin', 'starnowski']
-            );
-            return NextResponse.json({ success: true, message: 'Tables Created. User starnowski UPDATED with password123' });
+            return NextResponse.json({
+                success: true,
+                message: `[V5 ${new Date().toISOString()}] Tables Fixed. User starnowski Updated/Created.`
+            });
         }
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return NextResponse.json({ error: e.message, version: 'V5' }, { status: 500 });
     }
 }
