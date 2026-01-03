@@ -378,32 +378,40 @@ export default function SearchPage() {
 
             // 2. Fallback: Generate Composite ID if missing
             // Format: ClientCode.PlatformAbbrev.YYYY.MM.DD.BatchCode
-            if (!scanString && rec.ClientCode && rec.BatchCode) {
-                // Use BatchDate logic as requested (Batch Level)
-                const rawDate = rec.BatchDate || rec.GiftDate || new Date().toISOString();
-                const d = new Date(rawDate);
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                const dateStr = `${yyyy}.${mm}.${dd}`;
+            // 2. Fallback: Generate Composite ID if missing
+            // Priority: Explicit ScanString -> Full Batch Code -> Constructed Legacy Code
+            if (!scanString && rec.BatchCode) {
+                // Check if BatchCode is already the full Composite ID (New System)
+                // e.g. "AFL.CB.2025..." (contains ClientCode)
+                if (rec.BatchCode.includes(rec.ClientCode) && rec.BatchCode.split('.').length >= 4) {
+                    scanString = rec.BatchCode;
+                } else {
+                    // Start of OLD/LEGACY generation for short codes
+                    const rawDate = rec.BatchDate || rec.GiftDate || new Date().toISOString();
+                    const d = new Date(rawDate);
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const dateStr = `${yyyy}.${mm}.${dd}`;
 
-                // Platform Abbreviation Mapping
-                const platform = rec.GiftPlatform || rec.giftPlatform || 'Cage';
-                const abbreviations: Record<string, string> = {
-                    'Chainbridge': 'CB',
-                    'Stripe': 'ST',
-                    'National Capital': 'NC',
-                    'City National': 'CN',
-                    'Propay': 'PP',
-                    'Anedot': 'AN',
-                    'Winred': 'WR',
-                    'Cage': 'CG',
-                    'Import': 'IM'
-                };
-                // Default to first 2 chars upper-case if not found
-                const platCode = abbreviations[platform] || platform.substring(0, 2).toUpperCase();
+                    // Platform Abbreviation Mapping
+                    const platform = rec.GiftPlatform || rec.giftPlatform || 'Cage';
+                    const abbreviations: Record<string, string> = {
+                        'Chainbridge': 'CB',
+                        'Stripe': 'ST',
+                        'National Capital': 'NC',
+                        'City National': 'CN',
+                        'Propay': 'PP',
+                        'Anedot': 'AN',
+                        'Winred': 'WR',
+                        'Cage': 'CG',
+                        'Import': 'IM'
+                    };
+                    // Default to first 2 chars upper-case if not found
+                    const platCode = abbreviations[platform] || platform.substring(0, 2).toUpperCase();
 
-                scanString = `${rec.ClientCode}.${platCode}.${dateStr}.${rec.BatchCode}`;
+                    scanString = `${rec.ClientCode}.${platCode}.${dateStr}.${rec.BatchCode}`;
+                }
             }
 
             let mailCode = rec.MailCode || '';
