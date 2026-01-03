@@ -273,11 +273,6 @@ export default function SearchPage() {
     );
 
     useEffect(() => {
-        // Set Default Dates
-        const range = getWeeklyRange();
-        setStartDate(range.start);
-        setEndDate(range.end);
-
         // Fetch Clients for dropdown
         fetch('/api/clients')
             .then(res => res.json())
