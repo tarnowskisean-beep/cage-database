@@ -1,7 +1,7 @@
 
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "../../[...nextauth]/route";
+import { authOptions } from "../[...nextauth]/route";
 import { query } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 

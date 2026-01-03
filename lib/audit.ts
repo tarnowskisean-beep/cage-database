@@ -19,3 +19,5 @@ export async function logAudit(
         // Do not crash the app if audit log fails, but ideally strictly log this failure
     }
 }
+
+export const logAction = logAudit;
