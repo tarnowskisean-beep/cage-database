@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { formatName, formatAddress, formatState, formatZip, cleanText } from '@/lib/cleaners';
+import { formatName, formatAddress, formatState, formatZip, cleanText, formatEmail, formatPhone } from '@/lib/cleaners';
 
 export const dynamic = 'force-dynamic';
 

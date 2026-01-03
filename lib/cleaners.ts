@@ -62,3 +62,26 @@ export function formatZip(str: string | null | undefined): string | null {
     if (clean.length > 5) return clean.substring(0, 5);
     return clean.padStart(5, '0');
 }
+
+export function formatEmail(str: string | null | undefined): string | null {
+    if (!str) return null;
+    return cleanText(str)!.toLowerCase();
+}
+
+export function formatPhone(str: string | null | undefined): string | null {
+    if (!str) return null;
+    // Strip non-digits
+    const clean = str.replace(/[^0-9]/g, '');
+
+    // Format as (XXX) XXX-XXXX if 10 digits
+    if (clean.length === 10) {
+        return `(${clean.substring(0, 3)}) ${clean.substring(3, 6)}-${clean.substring(6)}`;
+    }
+    // If 11 digits and starts with 1, remove 1 and format
+    if (clean.length === 11 && clean.startsWith('1')) {
+        const ten = clean.substring(1);
+        return `(${ten.substring(0, 3)}) ${ten.substring(3, 6)}-${ten.substring(6)}`;
+    }
+
+    return str; // Return original if unknown format, or maybe just clean digits? Let's return original for now but trimmed.
+}
