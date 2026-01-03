@@ -429,9 +429,20 @@ function BatchRow({ batch }: { batch: Batch }) {
             </td>
             <td>{batch.EntryMode}</td>
             <td>
-                <Link href={`/batches/${batch.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
-                    Open &rarr;
-                </Link>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <Link href={`/batches/${batch.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
+                        Open &rarr;
+                    </Link>
+                    {(batch as any).ImportSessionID && (
+                        <a
+                            href={`/api/batches/download/${batch.BatchID}`}
+                            title="Download Original CSV"
+                            style={{ fontSize: '1.2rem', textDecoration: 'none' }}
+                        >
+                            📥
+                        </a>
+                    )}
+                </div>
             </td>
         </tr>
     );

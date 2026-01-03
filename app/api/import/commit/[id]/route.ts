@@ -53,10 +53,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         const batchRes = await query(`
             INSERT INTO "Batches" (
                 "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "CreatedBy", "Status", "Date",
-                "DefaultGiftPlatform"
-            ) VALUES ($1, $2, 'Import', 'Donations', $3, 'Open', $4, $5)
+                "DefaultGiftPlatform", "ImportSessionID"
+            ) VALUES ($1, $2, 'Import', 'Donations', $3, 'Open', $4, $5, $6)
             RETURNING "BatchID"
-        `, [batchCode, clientId, userId, batchDate, importSession.source_system]);
+        `, [batchCode, clientId, userId, batchDate, importSession.source_system, sessionId]);
 
         const batchId = batchRes.rows[0].BatchID;
 

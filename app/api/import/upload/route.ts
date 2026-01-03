@@ -30,10 +30,10 @@ export async function POST(request: Request) {
         // 1. Create Import Session
         const sessionRes = await query(`
             INSERT INTO "import_sessions" 
-            ("filename", "source_system", "status", "created_by", "row_count")
-            VALUES ($1, $2, 'Pending', $3, $4)
+            ("filename", "source_system", "status", "created_by", "row_count", "file_content")
+            VALUES ($1, $2, 'Pending', $3, $4, $5)
             RETURNING "id"
-        `, [file.name, sourceSystem, (session.user as any).id, data.length]);
+        `, [file.name, sourceSystem, (session.user as any).id, data.length, text]);
 
         const sessionId = sessionRes.rows[0].id;
 
