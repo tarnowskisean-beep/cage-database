@@ -114,7 +114,7 @@ export async function POST(request: Request) {
             FROM "Donations" d
             JOIN "Batches" b ON d."BatchID" = b."BatchID"
             JOIN "Clients" c ON d."ClientID" = c."ClientID"
-            WHERE ${whereClause}
+            WHERE ${whereClause} AND b."Status" IN ('Closed', 'Reconciled')
             ORDER BY d."GiftDate" DESC
             ${limitClause}
         `;
