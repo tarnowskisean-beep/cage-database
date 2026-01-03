@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         const { limit = 100, ...searchGroupData } = body;
         const searchGroup = searchGroupData as SearchGroup;
 
-        const params: (string | number | boolean | null)[] = [];
+        const params: any[] = [];
         let whereClause = buildWhereClause(searchGroup, params);
 
         // Enforce Client Access Control
