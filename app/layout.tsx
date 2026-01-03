@@ -5,6 +5,8 @@ import Sidebar from './components/Sidebar';
 import { Providers } from './providers';
 import MainLayout from './components/MainLayout';
 
+import PolicyEnforcement from './components/PolicyEnforcement';
+
 const inter = Inter_Tight({ subsets: ['latin'], variable: '--font-inter' });
 const oldStandard = Old_Standard_TT({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-old-standard' });
 
@@ -22,6 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${oldStandard.variable}`} style={{ display: 'flex' }}>
         <Providers>
+          <PolicyEnforcement />
           <Sidebar />
           <MainLayout>
             {children}
