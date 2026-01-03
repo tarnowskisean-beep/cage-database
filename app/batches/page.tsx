@@ -207,7 +207,9 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
         defaultGiftPlatform: 'Cage',
         defaultTransactionType: 'Donation',
         defaultGiftType: 'Individual/Trust/IRA',
-        date: today.toISOString().split('T')[0],
+        defaultGiftType: 'Individual/Trust/IRA',
+        date: new Date().toLocaleDateString('en-CA'), // Returns YYYY-MM-DD in local time
+        defaultGiftYear: currentYear,
         defaultGiftYear: currentYear,
         defaultGiftQuarter: `Q${currentQuarter}`
     });
@@ -397,9 +399,9 @@ function BatchRow({ batch }: { batch: Batch }) {
                             batch.Status === 'Reconciled' ? '#c084fc' :
                                 'var(--color-text-muted)',
                     border: `1px solid ${batch.Status === 'Open' ? '#4ade80' :
-                            batch.Status === 'Closed' ? '#fb923c' :
-                                batch.Status === 'Reconciled' ? '#c084fc' :
-                                    'var(--color-border)'
+                        batch.Status === 'Closed' ? '#fb923c' :
+                            batch.Status === 'Reconciled' ? '#c084fc' :
+                                'var(--color-border)'
                         }`
                 }}>
                     {batch.Status}

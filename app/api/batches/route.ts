@@ -68,8 +68,8 @@ export async function POST(request: Request) {
         SELECT COUNT(*) as count 
         FROM "Batches" 
         WHERE "CreatedBy" = $1 
-        AND "Date"::date = CURRENT_DATE
-      `, [userId]);
+        AND "Date"::date = $2::date
+      `, [userId, body.date || new Date().toISOString()]);
 
     const dailyCount = parseInt(countRes.rows[0].count) + 1;
     const batchCode = `${userInitials}.${dailyCount.toString().padStart(2, '0')}`;
