@@ -24,13 +24,20 @@ const FIELD_MAP: Record<string, string> = {
     'amount': 'd."GiftAmount"',
     'date': 'd."GiftDate"',
     'method': 'd."GiftMethod"',
+    'platform': 'd."GiftPlatform"',
     'checkNumber': 'd."SecondaryID"',
 
     // Donor Fields
-    'donorName': 'd."DonorLastName"', // Simplified for now, really should search first/last
+    'donorName': 'd."DonorLastName"', // Simplified for now
+    'donorFirstName': 'd."DonorFirstName"',
     'donorCity': 'd."DonorCity"',
     'donorState': 'd."DonorState"',
     'donorZip': 'd."DonorZip"',
+    'donorEmail': 'd."DonorEmail"',
+    'donorEmployer': 'd."DonorEmployer"',
+    'donorOccupation': 'd."DonorOccupation"',
+    'orgName': 'd."OrganizationName"',
+    'comment': 'd."Comment"',
 
     // Related Fields
     'clientCode': 'c."ClientCode"',
