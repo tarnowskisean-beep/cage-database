@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { logAction } from '@/lib/audit';
+import { Storage } from '@google-cloud/storage';
 
 export async function GET(
     request: Request,
@@ -14,7 +15,7 @@ export async function GET(
         // For now, we assume authenticated users can view.
 
         const result = await query(
-            `SELECT "FileName", "FileContent", "DocumentType", "BlobUrl" 
+            `SELECT "FileName", "FileContent", "DocumentType", "StorageKey", "BlobUrl" 
              FROM "BatchDocuments" 
              WHERE "BatchDocumentID" = $1`,
             [id]
@@ -29,15 +30,38 @@ export async function GET(
         // SOC 2: Audit Log
         await logAction(userId, 'ViewDocument', id, `Viewed ${doc.FileName}`);
 
-        // Blob Redirect
+        // GCS Signed URL Strategy
+        if (doc.StorageKey && doc.StorageKey.startsWith('gcs:') && process.env.GCS_BUCKET_NAME && process.env.GDRIVE_CREDENTIALS) {
+            const bucketName = process.env.GCS_BUCKET_NAME;
+            const filePath = doc.StorageKey.replace('gcs:', '');
+
+            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
+            const storage = new Storage({
+                projectId: credentials.project_id,
+                credentials,
+            });
+
+            const [url] = await storage
+                .bucket(bucketName)
+                .file(filePath)
+                .getSignedUrl({
+                    version: 'v4',
+                    action: 'read',
+                    expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+                });
+
+            return NextResponse.redirect(url);
+        }
+
+        // Legacy Vercel Blob Redirect
         if (doc.BlobUrl) {
             return NextResponse.redirect(doc.BlobUrl);
         }
 
-        // Return Data Stream (Database Fallback)
+        // Database Fallback (Legacy)
         const headers = new Headers();
-        headers.set('Content-Type', 'application/pdf'); // Simplified mime type handling
-        if (doc.DocumentType === 'CheckImages') headers.set('Content-Type', 'image/png'); // fallback
+        headers.set('Content-Type', 'application/pdf');
+        if (doc.DocumentType === 'CheckImages') headers.set('Content-Type', 'image/png');
         headers.set('Content-Disposition', `inline; filename="${doc.FileName}"`);
 
         return new NextResponse(doc.FileContent, {

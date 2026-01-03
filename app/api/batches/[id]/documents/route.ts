@@ -28,7 +28,20 @@ export async function GET(
     }
 }
 
-import { put } from '@vercel/blob';
+import { Storage } from '@google-cloud/storage';
+
+// Initialize Storage
+// We reuse GDRIVE_CREDENTIALS because it is the same Service Account
+const getStorageClient = () => {
+    if (process.env.GDRIVE_CREDENTIALS) {
+        const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
+        return new Storage({
+            projectId: credentials.project_id,
+            credentials,
+        });
+    }
+    return new Storage(); // Fallback to ADC
+};
 
 export async function POST(
     request: Request,
@@ -51,22 +64,27 @@ export async function POST(
         }
 
         const filename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        let blobUrl = null;
-        let buffer = null;
-        let storageKey = 'db-stored';
+        const bucketName = process.env.GCS_BUCKET_NAME;
 
-        // Check if environment is configured for Blob
-        if (process.env.BLOB_READ_WRITE_TOKEN) {
-            // Upload to Vercel Blob (No 4.5MB limit)
-            const blob = await put(`batches/${id}/${filename}`, file, {
-                access: 'public',
-            });
-            blobUrl = blob.url;
-            storageKey = 'vercel-blob';
+        let storageKey = 'db-stored';
+        let buffer = null;
+
+        // Check if environment is configured for GCS
+        if (bucketName && process.env.GDRIVE_CREDENTIALS) {
+            // Upload to Google Cloud Storage (No size limit, Secure)
+            const storage = getStorageClient();
+            const bucket = storage.bucket(bucketName);
+            const destination = `bath-attachments/${id}/${filename}`;
+            const fileObj = bucket.file(destination);
+
+            const fileBuffer = Buffer.from(await file.arrayBuffer());
+            await fileObj.save(fileBuffer);
+
+            storageKey = `gcs:${destination}`;
         } else {
             // Fallback to Database (4.5MB Limit Applies)
             if (file.size > 4.5 * 1024 * 1024) {
-                return NextResponse.json({ error: 'File too large for database storage. Configure Vercel Blob for >4.5MB.' }, { status: 413 });
+                return NextResponse.json({ error: 'File too large for database. Set GCS_BUCKET_NAME and GDRIVE_CREDENTIALS for large files.' }, { status: 413 });
             }
             buffer = Buffer.from(await file.arrayBuffer());
         }
@@ -76,15 +94,15 @@ export async function POST(
         if (batchCheck.rows.length === 0) return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
 
         await query(
-            `INSERT INTO "BatchDocuments" ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent", "BlobUrl")
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [id, type, filename, storageKey, userId, buffer, blobUrl]
+            `INSERT INTO "BatchDocuments" ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent")
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [id, type, filename, storageKey, userId, buffer]
         );
 
         // SOC 2: Audit Log
-        await logAction(userId, 'UploadDocument', id, `Uploaded ${filename} as ${type} (${file.size} bytes) via ${storageKey}`);
+        await logAction(userId, 'UploadDocument', id, `Uploaded ${filename} as ${type} (${file.size} bytes) via ${storageKey.split(':')[0]}`);
 
-        return NextResponse.json({ success: true, url: blobUrl });
+        return NextResponse.json({ success: true });
     } catch (e: any) {
         console.error('Upload Error:', e);
         return NextResponse.json({ error: e.message || 'Upload failed' }, { status: 500 });
