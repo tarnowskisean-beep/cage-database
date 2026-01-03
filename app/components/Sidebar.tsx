@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Sidebar() {
+    const { data: session } = useSession();
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -83,18 +85,51 @@ export default function Sidebar() {
             {/* User Profile */}
             <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border-subtle)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'white', flexShrink: 0 }}></div>
-                {!isCollapsed && (
-                    <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontWeight: 500, color: 'white', whiteSpace: 'nowrap' }}>Alyssa Graham</div>
-                        <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Clerk</div>
+                <div style={{
+                    marginTop: 'auto',
+                    padding: '1rem',
+                    borderTop: '1px solid var(--color-border-subtle)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: isCollapsed ? 'center' : 'start' }}>
+                        <div style={{
+                            width: '32px', height: '32px', borderRadius: '50%', background: 'white', color: 'black',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem'
+                        }}>
+                            {session?.user?.name ? session.user.name.slice(0, 1).toUpperCase() : 'AG'}
+                        </div>
+
+                        {!isCollapsed && (
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {session?.user?.name || 'Alyssa Graham'}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                    {session?.user?.email ? 'Clerk' : 'Clerk'}
+                                </div>
+                                <button
+                                    onClick={() => signOut({ callbackUrl: '/login' })}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#f87171',
+                                        fontSize: '0.75rem',
+                                        cursor: 'pointer',
+                                        padding: '0',
+                                        marginTop: '0.25rem',
+                                        textDecoration: 'underline'
+                                    }}
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
+                </div>
         </aside>
     );
 }
 
-function NavLink({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) {
+function NavItem({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) {
     return (
         <li>
             <Link href={href} style={{

@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Outfit } from 'next/font/google';
 import Sidebar from './components/Sidebar';
+import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
@@ -19,10 +20,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${outfit.variable}`} style={{ display: 'flex', background: 'var(--color-bg-base)', color: 'var(--color-text-main)' }}>
-        <Sidebar />
-        <main style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '2rem' }}>
-          {children}
-        </main>
+        <Providers>
+          <Sidebar />
+          <main style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '2rem' }}>
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );
