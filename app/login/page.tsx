@@ -195,37 +195,7 @@ export default function LoginPage() {
                     {loading ? 'AUTHENTICATING...' : (show2FA ? 'VERIFY' : 'ENTER')}
                 </button>
 
-                {/* Temporary Troubleshoot Button */}
-                <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            if (!confirm('This will repair the database structure and reset the admin password. Continue?')) return;
-                            try {
-                                const res = await fetch('/api/dev/seed-user', { method: 'POST' });
-                                const text = await res.text();
-                                try {
-                                    const data = JSON.parse(text);
-                                    alert(data.message || JSON.stringify(data));
-                                } catch (err) {
-                                    alert(`Failed to parse JSON. Status: ${res.status}. Response: ${text.substring(0, 100)}...`);
-                                }
-                            } catch (e) {
-                                alert('Network Error: ' + e);
-                            }
-                        }}
-                        style={{
-                            background: 'none',
-                            border: '1px dashed #666',
-                            color: '#888',
-                            padding: '0.5rem 1rem',
-                            cursor: 'pointer',
-                            fontSize: '0.7rem'
-                        }}
-                    >
-                        Troubleshoot: Repair Database
-                    </button>
-                </div>
+                {/* Temporary Troubleshoot Button Removed */}
             </form>
         </div>
     );
