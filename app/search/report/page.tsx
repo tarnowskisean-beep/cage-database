@@ -232,37 +232,78 @@ function ReportContent() {
             </div>
 
             {/* BOTTOM: Caging Activity (Mailcode breakdown) */}
+            {/* BOTTOM: Caging Activity (Mailcode breakdown) */}
             <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center', background: '#ccc', padding: '4px', border: '1px solid black' }}>
-                Caging Activity
+                Caging Activity (Matrix)
             </h3>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '0.75rem' }}>
                 <thead>
                     <tr style={{ background: '#eee' }}>
                         <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left' }}>Mail Code</th>
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left' }}>Method</th>
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Count</th>
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Sum</th>
+                        {/* Dynamic Method Columns */}
+                        {Object.keys(methods).sort().map(m => (
+                            <th key={m} colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{m}</th>
+                        ))}
+                        <th colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center', background: '#ddd' }}>Total</th>
+                    </tr>
+                    <tr style={{ background: '#eee', fontSize: '0.7rem' }}>
+                        <th style={{ border: '1px solid black', padding: '4px' }}></th>
+                        {Object.keys(methods).sort().map(m => (
+                            <>
+                                <th key={`${m}-cnt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Cnt</th>
+                                <th key={`${m}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>$</th>
+                            </>
+                        ))}
+                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Cnt</th>
+                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>$</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {Object.entries(cagingActivity)
-                        .sort((a, b) => a[0].localeCompare(b[0])) // Sort by MailCode
-                        .map(([key, stats]) => {
-                            const [mailCode, method] = key.split('::');
-                            return (
-                                <tr key={key}>
-                                    <td style={{ border: '1px solid black', padding: '4px' }}>{mailCode}</td>
-                                    <td style={{ border: '1px solid black', padding: '4px' }}>{method}</td>
-                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{stats.count}</td>
-                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${stats.sum.toFixed(2)}</td>
-                                </tr>
-                            );
-                        })}
+                    {/* Compute Unique MailCodes */}
+                    {Array.from(new Set(results.map(r => {
+                        if (r.ScanString && r.ScanString.includes('\t')) return r.ScanString.split('\t')[0];
+                        return r.MailCode || 'No Mail Code';
+                    }))).sort().map(mailCode => {
+                        let rowCount = 0;
+                        let rowSum = 0;
+
+                        return (
+                            <tr key={mailCode}>
+                                <td style={{ border: '1px solid black', padding: '4px', fontWeight: 600 }}>{mailCode}</td>
+                                {Object.keys(methods).sort().map(method => {
+                                    const key = `${mailCode}::${method}`;
+                                    const stats = cagingActivity[key] || { count: 0, sum: 0 };
+                                    rowCount += stats.count;
+                                    rowSum += stats.sum;
+
+                                    return (
+                                        <>
+                                            <td key={`${method}-cnt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center', color: stats.count ? 'black' : '#ccc' }}>
+                                                {stats.count || '-'}
+                                            </td>
+                                            <td key={`${method}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'right', color: stats.sum ? 'black' : '#ccc' }}>
+                                                {stats.sum ? stats.sum.toFixed(2) : '-'}
+                                            </td>
+                                        </>
+                                    );
+                                })}
+                                {/* Row Total */}
+                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{rowCount}</td>
+                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right', fontWeight: 'bold' }}>{rowSum.toFixed(2)}</td>
+                            </tr>
+                        );
+                    })}
                     {/* Grand Total Row */}
-                    <tr style={{ fontWeight: 'bold', background: '#f9f9f9' }}>
-                        <td style={{ border: '1px solid black', padding: '4px' }} colSpan={2}>Grand Total</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{count}</td>
+                    <tr style={{ fontWeight: 'bold', background: '#f9f9f9', borderTop: '2px solid black' }}>
+                        <td style={{ border: '1px solid black', padding: '4px' }}>Grand Total</td>
+                        {Object.keys(methods).sort().map(m => (
+                            <>
+                                <td key={`${m}-tot-cnt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{methods[m].count}</td>
+                                <td key={`${m}-tot-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{methods[m].sum.toFixed(2)}</td>
+                            </>
+                        ))}
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{count}</td>
                         <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${totalAmount.toFixed(2)}</td>
                     </tr>
                 </tbody>
