@@ -32,6 +32,45 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
         // Construct update query dynamically (simplistic for now)
         if (status) {
+            // Validation Logic for CLOSING
+            if (status === 'Closed') {
+                const batchRes = await query(`
+                    SELECT "PaymentCategory" FROM "Batches" WHERE "BatchID" = $1
+                `, [id]);
+
+                const docsRes = await query(`
+                    SELECT "DocumentType" FROM "BatchDocuments" WHERE "BatchID" = $1
+                `, [id]);
+
+                if (batchRes.rows.length === 0) {
+                    return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
+                }
+
+                const paymentCategory = batchRes.rows[0].PaymentCategory;
+                const uploadedTypes = new Set(docsRes.rows.map(d => d.DocumentType));
+
+                const missing = [];
+
+                if (['Checks', 'Mixed'].includes(paymentCategory)) {
+                    if (!uploadedTypes.has('ReplySlipsPDF')) missing.push('Reply Slips');
+                    if (!uploadedTypes.has('ChecksPDF')) missing.push('Check Images');
+                }
+                else if (paymentCategory === 'CC') {
+                    if (!uploadedTypes.has('ReplySlipsPDF')) missing.push('Reply Slips');
+                }
+                else if (paymentCategory === 'Cash') {
+                    if (!uploadedTypes.has('ReplySlipsPDF')) missing.push('Reply Slips');
+                    if (!uploadedTypes.has('DepositSlip')) missing.push('Deposit Slip');
+                }
+
+                if (missing.length > 0) {
+                    return NextResponse.json(
+                        { error: `Cannot close batch. Missing required documents: ${missing.join(', ')}` },
+                        { status: 400 }
+                    );
+                }
+            }
+
             const result = await query(`
                 UPDATE "Batches" 
                 SET "Status" = $1 

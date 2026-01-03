@@ -11,6 +11,7 @@ export interface Batch {
     DefaultGiftMethod?: string;
     DefaultGiftYear?: number;
     DefaultGiftQuarter?: string;
+    PaymentCategory: string;
 }
 
 export interface Client {

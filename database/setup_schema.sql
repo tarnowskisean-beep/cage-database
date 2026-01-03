@@ -61,11 +61,27 @@ BEGIN
 CREATE TABLE BatchDocuments (
     BatchDocumentID INT IDENTITY(1,1) PRIMARY KEY,
     BatchID INT NOT NULL FOREIGN KEY REFERENCES Batches(BatchID),
-    DocumentType NVARCHAR(50) NOT NULL CHECK (DocumentType IN ('ReplySlipsPDF', 'ChecksPDF')),
+    DocumentType NVARCHAR(50) NOT NULL CHECK (DocumentType IN ('ReplySlipsPDF', 'ChecksPDF', 'DepositSlip')),
     FileName NVARCHAR(255) NOT NULL,
     StorageKey NVARCHAR(500) NOT NULL,
     UploadedBy INT NOT NULL FOREIGN KEY REFERENCES Users(UserID),
-    UploadedAt DATETIME2 DEFAULT SYSUTCDATETIME()
+    UploadedAt DATETIME2 DEFAULT SYSUTCDATETIME(),
+    FileContent VARBINARY(MAX) -- Secure Storage
+);
+END
+GO
+
+-- AuditLogs Table (SOC 2)
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[AuditLogs]') AND type in (N'U'))
+BEGIN
+CREATE TABLE AuditLogs (
+    LogID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT NOT NULL FOREIGN KEY REFERENCES Users(UserID),
+    Action NVARCHAR(50) NOT NULL,
+    EntityID NVARCHAR(50),
+    Details NVARCHAR(MAX),
+    IPAddress NVARCHAR(50),
+    Timestamp DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 END
 GO

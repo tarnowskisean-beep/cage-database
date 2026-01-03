@@ -7,6 +7,7 @@ import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
 import { useBatchEntry } from '@/app/hooks/useBatchEntry';
 import { faker } from '@faker-js/faker';
+import BatchAttachments from '@/app/components/BatchAttachments';
 
 export default function BatchEntry({ id }: { id: string }) {
     const {
@@ -130,7 +131,10 @@ export default function BatchEntry({ id }: { id: string }) {
                 body: JSON.stringify({ status: newStatus })
             });
             if (res.ok) {
-                window.location.reload(); // Simple reload to reflect state
+                window.location.reload();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to update batch status');
             }
         } catch (e) { console.error(e); }
     };
@@ -431,9 +435,13 @@ export default function BatchEntry({ id }: { id: string }) {
                     </div>
                 </div>
 
-                {/* RIGHT SIDEBAR (HISTORY) */}
+                {/* RIGHT SIDEBAR (HISTORY & ATTACHMENTS) */}
                 <div style={{ width: '300px', background: 'var(--color-bg-sidebar)', borderLeft: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>RECENT SCANS</div>
+
+                    {/* ATTACHMENTS */}
+                    {batch && <BatchAttachments batchId={id} paymentCategory={batch.PaymentCategory} />}
+
+                    <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem' }}>RECENT SCANS</div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {records.map(r => (
                             <div

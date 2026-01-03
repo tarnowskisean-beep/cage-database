@@ -40,11 +40,23 @@ CREATE TABLE IF NOT EXISTS "Batches" (
 CREATE TABLE IF NOT EXISTS "BatchDocuments" (
     "BatchDocumentID" SERIAL PRIMARY KEY,
     "BatchID" INT NOT NULL REFERENCES "Batches"("BatchID"),
-    "DocumentType" TEXT NOT NULL CHECK ("DocumentType" IN ('ReplySlipsPDF', 'ChecksPDF')),
+    "DocumentType" TEXT NOT NULL CHECK ("DocumentType" IN ('ReplySlipsPDF', 'ChecksPDF', 'DepositSlip')),
     "FileName" TEXT NOT NULL,
     "StorageKey" TEXT NOT NULL,
     "UploadedBy" INT NOT NULL REFERENCES "Users"("UserID"),
-    "UploadedAt" TIMESTAMPTZ DEFAULT NOW()
+    "UploadedAt" TIMESTAMPTZ DEFAULT NOW(),
+    "FileContent" BYTEA -- Secure Storage
+);
+
+-- AuditLogs Table (SOC 2)
+CREATE TABLE IF NOT EXISTS "AuditLogs" (
+    "LogID" SERIAL PRIMARY KEY,
+    "UserID" INT NOT NULL REFERENCES "Users"("UserID"),
+    "Action" TEXT NOT NULL, -- e.g. ViewDocument, UploadDocument, CloseBatch
+    "EntityID" TEXT, -- e.g. BatchID or DocumentID
+    "Details" TEXT,
+    "IPAddress" TEXT,
+    "Timestamp" TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Donations Table
