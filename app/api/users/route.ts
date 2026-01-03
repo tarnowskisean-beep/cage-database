@@ -1,62 +1,55 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin') {
-        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
-    }
-
     try {
-        const result = await query(`
-            SELECT "UserID", "Username", "Email", "Role", "Initials", "CreatedAt"
-            FROM "Users"
-            ORDER BY "Username" ASC
-        `);
-        return NextResponse.json(result.rows);
-    } catch (e) {
-        console.error(e);
-        return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+        const session = await getServerSession(authOptions);
+        if (!session || (session.user as any).role !== 'Admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const res = await query('SELECT "UserID", "Username", "Email", "Role", "Initials", "IsActive", "CreatedAt" FROM "Users" ORDER BY "Username" ASC');
+        return NextResponse.json(res.rows);
+    } catch (error) {
+        console.error('GET /api/users error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin') {
-        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
-    }
-
     try {
-        const body = await request.json();
-        const { username, email, password, role } = body;
+        const session = await getServerSession(authOptions);
+        if (!session || (session.user as any).role !== 'Admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
+        const body = await request.json();
+        const { username, email, password, role, initials } = body;
+
+        // Validation
         if (!username || !email || !password || !role) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const initials = username.slice(0, 2).toUpperCase();
+        // Hash Password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-        const result = await query(`
-            INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials")
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING "UserID", "Username", "Email", "Role", "Initials"
-        `, [username, email, hashedPassword, role, initials]);
+        const res = await query(`
+            INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials", "IsActive")
+            VALUES ($1, $2, $3, $4, $5, true)
+            RETURNING "UserID", "Username", "Email", "Role", "Initials", "CreatedAt"
+        `, [username, email, hashedPassword, role, initials || username.slice(0, 2).toUpperCase()]);
 
-        return NextResponse.json(result.rows[0]);
-
-    } catch (e: any) {
-        console.error(e);
-        if (e.code === '23505') { // Unique violation
+        return NextResponse.json(res.rows[0]);
+    } catch (error: any) {
+        console.error('POST /api/users error:', error);
+        if (error.code === '23505') { // Unique violation
             return NextResponse.json({ error: 'Username or Email already exists' }, { status: 409 });
         }
-        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

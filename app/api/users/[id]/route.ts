@@ -1,64 +1,88 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '../../auth/[...nextauth]/route';
+import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
-export async function PATCH(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin') {
-        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
-    }
-
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await params;
-        const body = await request.json();
-        const { role } = body;
-
-        if (!role) {
-            return NextResponse.json({ error: 'Missing role' }, { status: 400 });
+        const session = await getServerSession(authOptions);
+        if (!session || (session.user as any).role !== 'Admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const result = await query(`
-            UPDATE "Users"
-            SET "Role" = $1
-            WHERE "UserID" = $2
-            RETURNING "UserID", "Username", "Role"
-        `, [role, id]);
+        const { id } = await params;
+        const body = await request.json();
+        const { email, role, password, is_active } = body;
 
-        if (result.rows.length === 0) {
+        // Build Update Query dynamically
+        const updates: string[] = [];
+        const values: any[] = [];
+        let queryIdx = 1;
+
+        if (email) {
+            updates.push(`"Email" = $${queryIdx++}`);
+            values.push(email);
+        }
+        if (role) {
+            updates.push(`"Role" = $${queryIdx++}`);
+            values.push(role);
+        }
+        if (is_active !== undefined) {
+            updates.push(`"IsActive" = $${queryIdx++}`);
+            values.push(is_active);
+        }
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            updates.push(`"PasswordHash" = $${queryIdx++}`);
+            values.push(hashedPassword);
+        }
+
+        if (updates.length === 0) {
+            return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+        }
+
+        values.push(id);
+        const sql = `UPDATE "Users" SET ${updates.join(', ')} WHERE "UserID" = $${queryIdx} RETURNING "UserID", "Username", "Email", "Role", "IsActive"`;
+
+        const res = await query(sql, values);
+
+        if (res.rowCount === 0) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        return NextResponse.json(result.rows[0]);
-    } catch (e) {
-        console.error(e);
-        return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+        return NextResponse.json(res.rows[0]);
+    } catch (error) {
+        console.error('PUT /api/users/[id] error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
-export async function DELETE(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin') {
-        return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
-    }
-
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session || (session.user as any).role !== 'Admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { id } = await params;
 
-        // Prevent deleting the last Admin or self (logic for self-deletion check often simpler on frontend or context)
-        // For now, simple Delete.
+        // Prevent deleting self
+        if ((session.user as any).id === id) {
+            return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+        }
 
-        await query(`DELETE FROM "Users" WHERE "UserID" = $1`, [id]);
-        return NextResponse.json({ success: true });
-    } catch (e) {
-        console.error(e);
-        return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+        // Soft Delete (Set IsActive = false)
+        const res = await query('UPDATE "Users" SET "IsActive" = false WHERE "UserID" = $1 RETURNING "UserID"', [id]);
+
+        if (res.rowCount === 0) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: 'User deactivated' });
+    } catch (error) {
+        console.error('DELETE /api/users/[id] error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
