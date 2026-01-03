@@ -14,6 +14,40 @@ export default function ImportPage() {
 
     // Staging Data
     const [stagingRows, setStagingRows] = useState<any[]>([]);
+    const [clients, setClients] = useState<any[]>([]);
+    const [selectedClientId, setSelectedClientId] = useState<number | ''>('');
+
+    // Load Clients on Mount
+    useState(() => {
+        fetch('/api/clients').then(res => res.json()).then(data => setClients(data));
+    });
+
+    const handleCommit = async () => {
+        if (!sessionId || !selectedClientId) return;
+        if (!confirm('This will create a new Batch and insert all valid records. Continue?')) return;
+
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/import/commit/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientId: selectedClientId })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(`Success! Created Batch: ${data.batchCode}`);
+                router.push(`/batches/${data.batchId}/enter`);
+            } else {
+                alert('Commit Failed: ' + data.error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Commit Error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -143,7 +177,32 @@ export default function ImportPage() {
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h3>Review Data</h3>
-                        <button className="btn-primary" disabled>Commit to Database (Coming Soon)</button>
+
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 500 }}>Assign to Client</label>
+                                <select
+                                    className="input-field"
+                                    style={{ padding: '0.5rem' }}
+                                    value={selectedClientId}
+                                    onChange={e => setSelectedClientId(Number(e.target.value))}
+                                >
+                                    <option value="">Select Client...</option>
+                                    {clients.map(c => (
+                                        <option key={c.ClientID} value={c.ClientID}>{c.ClientName} ({c.ClientCode})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <button
+                                onClick={handleCommit}
+                                className="btn-primary"
+                                disabled={loading || !selectedClientId}
+                                style={{ height: '42px', marginTop: 'auto' }}
+                            >
+                                {loading ? 'Committing...' : 'Commit to Database'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="glass-panel" style={{ overflowX: 'auto', padding: '0' }}>
