@@ -1,21 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// --- TYPES ---
+// --- TYPES (Internal to map to Backend) ---
 type Operator = 'AND' | 'OR';
 type RuleOperator = 'equals' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'neq';
 
 interface SearchRule {
-    id: string; // internal for React keys
     field: string;
     operator: RuleOperator;
-    value: string;
+    value: string | number;
 }
 
 interface SearchGroup {
-    id: string; // internal for React keys
     combinator: Operator;
     rules: (SearchRule | SearchGroup)[];
 }
@@ -58,128 +56,85 @@ interface SearchResult {
     Comment?: string;
 }
 
-// Default initial state
-const initialQuery: SearchGroup = {
-    id: 'root',
-    combinator: 'AND',
-    rules: [
-        { id: 'rule-1', field: 'donorName', operator: 'contains', value: '' }
-    ]
+// --- HELPER: Date Logic ---
+const getWeeklyRange = () => {
+    const today = new Date();
+    const day = today.getDay(); // 0 is Sunday, 6 is Saturday
+
+    // Find most recent Saturday (Start of current week cycle)
+    const diff = (day + 1) % 7;
+    const start = new Date(today);
+    start.setDate(today.getDate() - diff);
+
+    // End is start + 6 days (Friday)
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    const formatDate = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    return {
+        start: formatDate(start),
+        end: formatDate(end)
+    };
 };
 
-// Field Definitions
-const FIELDS = [
-    { value: 'donorName', label: 'Donor Name' },
-    { value: 'amount', label: 'Gift Amount' },
-    { value: 'date', label: 'Gift Date' },
-    { value: 'method', label: 'Payment Method' },
-    { value: 'platform', label: 'Platform' },
-    { value: 'checkNumber', label: 'Check Number' },
-    { value: 'donorCity', label: 'City' },
-    { value: 'donorState', label: 'State' },
-    { value: 'donorZip', label: 'Zip Code' },
-    { value: 'donorEmail', label: 'Email' },
-    { value: 'donorEmployer', label: 'Employer' },
-    { value: 'donorOccupation', label: 'Occupation' },
-    { value: 'orgName', label: 'Organization' },
-    { value: 'comment', label: 'Comment' },
-    { value: 'clientCode', label: 'Client Code' },
-    { value: 'batchCode', label: 'Batch Code' },
-];
-
-const OPERATORS = [
-    { value: 'equals', label: 'Equals' },
-    { value: 'contains', label: 'Contains' },
-    { value: 'neq', label: 'Does Not Equal' },
-    { value: 'gt', label: 'Greater Than' },
-    { value: 'lt', label: 'Less Than' },
-    { value: 'gte', label: 'Greater/Equal' },
-    { value: 'lte', label: 'Less/Equal' },
-];
-
 export default function SearchPage() {
-    const [query, setQuery] = useState<SearchGroup>(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
+    const [clients, setClients] = useState<{ ClientID: number, ClientCode: string, ClientName: string }[]>([]);
 
-    // --- RECURSIVE UPDATE HELPERS ---
-    // Deeply update the query tree. This identifies the target node by ID and modifies it.
-    const updateGroup = (group: SearchGroup, targetId: string, transform: (g: SearchGroup) => SearchGroup): SearchGroup => {
-        if (group.id === targetId) return transform(group);
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return updateGroup(r as SearchGroup, targetId, transform);
-                return r; // rules are leaves, handled by updateRule
-            })
-        };
-    };
+    // Simple Filters State
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [clientCode, setClientCode] = useState('');
+    const [donorName, setDonorName] = useState('');
+    const [amountMin, setAmountMin] = useState('');
+    const [amountMax, setAmountMax] = useState('');
+    const [checkNumber, setCheckNumber] = useState('');
 
-    const updateRule = (group: SearchGroup, ruleId: string, transform: (r: SearchRule) => SearchRule): SearchGroup => {
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return updateRule(r as SearchGroup, ruleId, transform);
-                if (r.id === ruleId) return transform(r as SearchRule);
-                return r;
-            })
-        };
-    };
+    useEffect(() => {
+        // Set Default Dates
+        const range = getWeeklyRange();
+        setStartDate(range.start);
+        setEndDate(range.end);
 
-    const addRuleToGroup = (group: SearchGroup, targetGroupId: string): SearchGroup => {
-        if (group.id === targetGroupId) {
-            return {
-                ...group,
-                rules: [...group.rules, { id: `rule-${Math.random()}`, field: 'donorName', operator: 'contains', value: '' }]
-            };
-        }
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return addRuleToGroup(r as SearchGroup, targetGroupId);
-                return r;
-            })
-        };
-    };
+        // Fetch Clients for dropdown
+        fetch('/api/clients')
+            .then(res => res.json())
+            .then(data => setClients(data))
+            .catch(console.error);
+    }, []);
 
-    const addGroupToGroup = (group: SearchGroup, targetGroupId: string): SearchGroup => {
-        if (group.id === targetGroupId) {
-            return {
-                ...group,
-                rules: [...group.rules, {
-                    id: `group-${Math.random()}`,
-                    combinator: 'AND',
-                    rules: [{ id: `rule-${Math.random()}`, field: 'donorName', operator: 'contains', value: '' }]
-                }]
-            };
-        }
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return addGroupToGroup(r as SearchGroup, targetGroupId);
-                return r;
-            })
-        };
-    };
-
-    const removeNode = (group: SearchGroup, targetId: string): SearchGroup => {
-        return {
-            ...group,
-            rules: group.rules
-                .filter(r => r.id !== targetId)
-                .map(r => {
-                    if ('combinator' in r) return removeNode(r as SearchGroup, targetId);
-                    return r;
-                })
-        };
-    };
-
-    // --- ACTIONS ---
     const handleSearch = async () => {
         setLoading(true);
         setSearched(true);
         try {
+            // Construct the Complex Group Object for the Backend
+            const rules: SearchRule[] = [];
+
+            if (startDate) rules.push({ field: 'date', operator: 'gte', value: startDate });
+            if (endDate) rules.push({ field: 'date', operator: 'lte', value: endDate });
+
+            if (clientCode) rules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
+
+            if (donorName) rules.push({ field: 'donorName', operator: 'contains', value: donorName });
+
+            if (amountMin) rules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
+            if (amountMax) rules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
+
+            if (checkNumber) rules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
+
+            const query: SearchGroup = {
+                combinator: 'AND',
+                rules: rules
+            };
+
             const res = await fetch('/api/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -195,11 +150,10 @@ export default function SearchPage() {
         }
     };
 
-    // --- EXPORT ---
     const handleExportCSV = () => {
         if (!results || results.length === 0) return alert('No results to export');
 
-        // Headers as requested
+        // Headers
         const headers = [
             'DonationID', 'ClientID', 'Date Created', 'CagingID', 'MailCode', 'Prefix',
             'First Name', 'Middle Name', 'Last Name', 'Suffix', 'Address', 'City', 'State', 'Zip',
@@ -213,7 +167,6 @@ export default function SearchPage() {
 
         // Mapped Rows
         const csvRows = results.map(r => {
-            // Helper to escape CSV content
             const esc = (val: string | number | null | undefined) => {
                 if (val === null || val === undefined) return '';
                 const str = String(val);
@@ -223,21 +176,15 @@ export default function SearchPage() {
                 return str;
             };
 
-            // Parse Scan String for MailCode (assuming tab sep or similar, simple logic for now)
-            // If ScanString contains TAB, part 0 is Mail Code.
             let mailCode = '';
-            // We need ScanString in SearchResult! (Types need update)
-            // But 'r' is SearchResult. Let's use 'any' cast if fields missing or update types in next step.
-            // Using 'any' for now to safely access fields that backend sends but strict type might miss until updated.
             const rec = r as any;
-
             if (rec.ScanString && rec.ScanString.includes('\t')) {
                 mailCode = rec.ScanString.split('\t')[0];
             }
 
             return [
                 esc(rec.DonationID),
-                esc(rec.ClientCode), // User requested Client Code instead of ID number
+                esc(rec.ClientCode),
                 esc(rec.CreatedAt ? new Date(rec.CreatedAt).toLocaleDateString('en-US') : ''),
                 esc(rec.DonationID),
                 esc(mailCode),
@@ -267,11 +214,9 @@ export default function SearchPage() {
                 esc(rec.GiftQuarter),
                 esc(rec.GiftConduit),
                 esc(rec.Comment),
-                esc(rec.BatchID), // BatchID is fine as number? Headers say BatchID. Or BatchCode? Keeping ID.
-                esc(rec.BatchCode), // Batch Date header... mapping to Code? 
-                '', // CC Account
-                '', // CVV
-                ''  // Exp
+                esc(rec.BatchID),
+                esc(rec.BatchCode),
+                '', '', ''
             ].join(',');
         });
 
@@ -287,135 +232,147 @@ export default function SearchPage() {
 
     const handleGenerateReport = () => {
         if (!searched) return alert('Please run a search first.');
+        // We need to reconstruct the query for the report URL too
+        const rules: SearchRule[] = [];
+        if (startDate) rules.push({ field: 'date', operator: 'gte', value: startDate });
+        if (endDate) rules.push({ field: 'date', operator: 'lte', value: endDate });
+        if (clientCode) rules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
+        if (donorName) rules.push({ field: 'donorName', operator: 'contains', value: donorName });
+        if (amountMin) rules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
+        if (amountMax) rules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
+        if (checkNumber) rules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
+
+        const query: SearchGroup = { combinator: 'AND', rules };
+
         const url = `/search/report?q=${encodeURIComponent(JSON.stringify(query))}`;
         window.open(url, '_blank');
     };
-
-    // --- RENDERERS ---
-    const renderRule = (rule: SearchRule) => (
-        <div key={rule.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <select
-                className="input-field"
-                style={{ width: '150px' }}
-                value={rule.field}
-                onChange={e => setQuery(prev => updateRule(prev, rule.id, r => ({ ...r, field: e.target.value })))}
-            >
-                {FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
-
-            <select
-                className="input-field"
-                style={{ width: '150px' }}
-                value={rule.operator}
-                onChange={e => setQuery(prev => updateRule(prev, rule.id, r => ({ ...r, operator: e.target.value as RuleOperator })))}
-            >
-                {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-
-            <input
-                className="input-field"
-                style={{ width: '200px' }}
-                value={rule.value}
-                onChange={e => setQuery(prev => updateRule(prev, rule.id, r => ({ ...r, value: e.target.value })))}
-                placeholder="Value..."
-            />
-
-            <button
-                onClick={() => setQuery(prev => removeNode(prev, rule.id))}
-                style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '1.2rem' }}
-                title="Remove Rule"
-            >
-                ×
-            </button>
-        </div>
-    );
-
-    const renderGroup = (group: SearchGroup, isRoot = false) => (
-        <div key={group.id} style={{
-            padding: '1rem',
-            border: isRoot ? 'none' : '1px solid var(--color-border)',
-            background: isRoot ? 'transparent' : 'var(--color-bg-elevated)',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1rem',
-            position: 'relative'
-        }}>
-            {/* Group Header */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
-                <select
-                    className="input-field"
-                    style={{ width: '80px', fontWeight: 600, color: 'var(--color-primary)' }}
-                    value={group.combinator}
-                    onChange={e => setQuery(prev => updateGroup(prev, group.id, g => ({ ...g, combinator: e.target.value as Operator })))}
-                >
-                    <option value="AND">AND</option>
-                    <option value="OR">OR</option>
-                </select>
-
-                <div style={{ flex: 1 }}></div>
-
-                <button
-                    onClick={() => setQuery(prev => addRuleToGroup(prev, group.id))}
-                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px', color: 'var(--color-text-main)' }}
-                >
-                    + Rule
-                </button>
-                <button
-                    onClick={() => setQuery(prev => addGroupToGroup(prev, group.id))}
-                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px', color: 'var(--color-text-main)' }}
-                >
-                    + Group
-                </button>
-                {!isRoot && (
-                    <button
-                        onClick={() => setQuery(prev => removeNode(prev, group.id))}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '1.2rem', marginLeft: '0.5rem' }}
-                        title="Remove Group"
-                    >
-                        ×
-                    </button>
-                )}
-            </div>
-
-            {/* Children */}
-            <div style={{ paddingLeft: isRoot ? 0 : '1rem' }}>
-                {group.rules.map(item => {
-                    if ('combinator' in item) return renderGroup(item as SearchGroup);
-                    return renderRule(item as SearchRule);
-                })}
-            </div>
-        </div>
-    );
 
     return (
         <div>
             <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>Advanced Search</h1>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Build complex queries to find donations.</p>
+                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>Search</h1>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Search donations by date, donor, or client.</p>
                 </div>
                 <Link href="/" className="btn-secondary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
             </header>
 
-            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-                {renderGroup(query, true)}
-                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem', display: 'flex', gap: '1rem' }}>
-                    <button className="btn-primary" onClick={handleSearch} disabled={loading}>
+            {/* Simple Search Form matching Dashboard Style */}
+            <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
+                </div>
+
+                {/* Client */}
+                <select
+                    className="input-field"
+                    style={{ width: 'auto', minWidth: '200px' }}
+                    value={clientCode}
+                    onChange={e => setClientCode(e.target.value)}
+                >
+                    <option value="">All Clients</option>
+                    {clients.map(c => (
+                        <option key={c.ClientID} value={c.ClientCode}>{c.ClientCode} - {c.ClientName}</option>
+                    ))}
+                </select>
+
+                {/* Date Range */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
+                    <input
+                        type="date"
+                        className="input-field"
+                        style={{ width: 'auto' }}
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
+                        onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                    />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
+                    <input
+                        type="date"
+                        className="input-field"
+                        style={{ width: 'auto' }}
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                        onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                    />
+                </div>
+
+                {/* Additional Filters inline */}
+                <input
+                    className="input-field"
+                    placeholder="Ref #"
+                    style={{ width: '120px' }}
+                    value={checkNumber}
+                    onChange={e => setCheckNumber(e.target.value)}
+                />
+
+                <input
+                    className="input-field"
+                    placeholder="Donor Name"
+                    style={{ width: '150px' }}
+                    value={donorName}
+                    onChange={e => setDonorName(e.target.value)}
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <input
+                        type="number"
+                        className="input-field"
+                        placeholder="Min $"
+                        style={{ width: '80px' }}
+                        value={amountMin}
+                        onChange={e => setAmountMin(e.target.value)}
+                    />
+                    <span style={{ color: 'var(--color-text-muted)' }}>-</span>
+                    <input
+                        type="number"
+                        className="input-field"
+                        placeholder="Max $"
+                        style={{ width: '80px' }}
+                        value={amountMax}
+                        onChange={e => setAmountMax(e.target.value)}
+                    />
+                </div>
+
+                <div style={{ flex: 1 }}></div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn-primary" onClick={handleSearch} disabled={loading} style={{ padding: '0.5rem 1rem' }}>
                         {loading ? 'Searching...' : 'Run Search'}
                     </button>
-                    {results.length > 0 && (
-                        <>
-                            <button className="btn-secondary" onClick={handleExportCSV}>
-                                Export CSV
-                            </button>
-                            <button className="btn-secondary" onClick={handleGenerateReport}>
-                                📄 Report
-                            </button>
-                        </>
+                    {(
+                        <button
+                            onClick={() => {
+                                setClientCode('');
+                                setStartDate(''); // Should reset to default really, but empty is fine to clear
+                                setEndDate('');
+                                setCheckNumber('');
+                                setDonorName('');
+                                setAmountMin('');
+                                setAmountMax('');
+                            }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+                        >
+                            Clear
+                        </button>
                     )}
                 </div>
             </div>
 
-            {/* Results */}
+            {/* Action Buttons Row (Only if results exist) */}
+            {results.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+                    <button className="btn-secondary" onClick={handleExportCSV}>Export CSV</button>
+                    <button className="btn-secondary" onClick={handleGenerateReport}>📄 Report</button>
+                </div>
+            )}
+
+            {/* Results Table */}
             {searched && (
                 <div className="glass-panel" style={{ padding: '1.5rem' }}>
                     <h3 style={{ marginBottom: '1rem' }}>Results ({results.length}{results.length >= 100 ? '+' : ''})</h3>

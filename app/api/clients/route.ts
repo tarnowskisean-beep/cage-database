@@ -40,23 +40,56 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     try {
-        const body = await request.json();
-        const { id, name, logoUrl } = body;
+        const contentType = request.headers.get('content-type') || '';
 
-        if (!id || !name) {
-            return NextResponse.json({ error: 'Client ID and Name are required' }, { status: 400 });
+        if (contentType.includes('multipart/form-data')) {
+            const formData = await request.formData();
+            const id = formData.get('id') as string;
+            const name = formData.get('name') as string;
+            const file = formData.get('logo') as File | null;
+
+            if (!id || !name) {
+                return NextResponse.json({ error: 'Client ID and Name are required' }, { status: 400 });
+            }
+
+            if (file) {
+                const buffer = Buffer.from(await file.arrayBuffer());
+                const mimeType = file.type;
+
+                // Update with Logo Data
+                const result = await query(
+                    'UPDATE "Clients" SET "ClientName" = $1, "LogoData" = $2, "MimeType" = $3, "LogoURL" = $4 WHERE "ClientID" = $5 RETURNING *',
+                    [name, buffer, mimeType, `/api/clients/${id}/logo`, id]
+                );
+                return NextResponse.json(result.rows[0]);
+            } else {
+                // Update Name only (preserve existing logo if no file sent)
+                const result = await query(
+                    'UPDATE "Clients" SET "ClientName" = $1 WHERE "ClientID" = $2 RETURNING *',
+                    [name, id]
+                );
+                return NextResponse.json(result.rows[0]);
+            }
+        } else {
+            // JSON fallback (legacy or name-only update via JSON)
+            const body = await request.json();
+            const { id, name, logoUrl } = body; // accept logoUrl if manually passed, but prefer file
+
+            if (!id || !name) {
+                return NextResponse.json({ error: 'Client ID and Name are required' }, { status: 400 });
+            }
+
+            const result = await query(
+                'UPDATE "Clients" SET "ClientName" = $1, "LogoURL" = $2 WHERE "ClientID" = $3 RETURNING *',
+                [name, logoUrl || null, id]
+            );
+
+            if (result.rowCount === 0) {
+                return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+            }
+
+            return NextResponse.json(result.rows[0]);
         }
-
-        const result = await query(
-            'UPDATE "Clients" SET "ClientName" = $1, "LogoURL" = $2 WHERE "ClientID" = $3 RETURNING *',
-            [name, logoUrl || null, id]
-        );
-
-        if (result.rowCount === 0) {
-            return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-        }
-
-        return NextResponse.json(result.rows[0]);
     } catch (error) {
         console.error('PUT /api/clients error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

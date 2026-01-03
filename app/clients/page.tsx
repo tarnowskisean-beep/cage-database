@@ -15,6 +15,7 @@ export default function ClientsPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newClient, setNewClient] = useState({ code: '', name: '', logoUrl: '' });
+    const [logoFile, setLogoFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [importClient, setImportClient] = useState<Client | null>(null);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -43,18 +44,31 @@ export default function ClientsPage() {
         try {
             const url = editingClient ? '/api/clients' : '/api/clients';
             const method = editingClient ? 'PUT' : 'POST';
-            const body = editingClient
-                ? { id: editingClient.ClientID, name: newClient.name, logoUrl: newClient.logoUrl }
-                : newClient;
 
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+            let body: any;
+            let headers: any = {};
+
+            if (editingClient) {
+                // Use FormData for updates (supports file upload)
+                const formData = new FormData();
+                formData.append('id', String(editingClient.ClientID));
+                formData.append('name', newClient.name);
+                if (logoFile) {
+                    formData.append('logo', logoFile);
+                }
+                body = formData;
+                // No Content-Type header needed for FormData, browser sets it with boundary
+            } else {
+                // Use JSON for creation (simple)
+                body = JSON.stringify(newClient);
+                headers = { 'Content-Type': 'application/json' };
+            }
+
+            const res = await fetch(url, { method, headers, body });
 
             if (res.ok) {
                 setNewClient({ code: '', name: '', logoUrl: '' });
+                setLogoFile(null);
                 setEditingClient(null);
                 setIsModalOpen(false);
                 fetchClients(); // Refresh list
@@ -199,13 +213,29 @@ export default function ClientsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Logo URL (Optional)</label>
-                                    <input
-                                        className="input-field"
-                                        placeholder="https://example.com/logo.png"
-                                        value={newClient.logoUrl}
-                                        onChange={e => setNewClient({ ...newClient, logoUrl: e.target.value })}
-                                    />
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Organization Logo</label>
+                                    {editingClient ? (
+                                        <>
+                                            {newClient.logoUrl && !logoFile && (
+                                                <div style={{ marginBottom: '0.5rem' }}>
+                                                    <img src={newClient.logoUrl} alt="Current Logo" style={{ height: '50px', objectFit: 'contain' }} />
+                                                </div>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="input-field"
+                                                onChange={e => setLogoFile(e.target.files?.[0] || null)}
+                                            />
+                                            <p style={{ fontSize: '0.8em', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                                                Upload an image to replace the current logo.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                                            Save the client first, then edit to upload a logo.
+                                        </p>
+                                    )}
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                                     <button
