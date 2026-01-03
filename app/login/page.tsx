@@ -8,6 +8,8 @@ export default function LoginPage() {
     const router = useRouter();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [totp, setTotp] = useState('');
+    const [show2FA, setShow2FA] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -19,11 +21,20 @@ export default function LoginPage() {
         const res = await signIn('credentials', {
             username,
             password,
+            totp,
             redirect: false,
         });
 
         if (res?.error) {
-            setError('Invalid credentials');
+            if (res.error === '2FA_REQUIRED') {
+                setShow2FA(true);
+                setError('Authentication code required');
+            } else if (res.error === 'INVALID_2FA') {
+                setError('Invalid code');
+                setShow2FA(true);
+            } else {
+                setError('Invalid credentials');
+            }
             setLoading(false);
         } else {
             router.push('/'); // Redirect to dashboard
@@ -99,12 +110,8 @@ export default function LoginPage() {
 
                 <div style={{ marginBottom: '1.5rem', width: '100%' }}>
                     <label style={{
-                        display: 'block',
-                        fontSize: '0.75rem',
-                        marginBottom: '0.75rem',
-                        color: 'var(--color-text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
+                        display: 'block', fontSize: '0.75rem', marginBottom: '0.75rem',
+                        color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
                         fontFamily: 'var(--font-body)'
                     }}>Username</label>
                     <input
@@ -113,28 +120,19 @@ export default function LoginPage() {
                         onChange={e => setUsername(e.target.value)}
                         className="input-field"
                         style={{
-                            background: 'transparent',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '0',
-                            padding: '1rem',
-                            fontSize: '1rem',
-                            color: 'var(--color-text-main)',
-                            width: '100%',
-                            outline: 'none',
-                            fontFamily: 'var(--font-body)'
+                            background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '0',
+                            padding: '1rem', fontSize: '1rem', color: 'var(--color-text-main)', width: '100%',
+                            outline: 'none', fontFamily: 'var(--font-body)'
                         }}
                         autoFocus
+                        disabled={show2FA}
                     />
                 </div>
 
-                <div style={{ marginBottom: '3rem', width: '100%' }}>
+                <div style={{ marginBottom: show2FA ? '1.5rem' : '3rem', width: '100%' }}>
                     <label style={{
-                        display: 'block',
-                        fontSize: '0.75rem',
-                        marginBottom: '0.75rem',
-                        color: 'var(--color-text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
+                        display: 'block', fontSize: '0.75rem', marginBottom: '0.75rem',
+                        color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
                         fontFamily: 'var(--font-body)'
                     }}>Password</label>
                     <input
@@ -143,18 +141,36 @@ export default function LoginPage() {
                         onChange={e => setPassword(e.target.value)}
                         className="input-field"
                         style={{
-                            background: 'transparent',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '0',
-                            padding: '1rem',
-                            fontSize: '1rem',
-                            color: 'var(--color-text-main)',
-                            width: '100%',
-                            outline: 'none',
-                            fontFamily: 'var(--font-body)'
+                            background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '0',
+                            padding: '1rem', fontSize: '1rem', color: 'var(--color-text-main)', width: '100%',
+                            outline: 'none', fontFamily: 'var(--font-body)'
                         }}
+                        disabled={show2FA}
                     />
                 </div>
+
+                {show2FA && (
+                    <div style={{ marginBottom: '3rem', width: '100%' }}>
+                        <label style={{
+                            display: 'block', fontSize: '0.75rem', marginBottom: '0.75rem',
+                            color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
+                            fontFamily: 'var(--font-body)'
+                        }}>Authentication Code</label>
+                        <input
+                            type="text"
+                            value={totp}
+                            onChange={e => setTotp(e.target.value)}
+                            placeholder="6-digit code"
+                            className="input-field"
+                            style={{
+                                background: 'transparent', border: '1px solid var(--color-primary)', borderRadius: '0',
+                                padding: '1rem', fontSize: '1.2rem', color: 'var(--color-text-main)', width: '100%',
+                                outline: 'none', fontFamily: 'var(--font-body)', textAlign: 'center', letterSpacing: '0.2em'
+                            }}
+                            autoFocus
+                        />
+                    </div>
+                )}
 
                 <button
                     type="submit"
@@ -176,7 +192,7 @@ export default function LoginPage() {
                         transition: 'opacity 0.2s ease'
                     }}
                 >
-                    {loading ? 'AUTHENTICATING...' : 'ENTER'}
+                    {loading ? 'AUTHENTICATING...' : (show2FA ? 'VERIFY' : 'ENTER')}
                 </button>
             </form>
         </div>

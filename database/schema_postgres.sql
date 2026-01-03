@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS "Users" (
     "PasswordHash" TEXT NOT NULL,
     "Role" TEXT NOT NULL CHECK ("Role" IN ('Admin', 'Clerk', 'ClientUser')),
     "Initials" TEXT NOT NULL,
+    "TwoFactorSecret" TEXT,
+    "TwoFactorEnabled" BOOLEAN DEFAULT FALSE,
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 

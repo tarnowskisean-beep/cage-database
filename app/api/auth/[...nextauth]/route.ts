@@ -2,6 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { query } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { authenticator } from 'otplib';
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -9,7 +10,8 @@ export const authOptions: NextAuthOptions = {
             name: 'Credentials',
             credentials: {
                 username: { label: "Username", type: "text" },
-                password: { label: "Password", type: "password" }
+                password: { label: "Password", type: "password" },
+                totp: { label: "2FA Code", type: "text" }
             },
             async authorize(credentials) {
                 if (!credentials?.username || !credentials?.password) return null;
@@ -22,20 +24,33 @@ export const authOptions: NextAuthOptions = {
                     const user = res.rows[0];
 
                     if (user) {
-                        // Check if password looks hashed (bcrypt starts with $2)
-                        // If the seed data is plain text 'hashedpassword', we might need to handle legacy or update it.
-                        // For now, assume we will update DB to valid hash.
-                        const valid = await bcrypt.compare(credentials.password, user.PasswordHash);
-                        if (valid) {
-                            return {
-                                id: user.UserID.toString(),
-                                name: user.Username,
-                                email: user.Email,
-                                role: user.Role
-                            };
+                        const validPassword = await bcrypt.compare(credentials.password, user.PasswordHash);
+                        if (!validPassword) return null;
+
+                        // 2FA Logic
+                        if (user.TwoFactorEnabled) {
+                            if (!credentials.totp) {
+                                throw new Error('2FA_REQUIRED');
+                            }
+
+                            const isValid = authenticator.check(credentials.totp, user.TwoFactorSecret);
+                            if (!isValid) {
+                                throw new Error('INVALID_2FA');
+                            }
                         }
+
+                        return {
+                            id: user.UserID.toString(),
+                            name: user.Username,
+                            email: user.Email,
+                            role: user.Role
+                        };
                     }
-                } catch (e) {
+                } catch (e: any) {
+                    // Pass specific 2FA errors through
+                    if (e.message === '2FA_REQUIRED' || e.message === 'INVALID_2FA') {
+                        throw e;
+                    }
                     console.error(e);
                 }
                 return null;

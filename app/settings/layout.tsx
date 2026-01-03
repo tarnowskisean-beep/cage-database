@@ -24,6 +24,13 @@ export default function SettingsLayout({
                     }}>
                         Users
                     </a>
+                    <a href="/settings/security" style={{
+                        padding: '0.75rem 1rem', background: 'transparent',
+                        border: '1px solid transparent', borderRadius: '4px',
+                        color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none'
+                    }}>
+                        Security
+                    </a>
                     {/* Placeholder for future settings */}
                     <div style={{
                         padding: '0.75rem 1rem', color: 'var(--color-text-muted)',

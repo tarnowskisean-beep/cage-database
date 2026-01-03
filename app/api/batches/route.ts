@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(request: Request) {
   try {
@@ -57,12 +59,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { clientId, entryMode, paymentCategory, zerosType } = body;
 
-    // Hardcoded User for MVP
-    const userId = 1;
-
-    // Generate Batch Code: Postgres specific logic
-    // We need initials first. Ideally fetch from User table, but hardcoding for speed as per previous step.
-    const userInitials = 'AG';
+    // Get Logged-in User
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = parseInt(session.user.id);
+    // Initials from session if available, else derive from name, else fallback
+    const userInitials = (session.user.name || 'Unknown').slice(0, 2).toUpperCase();
 
     const countRes = await query(`
         SELECT COUNT(*) as count 
