@@ -135,8 +135,11 @@ function ReportContent() {
         }
     });
 
-    // Sort methods alphabetically for columns
-    const dynamicMethods = Array.from(uniqueMethods).sort();
+    // Sort methods alphabetically, but ONLY include Caging-relevant methods (Check, Cash, Credit Card)
+    const CAGING_METHODS = ['Check', 'Cash', 'Credit Card'];
+    const dynamicMethods = Array.from(uniqueMethods)
+        .filter(m => CAGING_METHODS.includes(m))
+        .sort();
 
     // Date Range Logic (Prioritize Query, Fallback to Data)
     let minDate = '-';
