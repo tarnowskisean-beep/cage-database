@@ -74,11 +74,11 @@ export default function Sidebar() {
             {/* Navigation */}
             <nav style={{ flex: 1, padding: '0 1rem' }}>
                 <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <NavLink href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
-                    <NavLink href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
-                    <NavLink href="/batches" icon="📦" label="Batches" active={pathname.startsWith('/batches')} collapsed={isCollapsed} />
-                    <NavLink href="/search" icon="🔍" label="Search" active={pathname === '/search'} collapsed={isCollapsed} />
-                    <NavLink href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
+                    <NavItem href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
+                    <NavItem href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
+                    <NavItem href="/batches" icon="📦" label="Batches" active={pathname.startsWith('/batches')} collapsed={isCollapsed} />
+                    <NavItem href="/search" icon="🔍" label="Search" active={pathname === '/search'} collapsed={isCollapsed} />
+                    <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
                 </ul>
             </nav>
 
