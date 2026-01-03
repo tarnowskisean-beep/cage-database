@@ -1,48 +1,55 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&family=Cinzel:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Old+Standard+TT:wght@400;700&family=Cinzel:wght@500;700&display=swap');
 
 :root {
-  /* Compass Professional Theme (Greyscale / Monochrome) */
-  --color-bg-base: #0d0d0d;
-  /* Almost Black */
+  /* Compass Professional Design Tokens */
+
+  /* Colors */
+  --color-bg-base: #2A2829;
+  /* Dark Charcoal - Main background */
   --color-bg-surface: #1a1a1a;
-  /* Dark Grey */
-  --color-bg-elevated: #262626;
-  /* Lighter Grey */
-  --color-bg-sidebar: #141414;
+  /* Slightly darker/lighter for contrast if needed, keeping close to base */
+  --color-bg-elevated: #333333;
+  /* For hover states or cards */
+  --color-bg-sidebar: #2A2829;
 
-  --color-primary: #e5e5e5;
-  /* Off-White */
-  --color-primary-glow: rgba(255, 255, 255, 0.1);
+  --color-brand-blue: #0047AB;
+  /* Royal Blue/Navy glow */
 
-  --color-accent: #999999;
-  /* Mid Grey */
+  --color-text-main: #FFFFFF;
+  /* Pure White */
+  --color-text-muted: #CCCCCC;
+  /* Light Grey for secondary text */
 
-  --color-active: #33cc66;
-  /* Muted Green */
-  --color-error: #cc3333;
-  /* Muted Red */
+  --color-primary: #FFFFFF;
+  /* White as primary action color (buttons) */
+  --color-primary-text: #000000;
+  /* Black text on primary buttons */
 
-  --color-text-main: #f2f2f2;
-  /* White/Light Grey */
-  --color-text-muted: #a3a3a3;
-  /* Light Grey */
+  --color-accent: #e2e2da;
+  /* Warm Light Gray/Off-white from analysis */
 
-  --color-border: #333333;
-  --color-border-subtle: #262626;
+  --color-border: #444444;
+  /* Subtle border for dark theme */
+  --color-border-subtle: #333333;
 
-  --font-display: 'Playfair Display', serif;
+  /* Semantic Colors */
+  --color-active: #FFFFFF;
+  --color-error: #ff4d4f;
+
+  /* Typography */
+  --font-display: 'Old Standard TT', serif;
+  --font-body: 'Inter Tight', sans-serif;
   --font-logo: 'Cinzel', serif;
-  --font-body: 'Inter', sans-serif;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-
-  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
-  --glow-primary: 0 0 15px rgba(255, 255, 255, 0.05);
+  /* Spacing & Layout */
+  --radius-none: 0px;
+  /* Sharp corners */
 
   --sidebar-width: 280px;
+
+  /* Effects */
+  --shadow-sm: none;
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -55,6 +62,8 @@
 body {
   font-family: var(--font-body);
   background-color: var(--color-bg-base);
+  background-image: radial-gradient(circle at 50% 30%, rgba(0, 71, 171, 0.15), transparent 60%);
+  background-attachment: fixed;
   color: var(--color-text-main);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -67,7 +76,8 @@ h4,
 h5,
 h6 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
+  /* Old Standard TT is quite bold naturally */
   letter-spacing: 0.02em;
 }
 
@@ -79,49 +89,32 @@ h6 {
 
 .sidebar {
   width: var(--sidebar-width);
-  background-color: var(--color-bg-surface);
+  background-color: var(--color-bg-sidebar);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   position: fixed;
   height: 100vh;
   z-index: 100;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  /* Safari */
 }
 
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
   padding: 2rem;
-  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 40%);
+  background-color: var(--color-bg-base);
 }
 
 /* Component Classes */
 .glass-panel {
   background: var(--color-bg-surface);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-none);
   color: var(--color-text-main);
-  /* Explicitly set color */
 }
 
 .brand-header {
   padding: 1.5rem;
-}
-
-.brand-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(to right, var(--color-primary), var(--color-accent));
-  -webkit-background-clip: text;
-  background-clip: text;
-  /* Fix lint */
-  color: transparent;
-  display: inline-block;
 }
 
 .nav-menu {
@@ -137,11 +130,12 @@ h6 {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-none);
   color: var(--color-text-muted);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 400;
   transition: all 0.2s ease;
+  font-family: var(--font-body);
 }
 
 .nav-link:hover {
@@ -168,14 +162,13 @@ h6 {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
+  /* Keep avatar round or make square? Compass seems to like sharp, but avatars are usually round. Keeping round for now. */
   background-color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--color-bg-base);
-  /* Invert text for light avatar */
-  box-shadow: 0 0 10px var(--color-primary-glow);
+  color: var(--color-primary-text);
 }
 
 .user-info .name {
@@ -190,35 +183,39 @@ h6 {
 
 /* Button & Inputs */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-active), #22aa55);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-md);
-  font-weight: 600;
+  padding: 1rem 2rem;
+  /* Spacious padding per compass.cpa */
+  border-radius: var(--radius-none);
+  font-family: var(--font-body);
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.9rem;
 }
 
 .btn-primary:hover {
+  background-color: #f2f2f2;
+  /* Slight tint on hover */
   transform: translateY(-1px);
-  box-shadow: var(--glow-primary);
 }
 
 .input-field {
-  background: var(--color-bg-base);
+  background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-main);
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-none);
   width: 100%;
-  font-family: inherit;
+  font-family: var(--font-body);
   transition: border-color 0.2s;
 }
 
 .input-field:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-glow);
 }

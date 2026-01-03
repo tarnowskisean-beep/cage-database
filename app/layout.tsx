@@ -1,11 +1,11 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter_Tight, Old_Standard_TT } from 'next/font/google';
 import Sidebar from './components/Sidebar';
 import { Providers } from './providers';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
+const inter = Inter_Tight({ subsets: ['latin'], variable: '--font-inter' });
+const oldStandard = Old_Standard_TT({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-old-standard' });
 
 export const metadata: Metadata = {
   title: 'Compass Caging Database',
@@ -19,10 +19,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${outfit.variable}`} style={{ display: 'flex', background: 'var(--color-bg-base)', color: 'var(--color-text-main)' }}>
+      <body className={`${inter.variable} ${oldStandard.variable}`} style={{ display: 'flex' }}>
         <Providers>
           <Sidebar />
-          <main style={{ flex: 1, height: '100vh', overflowY: 'auto', padding: '2rem' }}>
+          <main className="main-content" style={{ flex: 1, height: '100vh', overflowY: 'auto' }}>
             {children}
           </main>
         </Providers>

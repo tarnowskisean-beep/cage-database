@@ -37,70 +37,121 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#0f172a', // Dark theme match
-            color: 'white'
+            // Background is handled by body but we ensure transparency here if needed or overlay
+            position: 'relative',
+            zIndex: 1
         }}>
             <form onSubmit={handleSubmit} style={{
-                background: '#1e293b',
-                padding: '2rem',
-                borderRadius: '8px',
+                background: 'transparent',
+                padding: '4rem 2rem',
                 width: '100%',
-                maxWidth: '400px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                maxWidth: '440px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
             }}>
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🧭</div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Sign In</h1>
-                    <p style={{ color: '#94a3b8' }}>Compass Professional</p>
+                <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+                    {/* Replaced logo SVG with a simple typographic treatment or keeping abstract if preferred. 
+                        Compass uses a specific circular logo but we'll stick to the text for brand match */ }
+                    <div style={{ fontSize: '3rem', marginBottom: '1.5rem', color: 'var(--color-text-main)' }}>
+                        <svg width="60" height="60" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {/* Simplified geometric logo */}
+                            <circle cx="24" cy="24" r="23" stroke="currentColor" strokeWidth="1" />
+                            <path d="M24 10L26 22L38 24L26 26L24 38L22 26L10 24L22 22L24 10Z" fill="currentColor" />
+                        </svg>
+                    </div>
+                    <h1 style={{
+                        fontSize: '2.5rem',
+                        fontWeight: 400,
+                        fontFamily: 'var(--font-display)',
+                        letterSpacing: '0.02em',
+                        marginBottom: '0.5rem',
+                        color: 'var(--color-text-main)'
+                    }}>
+                        COMPASS
+                    </h1>
+                    <p style={{
+                        fontSize: '0.8rem',
+                        letterSpacing: '0.25em',
+                        color: 'var(--color-text-muted)',
+                        textTransform: 'uppercase',
+                        fontFamily: 'var(--font-body)',
+                        fontWeight: 300
+                    }}>
+                        PROFESSIONAL
+                    </p>
                 </div>
 
                 {error && (
                     <div style={{
-                        background: 'rgba(239, 68, 68, 0.2)',
-                        color: '#f87171',
-                        padding: '0.75rem',
-                        borderRadius: '4px',
-                        marginBottom: '1.5rem',
+                        width: '100%',
+                        background: 'rgba(255, 77, 79, 0.1)',
+                        color: 'var(--color-error)',
+                        padding: '1rem',
+                        marginBottom: '2rem',
                         fontSize: '0.9rem',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        border: '1px solid var(--color-error)'
                     }}>
                         {error}
                     </div>
                 )}
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: '#cbd5e1' }}>Username</label>
+                <div style={{ marginBottom: '1.5rem', width: '100%' }}>
+                    <label style={{
+                        display: 'block',
+                        fontSize: '0.75rem',
+                        marginBottom: '0.75rem',
+                        color: 'var(--color-text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        fontFamily: 'var(--font-body)'
+                    }}>Username</label>
                     <input
                         type="text"
                         value={username}
                         onChange={e => setUsername(e.target.value)}
+                        className="input-field"
                         style={{
+                            background: 'transparent',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '0',
+                            padding: '1rem',
+                            fontSize: '1rem',
+                            color: 'var(--color-text-main)',
                             width: '100%',
-                            padding: '0.75rem',
-                            borderRadius: '4px',
-                            border: '1px solid #334155',
-                            background: '#0f172a',
-                            color: 'white',
-                            outline: 'none'
+                            outline: 'none',
+                            fontFamily: 'var(--font-body)'
                         }}
                         autoFocus
                     />
                 </div>
 
-                <div style={{ marginBottom: '2rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: '#cbd5e1' }}>Password</label>
+                <div style={{ marginBottom: '3rem', width: '100%' }}>
+                    <label style={{
+                        display: 'block',
+                        fontSize: '0.75rem',
+                        marginBottom: '0.75rem',
+                        color: 'var(--color-text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        fontFamily: 'var(--font-body)'
+                    }}>Password</label>
                     <input
                         type="password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
+                        className="input-field"
                         style={{
+                            background: 'transparent',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '0',
+                            padding: '1rem',
+                            fontSize: '1rem',
+                            color: 'var(--color-text-main)',
                             width: '100%',
-                            padding: '0.75rem',
-                            borderRadius: '4px',
-                            border: '1px solid #334155',
-                            background: '#0f172a',
-                            color: 'white',
-                            outline: 'none'
+                            outline: 'none',
+                            fontFamily: 'var(--font-body)'
                         }}
                     />
                 </div>
@@ -108,19 +159,24 @@ export default function LoginPage() {
                 <button
                     type="submit"
                     disabled={loading}
+                    className="btn-primary"
                     style={{
                         width: '100%',
-                        padding: '0.75rem',
-                        borderRadius: '4px',
+                        background: 'var(--color-primary)',
+                        color: 'var(--color-primary-text)',
                         border: 'none',
-                        background: '#3b82f6',
-                        color: 'white',
-                        fontWeight: 600,
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: loading ? 0.7 : 1
+                        padding: '1.25rem',
+                        fontFamily: 'var(--font-body)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        fontSize: '0.9rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        opacity: loading ? 0.7 : 1,
+                        transition: 'opacity 0.2s ease'
                     }}
                 >
-                    {loading ? 'Signing In...' : 'Sign In'}
+                    {loading ? 'AUTHENTICATING...' : 'ENTER'}
                 </button>
             </form>
         </div>

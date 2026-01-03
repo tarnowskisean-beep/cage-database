@@ -10,11 +10,13 @@ export default function Sidebar() {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
+    if (pathname === '/login') return null;
+
     return (
         <aside style={{
-            width: isCollapsed ? '80px' : '280px',
+            width: isCollapsed ? '80px' : 'var(--sidebar-width)',
             background: 'var(--color-bg-sidebar)',
-            borderRight: '1px solid var(--color-border-subtle)',
+            borderRight: '1px solid var(--color-border)',
             display: 'flex',
             flexDirection: 'column',
             transition: 'width 0.3s ease',
@@ -32,14 +34,13 @@ export default function Sidebar() {
                     height: '24px',
                     borderRadius: '50%',
                     background: 'var(--color-primary)',
-                    color: 'white',
+                    color: 'var(--color-primary-text)',
                     border: '2px solid var(--color-bg-base)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                     zIndex: 10,
-                    boxShadow: 'var(--shadow-sm)'
                 }}
             >
                 {isCollapsed ? '→' : '←'}
@@ -61,10 +62,10 @@ export default function Sidebar() {
                 </div>
                 {!isCollapsed && (
                     <>
-                        <h1 style={{ fontSize: '1.25rem', fontWeight: 600, letterSpacing: '0.1em', color: 'white', marginBottom: '0.25rem', fontFamily: '"Cinzel", serif' }}>
+                        <h1 style={{ fontSize: '1.25rem', fontWeight: 400, letterSpacing: '0.1em', color: 'var(--color-text-main)', marginBottom: '0.25rem', fontFamily: 'var(--font-display)' }}>
                             COMPASS
                         </h1>
-                        <p style={{ fontSize: '0.65rem', letterSpacing: '0.2em', color: '#94a3b8', textTransform: 'uppercase', fontFamily: '"Cinzel", serif' }}>
+                        <p style={{ fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-display)' }}>
                             PROFESSIONAL
                         </p>
                     </>
@@ -83,16 +84,16 @@ export default function Sidebar() {
             </nav>
 
             {/* User Profile */}
-            <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border-subtle)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'white', flexShrink: 0 }}></div>
+            <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0 }}></div>
                 <div style={{
                     marginTop: 'auto',
                     padding: '1rem',
-                    borderTop: '1px solid var(--color-border-subtle)'
+                    borderTop: '1px solid var(--color-border)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: isCollapsed ? 'center' : 'start' }}>
                         <div style={{
-                            width: '32px', height: '32px', borderRadius: '50%', background: 'white', color: 'black',
+                            width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-primary)', color: 'var(--color-primary-text)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem'
                         }}>
                             {session?.user?.name ? session.user.name.slice(0, 1).toUpperCase() : 'AG'}
@@ -100,10 +101,10 @@ export default function Sidebar() {
 
                         {!isCollapsed && (
                             <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-text-main)' }}>
                                     {session?.user?.name || 'Alyssa Graham'}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                                     {session?.user?.email ? 'Clerk' : 'Clerk'}
                                 </div>
                                 <button
@@ -111,12 +112,13 @@ export default function Sidebar() {
                                     style={{
                                         background: 'none',
                                         border: 'none',
-                                        color: '#f87171',
+                                        color: 'var(--color-error)',
                                         fontSize: '0.75rem',
                                         cursor: 'pointer',
                                         padding: '0',
                                         marginTop: '0.25rem',
-                                        textDecoration: 'underline'
+                                        textDecoration: 'underline',
+                                        fontFamily: 'inherit'
                                     }}
                                 >
                                     Sign Out
@@ -138,15 +140,16 @@ function NavItem({ href, icon, label, active, collapsed }: { href: string, icon:
                 alignItems: 'center',
                 gap: '1rem',
                 padding: '0.75rem 1rem',
-                borderRadius: '0.5rem',
-                color: active ? 'white' : '#94a3b8',
-                background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+                borderRadius: 'var(--radius-none)',
+                color: active ? 'var(--color-text-main)' : 'var(--color-text-muted)',
+                background: active ? 'rgba(255,255,255,0.05)' : 'transparent',
                 textDecoration: 'none',
                 transition: 'all 0.2s',
-                justifyContent: collapsed ? 'center' : 'flex-start'
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                borderLeft: active ? '2px solid var(--color-primary)' : '2px solid transparent'
             }}>
                 <span style={{ fontSize: '1.25rem' }}>{icon}</span>
-                {!collapsed && <span style={{ fontWeight: 500 }}>{label}</span>}
+                {!collapsed && <span style={{ fontWeight: 400 }}>{label}</span>}
             </Link>
         </li>
     );

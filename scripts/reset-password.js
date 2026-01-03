@@ -1,42 +1,35 @@
+
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || "postgresql://postgres:dadmy9-hoRqeg-budvyg@db.lrrlssecgkeqztwpkeca.supabase.co:5432/postgres",
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:dadmy9-hoRqeg-budvyg@db.lrrlssecgkeqztwpkeca.supabase.co:5432/postgres',
     ssl: { rejectUnauthorized: false }
 });
 
-async function resetPassword() {
+async function resetPassword(username, newPassword) {
     try {
-        const username = 'agraham';
-        const password = 'password';
-        const hash = await bcrypt.hash(password, 10);
+        console.log(`Resetting password for user: ${username}`);
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
 
-        console.log(`Resetting password for user '${username}' to '${password}'...`);
+        const res = await pool.query(
+            'UPDATE "Users" SET "PasswordHash" = $1 WHERE "Username" = $2 RETURNING "UserID"',
+            [hash, username]
+        );
 
-        // Check if user exists
-        const res = await pool.query('SELECT * FROM "Users" WHERE "Username" = $1', [username]);
-        if (res.rows.length === 0) {
-            console.log("User not found. Creating...");
-            await pool.query(
-                'INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials") VALUES ($1, $2, $3, $4, $5)',
-                [username, 'alyssa@compass.com', hash, 'Admin', 'AG']
-            );
+        if (res.rowCount > 0) {
+            console.log(`✅ Password updated successfully for ${username}.`);
         } else {
-            console.log("User found. Updating...");
-            await pool.query(
-                'UPDATE "Users" SET "PasswordHash" = $1 WHERE "Username" = $2',
-                [hash, username]
-            );
+            console.log(`❌ User ${username} not found.`);
         }
 
-        console.log("✅ Password reset successfully.");
-
     } catch (e) {
-        console.error(e);
+        console.error('Error resetting password:', e);
     } finally {
-        pool.end();
+        await pool.end();
     }
 }
 
-resetPassword();
+// Default to resetting 'agraham' to 'password123'
+resetPassword('agraham', 'password123');
