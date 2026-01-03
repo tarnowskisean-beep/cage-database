@@ -3,7 +3,7 @@ import { query } from '@/lib/db';
 
 export async function GET() {
     try {
-        const result = await query('SELECT "ClientID", "ClientCode", "ClientName", "LogoURL" FROM "Clients" ORDER BY "ClientCode"');
+        const result = await query('SELECT "ClientID", "ClientCode", "ClientName", "LogoURL", "ClientType" FROM "Clients" ORDER BY "ClientCode"');
         return NextResponse.json(result.rows);
     } catch (error) {
         console.error('GET /api/clients error:', error);
