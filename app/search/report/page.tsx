@@ -77,7 +77,7 @@ function ReportContent() {
     const totalAmount = results.reduce((sum, r) => sum + Number(r.GiftAmount || 0), 0);
     const count = results.length;
 
-    // Platform Stats
+    // Platform Stats & Method Stats
     const platforms: Record<string, { count: number, sum: number }> = {};
     const methods: Record<string, { count: number, sum: number }> = {};
 
@@ -87,31 +87,56 @@ function ReportContent() {
         platforms[p].count++;
         platforms[p].sum += Number(r.GiftAmount || 0);
 
+        // Aggregate ALL methods for summary stats
         const m = r.GiftMethod || 'Unknown';
         if (!methods[m]) methods[m] = { count: 0, sum: 0 };
         methods[m].count++;
         methods[m].sum += Number(r.GiftAmount || 0);
     });
 
-    // Caging Activity Aggregation (MailCode + Method -> Count & Sum)
-    const cagingActivity: Record<string, { count: number, sum: number }> = {};
+    // Caging Activity Aggregation
+    // Structure: MailCode -> { donors: 0, nonDonors: 0, amount: 0, methodStats: { [method]: { count, sum } } }
+    type RowStats = {
+        donors: number;
+        nonDonors: number;
+        amount: number;
+        methodStats: Record<string, { count: number; sum: number }>;
+    };
+    const cagingActivity: Record<string, RowStats> = {};
+    const uniqueMethods = new Set<string>();
 
     results.forEach(r => {
-        // Extract MailCode from ScanString (Method B) or use raw MailCode if available
-        let mailCode = r.MailCode || 'Unknown';
-        if (r.ScanString && r.ScanString.includes('\t')) {
-            mailCode = r.ScanString.split('\t')[0];
-        } else if (!mailCode || mailCode === '') {
-            mailCode = 'No Mail Code';
+        const rawMailCode = r.ScanString && r.ScanString.includes('\t') ? r.ScanString.split('\t')[0] : (r.MailCode || '');
+        const mailCode = rawMailCode || 'No Mail Code';
+        const method = r.GiftMethod || 'Unknown';
+        const amount = Number(r.GiftAmount || 0);
+        const isNonDonor = method.toLowerCase() === 'zero' || method.toLowerCase() === 'non-donor';
+
+        if (!cagingActivity[mailCode]) {
+            cagingActivity[mailCode] = { donors: 0, nonDonors: 0, amount: 0, methodStats: {} };
         }
 
-        const method = r.GiftMethod || 'Unknown';
-        const key = `${mailCode}::${method}`; // Composite key
+        const row = cagingActivity[mailCode];
 
-        if (!cagingActivity[key]) cagingActivity[key] = { count: 0, sum: 0 };
-        cagingActivity[key].count++;
-        cagingActivity[key].sum += Number(r.GiftAmount || 0);
+        // Update Row Totals
+        row.amount += amount;
+        if (isNonDonor) {
+            row.nonDonors++;
+        } else {
+            row.donors++;
+        }
+
+        // Update Method Stats (Skip Zero/Non-Donor for the breakdown columns if desired, strictly payment methods)
+        if (!isNonDonor) {
+            if (!row.methodStats[method]) row.methodStats[method] = { count: 0, sum: 0 };
+            row.methodStats[method].count++;
+            row.methodStats[method].sum += amount;
+            uniqueMethods.add(method);
+        }
     });
+
+    // Sort methods alphabetically for columns
+    const dynamicMethods = Array.from(uniqueMethods).sort();
 
     // Date Range Logic (Prioritize Query, Fallback to Data)
     let minDate = '-';
@@ -121,11 +146,8 @@ function ReportContent() {
     if (qParam) {
         try {
             const query = JSON.parse(decodeURIComponent(qParam));
-            // Find Date Rules
             const findRule = (op: string) => {
                 const rules = query.rules || [];
-                // Simple search flattens rules, but let's check recursively if needed or just top level
-                // Our SearchPage sends a simple AND list for dates at top level mostly.
                 if (Array.isArray(rules)) {
                     const rule = rules.find((r: any) => r.field === 'date' && r.operator === op);
                     return rule ? rule.value : null;
@@ -143,7 +165,6 @@ function ReportContent() {
         }
     }
 
-    // Fallback if query didn't have dates (e.g. searched only by name)
     if (minDate === '-' || maxDate === '-') {
         const dates = results.map(r => new Date(r.GiftDate).getTime());
         if (minDate === '-' && dates.length) minDate = new Date(Math.min(...dates)).toLocaleDateString();
@@ -151,8 +172,7 @@ function ReportContent() {
     }
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif', color: 'black', background: 'white' }}>
-            {/* Print Styles */}
+        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif', color: 'black', background: 'white' }}>
             <style jsx global>{`
                 @media print {
                     .no-print { display: none !important; }
@@ -257,82 +277,67 @@ function ReportContent() {
             </div>
 
             {/* BOTTOM: Caging Activity (Mailcode breakdown) */}
-            {/* BOTTOM: Caging Activity (Mailcode breakdown) */}
             <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center', background: '#ccc', padding: '4px', border: '1px solid black' }}>
                 Caging Activity (Matrix)
             </h3>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '0.75rem' }}>
-                <thead>
-                    <tr style={{ background: '#eee' }}>
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left' }}>Mail Code</th>
-                        {/* Dynamic Method Columns */}
-                        {Object.keys(methods).sort().map(m => (
-                            <th key={m} colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{m}</th>
-                        ))}
-                        <th colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center', background: '#ddd' }}>Total</th>
-                    </tr>
-                    <tr style={{ background: '#eee', fontSize: '0.7rem' }}>
-                        <th style={{ border: '1px solid black', padding: '4px' }}></th>
-                        {Object.keys(methods).sort().map(m => (
-                            <>
-                                <th key={`${m}-cnt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Cnt</th>
-                                <th key={`${m}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>$</th>
-                            </>
-                        ))}
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Cnt</th>
-                        <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>$</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {/* Compute Unique MailCodes */}
-                    {Array.from(new Set(results.map(r => {
-                        if (r.ScanString && r.ScanString.includes('\t')) return r.ScanString.split('\t')[0];
-                        return r.MailCode || 'No Mail Code';
-                    }))).sort().map(mailCode => {
-                        let rowCount = 0;
-                        let rowSum = 0;
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '0.75rem' }}>
+                    <thead>
+                        <tr style={{ background: '#eee' }}>
+                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left', minWidth: '80px' }}>Mail Code</th>
+                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Donors</th>
+                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Non-Donors</th>
+                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total $$</th>
 
-                        return (
-                            <tr key={mailCode}>
-                                <td style={{ border: '1px solid black', padding: '4px', fontWeight: 600 }}>{mailCode}</td>
-                                {Object.keys(methods).sort().map(method => {
-                                    const key = `${mailCode}::${method}`;
-                                    const stats = cagingActivity[key] || { count: 0, sum: 0 };
-                                    rowCount += stats.count;
-                                    rowSum += stats.sum;
+                            {/* Dynamic Method Columns */}
+                            {dynamicMethods.map(m => (
+                                <th key={m} colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center', borderLeft: '2px solid black' }}>{m}</th>
+                            ))}
+                        </tr>
+                        <tr style={{ background: '#eee', fontSize: '0.7rem' }}>
+                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
+                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
+                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
+                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
 
-                                    return (
-                                        <>
-                                            <td key={`${method}-cnt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center', color: stats.count ? 'black' : '#ccc' }}>
-                                                {stats.count || '-'}
-                                            </td>
-                                            <td key={`${method}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'right', color: stats.sum ? 'black' : '#ccc' }}>
-                                                {stats.sum ? stats.sum.toFixed(2) : '-'}
-                                            </td>
-                                        </>
-                                    );
-                                })}
-                                {/* Row Total */}
-                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{rowCount}</td>
-                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right', fontWeight: 'bold' }}>{rowSum.toFixed(2)}</td>
-                            </tr>
-                        );
-                    })}
-                    {/* Grand Total Row */}
-                    <tr style={{ fontWeight: 'bold', background: '#f9f9f9', borderTop: '2px solid black' }}>
-                        <td style={{ border: '1px solid black', padding: '4px' }}>Grand Total</td>
-                        {Object.keys(methods).sort().map(m => (
-                            <>
-                                <td key={`${m}-tot-cnt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{methods[m].count}</td>
-                                <td key={`${m}-tot-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{methods[m].sum.toFixed(2)}</td>
-                            </>
-                        ))}
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{count}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${totalAmount.toFixed(2)}</td>
-                    </tr>
-                </tbody>
-            </table>
+                            {dynamicMethods.map(m => (
+                                <>
+                                    <th key={`${m}-cnt`} style={{ border: '1px solid black', borderLeft: '2px solid black', padding: '4px', textAlign: 'center' }}>Donors</th>
+                                    <th key={`${m}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Amount</th>
+                                </>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Object.keys(cagingActivity).sort().map(mailCode => {
+                            const row = cagingActivity[mailCode];
+                            return (
+                                <tr key={mailCode}>
+                                    <td style={{ border: '1px solid black', padding: '4px', fontWeight: 600 }}>{mailCode}</td>
+                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{row.donors}</td>
+                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{row.nonDonors}</td>
+                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right', fontWeight: 600 }}>${row.amount.toFixed(2)}</td>
+
+                                    {dynamicMethods.map(method => {
+                                        const stats = row.methodStats[method] || { count: 0, sum: 0 };
+                                        return (
+                                            <>
+                                                <td key={`${method}-cnt`} style={{ border: '1px solid black', borderLeft: '2px solid black', padding: '4px', textAlign: 'center', color: stats.count ? 'black' : '#ccc' }}>
+                                                    {stats.count}
+                                                </td>
+                                                <td key={`${method}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'right', color: stats.sum ? 'black' : '#ccc' }}>
+                                                    ${stats.sum.toFixed(2)}
+                                                </td>
+                                            </>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
