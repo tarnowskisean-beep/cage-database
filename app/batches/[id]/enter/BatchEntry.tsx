@@ -55,6 +55,67 @@ export default function BatchEntry({ id }: { id: string }) {
         }));
     };
 
+    const handleBulkAdd = async () => {
+        if (!confirm("Generate 25 fake records?")) return;
+
+        try {
+            const promises = [];
+            for (let i = 0; i < 25; i++) {
+                const method = faker.helpers.arrayElement(METHODS);
+                const platform = faker.helpers.arrayElement(PLATFORMS);
+
+                const fakePayload = {
+                    scanString: '',
+                    mailCode: faker.string.alphanumeric(6).toUpperCase(), // KEY for report
+                    donorPrefix: faker.person.prefix(),
+                    donorFirstName: faker.person.firstName(),
+                    donorMiddleName: '',
+                    donorLastName: faker.person.lastName(),
+                    donorSuffix: '',
+                    donorEmployer: faker.company.name(),
+                    donorOccupation: faker.person.jobTitle(),
+                    donorAddress: faker.location.streetAddress(),
+                    donorCity: faker.location.city(),
+                    donorState: faker.location.state({ abbreviated: true }),
+                    donorZip: faker.location.zipCode().substring(0, 5),
+                    giftFee: 0,
+
+                    platform,
+                    giftType: faker.helpers.arrayElement(GIFT_TYPES),
+                    method,
+                    isInactive: faker.datatype.boolean() ? 'True' : 'False',
+                    postMarkYear: new Date().getFullYear().toString(),
+                    postMarkQuarter: `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
+                    organizationName: faker.company.name(),
+                    giftCustodian: '',
+                    giftConduit: '',
+                    amount: parseFloat(faker.finance.amount({ min: 10, max: 500, dec: 2 })),
+                    pledgeAmount: 0,
+                    donorPhone: faker.phone.number(),
+                    donorEmail: faker.internet.email(),
+                    comment: 'Bulk Generated',
+                    checkNumber: faker.finance.accountNumber(),
+                    giftYear: new Date().getFullYear().toString(),
+                    giftQuarter: `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
+                };
+
+                promises.push(
+                    fetch(`/api/batches/${id}/donations`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(fakePayload)
+                    })
+                );
+            }
+
+            await Promise.all(promises);
+            window.location.reload();
+        } catch (e) {
+            console.error(e);
+            alert("Bulk add failed");
+        }
+    };
+
     const toggleBatchStatus = async () => {
         if (!batch) return;
         const newStatus = batch.Status === 'Open' ? 'Closed' : 'Open';
@@ -120,6 +181,19 @@ export default function BatchEntry({ id }: { id: string }) {
                         </button>
                     )}
                     <button
+                        onClick={handleBulkAdd}
+                        disabled={batch?.Status === 'Reconciled'}
+                        style={{
+                            background: 'transparent',
+                            border: `1px solid ${batch?.Status === 'Reconciled' ? 'var(--color-text-muted)' : '#8b5cf6'}`,
+                            color: batch?.Status === 'Reconciled' ? 'var(--color-text-muted)' : '#8b5cf6',
+                            padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '1rem',
+                            cursor: batch?.Status === 'Reconciled' ? 'not-allowed' : 'pointer',
+                        }}
+                    >
+                        ⚡ Bulk Add 25
+                    </button>
+                    <button
                         onClick={handleFillFakeData}
                         disabled={batch?.Status === 'Reconciled'}
                         style={{
@@ -132,7 +206,7 @@ export default function BatchEntry({ id }: { id: string }) {
                         }}
                         title="Auto-fill with Fake Data"
                     >
-                        ⚡ Fill Fake
+                        ⚡ Fill Fake Form
                     </button>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginRight: '1rem' }}>Total: {records.length}</span>
                     <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-active)' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
