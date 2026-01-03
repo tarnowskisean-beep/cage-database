@@ -298,53 +298,54 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
 
                 </form>
             </div>
-            );
+        </div>
+    );
 }
 
-            // Reusable Component for Select + Custom Entry
-            function CreatableSelect({label, value, options, onChange, placeholder = "Select or Type..."}: {label: string, value: string, options: string[], onChange: (val: string) => void, placeholder?: string }) {
+// Reusable Component for Select + Custom Entry
+function CreatableSelect({ label, value, options, onChange, placeholder = "Select or Type..." }: { label: string, value: string, options: string[], onChange: (val: string) => void, placeholder?: string }) {
     const isCustom = value && !options.includes(value);
-            const [mode, setMode] = useState<'select' | 'input'>(isCustom ? 'input' : 'select');
+    const [mode, setMode] = useState<'select' | 'input'>(isCustom ? 'input' : 'select');
 
-            return (
-            <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>
-                {mode === 'select' ? (
-                    <select
+    return (
+        <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>
+            {mode === 'select' ? (
+                <select
+                    className="input-field"
+                    value={options.includes(value) ? value : ''}
+                    onChange={(e) => {
+                        if (e.target.value === '__NEW__') {
+                            setMode('input');
+                            onChange('');
+                        } else {
+                            onChange(e.target.value);
+                        }
+                    }}
+                >
+                    <option value="" disabled>Select Source...</option>
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    <option style={{ fontWeight: 600, color: 'var(--color-primary)' }} value="__NEW__">+ Add New Source...</option>
+                </select>
+            ) : (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
                         className="input-field"
-                        value={options.includes(value) ? value : ''}
-                        onChange={(e) => {
-                            if (e.target.value === '__NEW__') {
-                                setMode('input');
-                                onChange('');
-                            } else {
-                                onChange(e.target.value);
-                            }
-                        }}
+                        value={value}
+                        onChange={e => onChange(e.target.value)}
+                        placeholder={placeholder}
+                        autoFocus
+                    />
+                    <button
+                        type="button"
+                        onClick={() => { setMode('select'); onChange(options[0] || ''); }}
+                        style={{ padding: '0 1rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                        title="Cancel custom entry"
                     >
-                        <option value="" disabled>Select Source...</option>
-                        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        <option style={{ fontWeight: 600, color: 'var(--color-primary)' }} value="__NEW__">+ Add New Source...</option>
-                    </select>
-                ) : (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input
-                            className="input-field"
-                            value={value}
-                            onChange={e => onChange(e.target.value)}
-                            placeholder={placeholder}
-                            autoFocus
-                        />
-                        <button
-                            type="button"
-                            onClick={() => { setMode('select'); onChange(options[0] || ''); }}
-                            style={{ padding: '0 1rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
-                            title="Cancel custom entry"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
-            </div>
-            );
+                        ✕
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 }
