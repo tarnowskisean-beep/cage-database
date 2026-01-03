@@ -14,7 +14,11 @@ export const authOptions: NextAuthOptions = {
                 totp: { label: "2FA Code", type: "text" }
             },
             async authorize(credentials) {
-                if (!credentials?.username || !credentials?.password) return null;
+                console.log('[Auth Debug] Attempting login for:', credentials?.username);
+                if (!credentials?.username || !credentials?.password) {
+                    console.log('[Auth Debug] Missing credentials');
+                    return null;
+                }
 
                 try {
                     const res = await query(
@@ -24,11 +28,14 @@ export const authOptions: NextAuthOptions = {
                     const user = res.rows[0];
 
                     if (user) {
+                        console.log('[Auth Debug] User found:', user.Username);
                         const validPassword = await bcrypt.compare(credentials.password, user.PasswordHash);
+                        console.log('[Auth Debug] Password Valid:', validPassword);
                         if (!validPassword) return null;
 
                         // 2FA Logic
                         if (user.TwoFactorEnabled) {
+                            console.log('[Auth Debug] 2FA Enabled');
                             if (!credentials.totp) {
                                 throw new Error('2FA_REQUIRED');
                             }
@@ -49,8 +56,11 @@ export const authOptions: NextAuthOptions = {
                             role: user.Role,
                             allowedClientIds: clientIds
                         };
+                    } else {
+                        console.log('[Auth Debug] User NOT found in DB');
                     }
                 } catch (e: any) {
+                    console.error('[Auth Debug] Error:', e);
                     // Pass specific 2FA errors through
                     if (e.message === '2FA_REQUIRED' || e.message === 'INVALID_2FA') {
                         throw e;
