@@ -33,6 +33,13 @@ export async function GET(request: Request) {
       params.push(status);
     }
 
+    // New: Filter by Platform (DefaultGiftPlatform)
+    const platform = searchParams.get('platform');
+    if (platform) {
+      conditions.push(`b."DefaultGiftPlatform" = $${paramIndex++}`);
+      params.push(platform);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const result = await query(`

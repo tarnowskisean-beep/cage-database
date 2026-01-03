@@ -38,6 +38,7 @@ export default function BatchesPage() {
     const [filters, setFilters] = useState({
         clientId: '',
         status: '',
+        platform: '',
         startDate: defaultRange.start,
         endDate: defaultRange.end
     });
@@ -49,6 +50,7 @@ export default function BatchesPage() {
             if (filters.startDate) params.append('startDate', filters.startDate);
             if (filters.endDate) params.append('endDate', filters.endDate);
             if (filters.status) params.append('status', filters.status);
+            if (filters.platform) params.append('platform', filters.platform);
 
             const res = await fetch(`/api/batches?${params.toString()}`);
             if (res.ok) setBatches(await res.json());
@@ -116,6 +118,24 @@ export default function BatchesPage() {
                     <option value="Reconciled">Reconciled</option>
                 </select>
 
+                <select
+                    className="input-field"
+                    style={{ width: 'auto', minWidth: '150px' }}
+                    value={filters.platform}
+                    onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
+                >
+                    <option value="">All Platforms</option>
+                    <option value="Winred">Winred</option>
+                    <option value="Stripe">Stripe</option>
+                    <option value="Anedot">Anedot</option>
+                    <option value="Cage">Cage</option>
+                    <option value="Import">Import</option>
+                    <option value="Chainbridge">Chainbridge</option>
+                    <option value="National Capital">National Capital</option>
+                    <option value="City National">City National</option>
+                    <option value="Propay">Propay</option>
+                </select>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
                     <input
@@ -140,9 +160,9 @@ export default function BatchesPage() {
                     />
                 </div>
 
-                {(filters.clientId || filters.startDate || filters.endDate || filters.status) && (
+                {(filters.clientId || filters.startDate || filters.endDate || filters.status || filters.platform) && (
                     <button
-                        onClick={() => setFilters({ clientId: '', startDate: '', endDate: '', status: '' })}
+                        onClick={() => setFilters({ clientId: '', startDate: '', endDate: '', status: '', platform: '' })}
                         style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
                     >
                         Clear Filters
