@@ -8,9 +8,25 @@ const pool = new Pool({
 export async function query(text: string, params?: unknown[]) {
     const start = Date.now();
     const res = await pool.query(text, params);
-    const duration = Date.now() - start;
+    // const duration = Date.now() - start;
     // console.log('executed query', { text, duration, rows: res.rowCount });
     return res;
+}
+
+// Transaction Helper
+export async function transaction<T>(callback: (client: any) => Promise<T>): Promise<T> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const result = await callback(client);
+        await client.query('COMMIT');
+        return result;
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
 }
 
 // Helper for clients used to MSSQL style

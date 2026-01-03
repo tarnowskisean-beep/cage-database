@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, transaction } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { CreateBatchSchema } from '@/lib/schema';
 
 export async function GET(request: Request) {
   try {
@@ -79,98 +80,99 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { clientId, entryMode, paymentCategory, zerosType } = body;
 
-    // Get Logged-in User
+    // 1. Validation (Zod)
+    const validation = CreateBatchSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Validation Failed', details: validation.error.format() }, { status: 400 });
+    }
+    const data = validation.data;
+
+    // 2. Authentication
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // 3. User Resolution
     let userId = parseInt(session.user.id);
     let userInitials = (session.user.name || 'Unknown').substring(0, 2).toUpperCase();
 
-    // Fallback: If session ID is missing or NaN, lookup by Email
+    // Handle edge case where session ID is missing
     if (isNaN(userId)) {
-      console.warn('Session User ID is NaN, attempting DB lookup for:', session.user.email);
-      if (session.user.email) {
-        const userRes = await query('SELECT "UserID", "Username" FROM "Users" WHERE "Email" = $1', [session.user.email]);
-        if (userRes.rows.length > 0) {
-          userId = userRes.rows[0].UserID;
-          userInitials = userRes.rows[0].Username.substring(0, 2).toUpperCase();
-        } else {
-          console.error('User not found by email:', session.user.email);
-          return NextResponse.json({ error: 'User lookup failed: ' + session.user.email }, { status: 401 });
-        }
-      } else {
-        return NextResponse.json({ error: 'Invalid Session: No ID or Email' }, { status: 401 });
-      }
+      // This lookup is safe to do outside transaction as user ID/username rarely changes rapidly
+      const userRes = await query('SELECT "UserID", "Username" FROM "Users" WHERE "Email" = $1', [session.user.email]);
+      if (userRes.rows.length === 0) return NextResponse.json({ error: 'User not found' }, { status: 401 });
+      userId = userRes.rows[0].UserID;
+      userInitials = userRes.rows[0].Username.substring(0, 2).toUpperCase();
     }
-    // 1. Get Client Code
-    const clientRes = await query('SELECT "ClientCode" FROM "Clients" WHERE "ClientID" = $1', [clientId]);
-    if (clientRes.rows.length === 0) throw new Error('Client not found');
-    const clientCode = clientRes.rows[0].ClientCode;
 
-    // 2. Platform Abbreviation
-    const platform = body.defaultGiftPlatform || 'Cage';
-    const abbreviations: Record<string, string> = {
-      'Chainbridge': 'CB',
-      'Stripe': 'ST',
-      'National Capital': 'NC',
-      'City National': 'CN',
-      'Propay': 'PP',
-      'Anedot': 'AN',
-      'Winred': 'WR',
-      'Cage': 'CG',
-      'Import': 'IM'
-    };
-    const platCode = abbreviations[platform] || platform.substring(0, 2).toUpperCase();
+    // 4. Transactional Batch Creation
+    const result = await transaction(async (client) => {
+      // A. Verify Client exists
+      const clientRes = await client.query('SELECT "ClientCode" FROM "Clients" WHERE "ClientID" = $1', [data.clientId]);
+      if (clientRes.rows.length === 0) throw new Error('Client not found');
+      const clientCode = clientRes.rows[0].ClientCode;
 
-    // 3. Date Format (YYYY.MM.DD)
-    const dateObj = new Date(body.date || new Date().toISOString());
-    const yyyy = dateObj.getFullYear();
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    const dateStr = `${yyyy}.${mm}.${dd} `;
+      // B. Platform Short Code
+      const abbreviations: Record<string, string> = {
+        'Chainbridge': 'CB', 'Stripe': 'ST', 'National Capital': 'NC', 'City National': 'CN',
+        'Propay': 'PP', 'Anedot': 'AN', 'Winred': 'WR', 'Cage': 'CG', 'Import': 'IM'
+      };
+      const platCode = abbreviations[data.defaultGiftPlatform] || data.defaultGiftPlatform.substring(0, 2).toUpperCase();
 
-    // 4. Daily Sequence
-    const countRes = await query(`
-        SELECT COUNT(*) as count 
-        FROM "Batches" 
-        WHERE "CreatedBy" = $1 
-        AND "Date":: date = $2:: date
-      `, [userId, body.date || new Date().toISOString()]);
+      // C. Calculate Date Strings
+      const dateObj = new Date(data.date || new Date().toISOString());
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}.${mm}.${dd}`;
 
-    const dailyCount = parseInt(countRes.rows[0].count) + 1;
-    const suffix = `${userInitials}.${dailyCount.toString().padStart(2, '0')} `;
+      // D. CRITICAL: Row Locking for Sequence Generation
+      // Lock the user row to serialize batch creation for this specific user
+      await client.query('SELECT 1 FROM "Users" WHERE "UserID" = $1 FOR UPDATE', [userId]);
 
-    // 5. Final Batch Code
-    const batchCode = `${clientCode}.${platCode}.${dateStr}.${suffix} `;
+      // E. Count Batches for today for this User
+      const countRes = await client.query(`
+            SELECT COUNT(*) as count 
+            FROM "Batches" 
+            WHERE "CreatedBy" = $1 
+            AND "Date"::date = $2::date
+        `, [userId, data.date || new Date().toISOString()]);
 
-    const result = await query(`
-        INSERT INTO "Batches"(
-            "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date",
-            "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter",
-            "DefaultGiftType"
-          )
-    VALUES($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13)
-        RETURNING "BatchID", "BatchCode"
-      `, [
-      batchCode,
-      clientId,
-      entryMode,
-      paymentCategory,
-      zerosType || null,
-      userId,
-      body.date || new Date().toISOString(),
-      body.defaultGiftMethod || 'Check',
-      body.defaultGiftPlatform || 'Cage',
-      body.defaultTransactionType || 'Donation',
-      body.defaultGiftYear || new Date().getFullYear(),
-      body.defaultGiftQuarter || 'Q1',
-      body.defaultGiftType || 'Individual/Trust/IRA'
-    ]);
+      const dailyCount = parseInt(countRes.rows[0].count) + 1;
+      const suffix = `${userInitials}.${dailyCount.toString().padStart(2, '0')}`;
+      const batchCode = `${clientCode}.${platCode}.${dateStr}.${suffix}`;
 
-    return NextResponse.json(result.rows[0]);
+      // F. Insert
+      const insertRes = await client.query(`
+            INSERT INTO "Batches"(
+                "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date",
+                "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter",
+                "DefaultGiftType"
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13)
+            RETURNING "BatchID", "BatchCode"
+        `, [
+        batchCode,
+        data.clientId,
+        data.entryMode,
+        data.paymentCategory,
+        data.zerosType || null,
+        userId,
+        data.date || new Date().toISOString(),
+        data.defaultGiftMethod,
+        data.defaultGiftPlatform,
+        data.defaultTransactionType,
+        data.defaultGiftYear || new Date().getFullYear(),
+        data.defaultGiftQuarter || 'Q1',
+        data.defaultGiftType || 'Individual/Trust/IRA'
+      ]);
+
+      return insertRes.rows[0];
+    });
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('POST /api/batches error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

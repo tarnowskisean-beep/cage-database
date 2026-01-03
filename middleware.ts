@@ -6,4 +6,6 @@ export default withAuth({
     },
 })
 
-export const config = { matcher: ["/((?!api|login|debug-env|_next/static|_next/image|favicon.ico).*)"] }
+// Protect everything by default, including /api
+// Explicitly exclude public assets, login, and public API sub-paths if needed
+export const config = { matcher: ["/((?!api/auth|api/webhooks|login|debug-env|_next/static|_next/image|favicon.ico).*)"] }
