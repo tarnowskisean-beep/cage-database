@@ -194,6 +194,33 @@ export default function LoginPage() {
                 >
                     {loading ? 'AUTHENTICATING...' : (show2FA ? 'VERIFY' : 'ENTER')}
                 </button>
+
+                {/* Temporary Troubleshoot Button */}
+                <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            if (!confirm('This will repair the database structure and reset the admin password. Continue?')) return;
+                            try {
+                                const res = await fetch('/api/dev/seed-user');
+                                const data = await res.json();
+                                alert(data.message || JSON.stringify(data));
+                            } catch (e) {
+                                alert('Error: ' + e);
+                            }
+                        }}
+                        style={{
+                            background: 'none',
+                            border: '1px dashed #666',
+                            color: '#888',
+                            padding: '0.5rem 1rem',
+                            cursor: 'pointer',
+                            fontSize: '0.7rem'
+                        }}
+                    >
+                        Troubleshoot: Repair Database
+                    </button>
+                </div>
             </form>
         </div>
     );
