@@ -176,7 +176,7 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
         'Gift Type', 'Gift Method', 'Gift Platform', 'Gift Amount',
         'Gift Date', 'Gift Year', 'Gift Quarter',
         'First Name', 'Last Name', 'Address', 'City', 'State', 'Zip',
-        'Yes Inactive'
+        'Yes Inactive', 'External Batch ID'
     ];
 
     const handleSubmit = async (e: React.FormEvent) => {

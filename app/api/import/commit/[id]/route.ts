@@ -46,8 +46,39 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         const clientRes = await query('SELECT "ClientCode" FROM "Clients" WHERE "ClientID" = $1', [clientId]);
         const clientCode = clientRes.rows[0].ClientCode;
 
-        // Simple Import Batch Code: [Client].IMP.[Date].[SessionID]
-        const batchCode = `${clientCode}.IMP.${yyyy}.${mm}.${dd}.${sessionId}`;
+        // 2. Fetch Staging Data (Need one row to determine Batch Code suffix from External Batch ID)
+        const stagingRes = await query('SELECT "normalized_data" FROM "staging_revenue" WHERE "session_id" = $1', [sessionId]);
+        const rows = stagingRes.rows;
+
+        if (rows.length === 0) {
+            return NextResponse.json({ error: 'No data to commit' }, { status: 400 });
+        }
+
+        const firstRowData = rows[0].normalized_data || {};
+        const externalBatchId = firstRowData['External Batch ID'];
+
+        // Suffix: Right 6 digits of External Batch ID, or fallback to Session ID
+        let suffix = String(sessionId);
+        if (externalBatchId && typeof externalBatchId === 'string' && externalBatchId.length >= 6) {
+            suffix = externalBatchId.slice(-6);
+        } else if (externalBatchId) {
+            suffix = String(externalBatchId);
+        }
+
+        // Platform Short Code
+        const platformMap: Record<string, string> = {
+            'Winred': 'WR',
+            'Stripe': 'STR',
+            'Anedot': 'AND',
+            'Cage': 'CAGE',
+            'Revv': 'REVV',
+            'ActBlue': 'AB'
+        };
+        const platformCode = platformMap[importSession.source_system] || 'IMP';
+
+        // Custom Batch Code: [Client].[Platform].[Date].[Suffix]
+        // Ex: AFL.WR.2025.12.25.nijn33
+        const batchCode = `${clientCode}.${platformCode}.${yyyy}.${mm}.${dd}.${suffix}`;
 
         // Create Batch
         const batchRes = await query(`
@@ -62,8 +93,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
         // 3. Move Data from Staging to Donations
         // We iterate and map 'normalized_data' JSON fields to table columns
-        const stagingRes = await query('SELECT "normalized_data" FROM "staging_revenue" WHERE "session_id" = $1', [sessionId]);
-        const rows = stagingRes.rows;
+        // const stagingRes = await query('SELECT "normalized_data" FROM "staging_revenue" WHERE "session_id" = $1', [sessionId]);
+        // const rows = stagingRes.rows; (Already fetched above)
 
         const insertValues: string[] = [];
         const paramsList: any[] = [];
