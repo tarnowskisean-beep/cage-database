@@ -377,19 +377,9 @@ export default function SearchPage() {
             let scanString = rec.ScanString || rec.scanString || rec.scanstring || '';
 
             // 2. Fallback: Generate Composite ID if missing
-            // Format: ClientCode.CB.YYYY.MM.DD.BatchCode (where BatchCode = Initials.Seq)
+            // Format: ClientCode.PlatformAbbrev.YYYY.MM.DD.BatchCode
             if (!scanString && rec.ClientCode && rec.BatchCode) {
-                // Use BatchDate if available, else CreatedAt or Today? 
-                // Usually Batch Date. `rec.BatchDate` might be available if joined? 
-                // Check query: joined "Batches" b. `b."Date"`. 
-                // `FIELD_MAP` doesn't explicitly map `BatchDate` but `d.*` and `b."Date"` might be there?
-                // The query in route.ts selects `b."BatchCode"`. It does NOT select `b."Date"` explicitly in the SELECT list in route.ts?
-                // Wait, route.ts has: `b."BatchCode", c."ClientCode", c."ClientName"`. It does NOT have `b."Date"`.
-                // BUT `d.*` has `BatchDate` if it was saved in Donations table?
-                // Schema has `BatchDate` in Donations. And `Date` in Batches.
-                // Let's rely on `rec.BatchDate` (Donations table) or `rec.GiftDate` (Donations table). 
-                // User example `2025.12.31` implies the batch date.
-
+                // Use BatchDate logic as requested (Batch Level)
                 const rawDate = rec.BatchDate || rec.GiftDate || new Date().toISOString();
                 const d = new Date(rawDate);
                 const yyyy = d.getFullYear();
@@ -397,7 +387,23 @@ export default function SearchPage() {
                 const dd = String(d.getDate()).padStart(2, '0');
                 const dateStr = `${yyyy}.${mm}.${dd}`;
 
-                scanString = `${rec.ClientCode}.CB.${dateStr}.${rec.BatchCode}`;
+                // Platform Abbreviation Mapping
+                const platform = rec.GiftPlatform || rec.giftPlatform || 'Cage';
+                const abbreviations: Record<string, string> = {
+                    'Chainbridge': 'CB',
+                    'Stripe': 'ST',
+                    'National Capital': 'NC',
+                    'City National': 'CN',
+                    'Propay': 'PP',
+                    'Anedot': 'AN',
+                    'Winred': 'WR',
+                    'Cage': 'CG',
+                    'Import': 'IM'
+                };
+                // Default to first 2 chars upper-case if not found
+                const platCode = abbreviations[platform] || platform.substring(0, 2).toUpperCase();
+
+                scanString = `${rec.ClientCode}.${platCode}.${dateStr}.${rec.BatchCode}`;
             }
 
             let mailCode = rec.MailCode || '';
