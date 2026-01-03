@@ -37,6 +37,7 @@ export default function BatchesPage() {
     const defaultRange = getWeeklyRange();
     const [filters, setFilters] = useState({
         clientId: '',
+        status: '',
         startDate: defaultRange.start,
         endDate: defaultRange.end
     });
@@ -47,6 +48,7 @@ export default function BatchesPage() {
             if (filters.clientId) params.append('clientId', filters.clientId);
             if (filters.startDate) params.append('startDate', filters.startDate);
             if (filters.endDate) params.append('endDate', filters.endDate);
+            if (filters.status) params.append('status', filters.status);
 
             const res = await fetch(`/api/batches?${params.toString()}`);
             if (res.ok) setBatches(await res.json());
@@ -114,6 +116,18 @@ export default function BatchesPage() {
                     />
                 </div>
 
+                <select
+                    className="input-field"
+                    style={{ width: 'auto', minWidth: '150px' }}
+                    value={filters.status}
+                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                >
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Closed">Closed</option>
+                </select>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
                     <input
@@ -126,9 +140,9 @@ export default function BatchesPage() {
                     />
                 </div>
 
-                {(filters.clientId || filters.startDate || filters.endDate) && (
+                {(filters.clientId || filters.startDate || filters.endDate || filters.status) && (
                     <button
-                        onClick={() => setFilters({ clientId: '', startDate: '', endDate: '' })}
+                        onClick={() => setFilters({ clientId: '', startDate: '', endDate: '', status: '' })}
                         style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
                     >
                         Clear Filters
@@ -374,8 +388,16 @@ function BatchRow({ batch }: { batch: Batch }) {
             <td style={{ padding: '1rem' }}>
                 <span style={{
                     padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
-                    background: batch.Status === 'Open' ? 'rgba(74, 222, 128, 0.2)' : 'rgba(148, 163, 184, 0.2)',
-                    color: batch.Status === 'Open' ? '#4ade80' : 'var(--color-text-muted)'
+                    background: batch.Status === 'Open' ? 'rgba(74, 222, 128, 0.2)' :
+                        batch.Status === 'Submitted' ? 'rgba(192, 132, 252, 0.2)' :
+                            'rgba(148, 163, 184, 0.2)',
+                    color: batch.Status === 'Open' ? '#4ade80' :
+                        batch.Status === 'Submitted' ? '#c084fc' :
+                            'var(--color-text-muted)',
+                    border: `1px solid ${batch.Status === 'Open' ? '#4ade80' :
+                        batch.Status === 'Submitted' ? '#c084fc' :
+                            'var(--color-border)'
+                        }`
                 }}>
                     {batch.Status}
                 </span>

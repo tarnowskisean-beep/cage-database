@@ -41,6 +41,7 @@ export default function BatchEntry({ id }: { id: string }) {
             donorPhone: faker.phone.number(),
             donorEmployer: faker.company.name(),
             donorOccupation: faker.person.jobTitle(),
+            organizationName: faker.company.name(),
             amount: faker.finance.amount({ min: 10, max: 1000, dec: 2 }),
             checkNumber: faker.finance.accountNumber(),
         };
@@ -65,6 +66,14 @@ export default function BatchEntry({ id }: { id: string }) {
                     <span style={{ color: 'var(--color-border)' }}>|</span>
                     <span style={{ fontWeight: 600 }}>{batch?.BatchCode}</span>
                     <span style={{ color: 'var(--color-text-muted)' }}>{batch?.ClientCode}</span>
+                    <span style={{
+                        padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                        background: batch?.Status === 'Open' ? '#4ade80' : batch?.Status === 'Submitted' ? '#c084fc' : '#334155',
+                        color: batch?.Status === 'Open' ? '#022c22' : 'white',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    }}>
+                        {batch?.Status === 'Open' ? '🟢 ACTIVE' : batch?.Status === 'Submitted' ? '🟣 SUBMITTED' : `🔒 ${batch?.Status}`}
+                    </span>
                     {editingId && <span style={{ background: '#3b82f6', color: 'white', padding: '0.1rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>EDITING MODE</span>}
                 </div>
                 <div>

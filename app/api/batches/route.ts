@@ -25,6 +25,12 @@ export async function GET(request: Request) {
       params.push(`${endDate} 23:59:59`);
     }
 
+    const status = searchParams.get('status');
+    if (status) {
+      conditions.push(`b."Status" = $${paramIndex++}`);
+      params.push(status);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const result = await query(`
