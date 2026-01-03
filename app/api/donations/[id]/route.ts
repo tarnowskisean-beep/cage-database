@@ -1,10 +1,32 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { verifyDonationAccess, UserSession } from '@/lib/auth-helpers';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
         const body = await request.json();
+
+        // 1. Authentication
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // 2. Authorization (RBAC)
+        // Cast session user to our type which includes allowedClientIds
+        const user: UserSession = session.user as any;
+        const hasAccess = await verifyDonationAccess(user, id);
+        if (!hasAccess) {
+            return NextResponse.json({ error: 'Forbidden: Access Denied' }, { status: 403 });
+        }
+
+        // 3. Optimistic Locking Check
+        // Frontend must send 'version' in body. If missing, we assume force update (or legacy client)
+        // ideally checking version should be mandatory.
+        const providedVersion = body.Version;
 
         const {
             // Fields to update
@@ -19,15 +41,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         } = body;
 
 
-        // 1. Fetch existing record to ensure we don't overwrite with NULLs on partial update
+        // 4. Fetch existing record
         const existingRes = await query('SELECT * FROM "Donations" WHERE "DonationID" = $1', [id]);
         if (existingRes.rows.length === 0) {
             return NextResponse.json({ error: 'Donation not found' }, { status: 404 });
         }
         const current = existingRes.rows[0];
 
-        // 2. Merge existing data with new data (new data takes precedence if defined)
-        // Helper to check if value is valid to update (not undefined)
+        // 5. Version Check
+        if (providedVersion !== undefined && providedVersion !== null) {
+            if (current.Version !== providedVersion) {
+                return NextResponse.json({
+                    error: 'Conflict: Data has been modified by another user.',
+                    currentVersion: current.Version
+                }, { status: 409 });
+            }
+        }
+
+        // 6. Merge existing data
         const val = (v: any, cur: any) => v === undefined ? cur : v;
 
         const result = await query(
@@ -62,7 +93,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 "Comment" = $28,
                 "DonorPhone" = $29,
                 "DonorEmail" = $30,
-                "OrganizationName" = $31
+                "OrganizationName" = $31,
+                "Version" = COALESCE("Version", 1) + 1  -- Increment Version
             WHERE "DonationID" = $32
             RETURNING *`,
             [
@@ -102,7 +134,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         );
 
         if (result.rowCount === 0) {
-            return NextResponse.json({ error: 'Donation not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Donation not found or Update Failed' }, { status: 404 });
         }
 
         return NextResponse.json(result.rows[0]);

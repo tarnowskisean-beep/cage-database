@@ -54,6 +54,16 @@ export async function GET() {
             );
         `);
 
+        // 5. Concurrency Control (Optimistic Locking)
+        try {
+            // Check if Version column exists, if not add it
+            // Note: Postgres specific syntax for 'ADD COLUMN IF NOT EXISTS'
+            await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "Version" INT DEFAULT 1`);
+            await query(`ALTER TABLE "Batches" ADD COLUMN IF NOT EXISTS "Version" INT DEFAULT 1`);
+        } catch (colErr) {
+            console.warn('Concurrency columns might already exist or failed:', colErr);
+        }
+
         // Seed Initial Policies if empty
         const policyCheck = await query('SELECT COUNT(*) as count FROM "Policies"');
         if (parseInt(policyCheck.rows[0].count) === 0) {
