@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-// Types (Mirrors Search Page)
+// Types
 interface SearchResult {
     DonationID: number;
     GiftAmount: number;
@@ -11,11 +11,13 @@ interface SearchResult {
     GiftPlatform: string;
     ClientCode: string;
     ClientID: number;
-    CreatedAt: string; // date
+    CreatedAt: string;
     GiftDate: string;
     ScanString?: string;
-    MailCode?: string; // Derived
-    // ... other needed fields
+    MailCode?: string;
+    GiftPledgeAmount?: number;
+    GiftFee?: number;
+    // ... other fields
 }
 
 interface Client {
@@ -40,7 +42,6 @@ function ReportContent() {
 
         const fetchReportData = async () => {
             try {
-                // 1. Re-run Search
                 const query = JSON.parse(decodeURIComponent(qParam));
                 const res = await fetch('/api/search', {
                     method: 'POST',
@@ -51,16 +52,13 @@ function ReportContent() {
                 const rows = Array.isArray(data) ? data : [];
                 setResults(rows);
 
-                // 2. Check for Single Client
                 const uniqueClientIDs = Array.from(new Set(rows.map((r: any) => r.ClientID).filter(Boolean)));
                 if (uniqueClientIDs.length === 1) {
-                    // Fetch Client Details for Logo
-                    const clientRes = await fetch('/api/clients'); // Ideally /api/clients/:id but we have list
+                    const clientRes = await fetch('/api/clients');
                     const clients = await clientRes.json();
                     const match = clients.find((c: Client) => c.ClientID === uniqueClientIDs[0]);
                     if (match) setClient(match);
                 }
-
             } catch (e) {
                 console.error(e);
             } finally {
@@ -74,74 +72,124 @@ function ReportContent() {
     if (loading) return <div className="p-8">Generating Report...</div>;
 
     // --- AGGREGATION LOGIC ---
-    const totalAmount = results.reduce((sum, r) => sum + Number(r.GiftAmount || 0), 0);
-    const count = results.length;
 
-    // Platform Stats & Method Stats
-    const platforms: Record<string, { count: number, sum: number }> = {};
-    const methods: Record<string, { count: number, sum: number }> = {};
+    // 1. Helpers
+    const parseAmount = (val: any) => Number(val || 0);
+    const isZero = (method: string) => method.toLowerCase() === 'zero' || method.toLowerCase() === 'non-donor';
 
-    results.forEach(r => {
-        const p = r.GiftPlatform || 'Unknown';
-        if (!platforms[p]) platforms[p] = { count: 0, sum: 0 };
-        platforms[p].count++;
-        platforms[p].sum += Number(r.GiftAmount || 0);
+    // Categorize Methods
+    // Caged: Check, Cash, Credit Card
+    // Non-Caged: EFT, Stock, Online
+    const isCaged = (m: string) => ['Check', 'Cash', 'Credit Card'].includes(m);
+    const isNonCaged = (m: string) => ['EFT', 'Stock', 'Online'].includes(m);
 
-        // Aggregate ALL methods for summary stats
-        const m = r.GiftMethod || 'Unknown';
-        if (!methods[m]) methods[m] = { count: 0, sum: 0 };
-        methods[m].count++;
-        methods[m].sum += Number(r.GiftAmount || 0);
-    });
+    // Initial Accumulators for "Activity Window"
+    let totalPledged = 0;
+    let totalCagedEnvelopes = 0;
+    let cagedNonDonors = 0;
+    let cagedDonors = 0;
 
-    // Caging Activity Aggregation
-    // Structure: MailCode -> { donors: 0, nonDonors: 0, amount: 0, methodStats: { [method]: { count, sum } } }
-    type RowStats = {
+    const cagedStats = {
+        Check: { count: 0, sum: 0 },
+        Cash: { count: 0, sum: 0 },
+        'Credit Card': { count: 0, sum: 0 }
+    };
+
+    const nonCagedStats = {
+        EFT: { count: 0, sum: 0 },
+        Stock: { count: 0, sum: 0 },
+        Online: { count: 0, sum: 0 }
+    };
+
+    let totalChargebackCount = 0;
+    let totalChargebackSum = 0;
+
+    // Platforms Accumulator
+    const platformStats: Record<string, { count: number, sum: number, fees: number }> = {};
+    const targetPlatforms = ['Chainbridge', 'Anedot', 'Stripe', 'Winred', 'Revv', 'Cornerstone'];
+    targetPlatforms.forEach(p => platformStats[p] = { count: 0, sum: 0, fees: 0 });
+
+    // Matrix Accumulator
+    type MatrixRow = {
         donors: number;
         nonDonors: number;
         amount: number;
-        methodStats: Record<string, { count: number; sum: number }>;
+        check: { count: number, sum: number };
+        cash: { count: number, sum: number };
+        cc: { count: number, sum: number };
     };
-    const cagingActivity: Record<string, RowStats> = {};
-    const uniqueMethods = new Set<string>();
+    const matrix: Record<string, MatrixRow> = {};
 
+    // 2. Main Loop
     results.forEach(r => {
-        const rawMailCode = r.ScanString && r.ScanString.includes('\t') ? r.ScanString.split('\t')[0] : (r.MailCode || '');
-        const mailCode = rawMailCode || 'No Mail Code';
         const method = r.GiftMethod || 'Unknown';
-        const amount = Number(r.GiftAmount || 0);
-        const isNonDonor = method.toLowerCase() === 'zero' || method.toLowerCase() === 'non-donor';
+        const amount = parseAmount(r.GiftAmount);
+        const pledge = parseAmount(r.GiftPledgeAmount);
+        const fee = parseAmount(r.GiftFee);
+        const platform = r.GiftPlatform || 'Unknown';
+        const mailCodeRaw = r.ScanString && r.ScanString.includes('\t') ? r.ScanString.split('\t')[0] : (r.MailCode || 'No Mail Code');
+        const mailCode = mailCodeRaw || 'No Mail Code';
 
-        if (!cagingActivity[mailCode]) {
-            cagingActivity[mailCode] = { donors: 0, nonDonors: 0, amount: 0, methodStats: {} };
+        // Activity Window Stats
+        totalPledged += pledge; // Logic check: is pledge separate? assuming yes.
+
+        if (isCaged(method) || isZero(method)) {
+            totalCagedEnvelopes++;
         }
 
-        const row = cagingActivity[mailCode];
+        if (isZero(method)) {
+            cagedNonDonors++;
+        } else if (isCaged(method)) {
+            cagedDonors++;
+            // Specific Stats
+            if (method === 'Check') { cagedStats.Check.count++; cagedStats.Check.sum += amount; }
+            if (method === 'Cash') { cagedStats.Cash.count++; cagedStats.Cash.sum += amount; }
+            if (method === 'Credit Card') { cagedStats['Credit Card'].count++; cagedStats['Credit Card'].sum += amount; }
+        } else if (isNonCaged(method)) {
+            // Non-Caged Stats
+            if (method === 'EFT') { nonCagedStats.EFT.count++; nonCagedStats.EFT.sum += amount; }
+            if (method === 'Stock') { nonCagedStats.Stock.count++; nonCagedStats.Stock.sum += amount; }
+            if (method === 'Online') { nonCagedStats.Online.count++; nonCagedStats.Online.sum += amount; }
+        }
 
-        // Update Row Totals
+        // Platform Stats (Naive mapping, check case sensitivity if needed)
+        // Only track if it's one of the target platforms for now, or just map all?
+        // Screenshot implies specific list.
+        const pKey = targetPlatforms.find(tp => tp.toLowerCase() === platform.toLowerCase()) || 'Other';
+        if (pKey !== 'Other') {
+            platformStats[pKey].count++;
+            platformStats[pKey].sum += amount;
+            platformStats[pKey].fees += fee;
+        }
+
+        // Matrix Aggregation
+        if (!matrix[mailCode]) {
+            matrix[mailCode] = {
+                donors: 0, nonDonors: 0, amount: 0,
+                check: { count: 0, sum: 0 },
+                cash: { count: 0, sum: 0 },
+                cc: { count: 0, sum: 0 }
+            };
+        }
+        const row = matrix[mailCode];
         row.amount += amount;
-        if (isNonDonor) {
+
+        if (isZero(method)) {
             row.nonDonors++;
         } else {
             row.donors++;
-        }
-
-        // Update Method Stats (Skip Zero/Non-Donor for the breakdown columns if desired, strictly payment methods)
-        if (!isNonDonor) {
-            if (!row.methodStats[method]) row.methodStats[method] = { count: 0, sum: 0 };
-            row.methodStats[method].count++;
-            row.methodStats[method].sum += amount;
-            uniqueMethods.add(method);
+            if (method === 'Check') { row.check.count++; row.check.sum += amount; }
+            if (method === 'Cash') { row.cash.count++; row.cash.sum += amount; }
+            if (method === 'Credit Card') { row.cc.count++; row.cc.sum += amount; }
         }
     });
 
-    // Sort methods alphabetically, but ONLY include Caging-relevant methods (Check, Cash, Credit Card)
-    const CAGING_METHODS = ['Check', 'Cash', 'Credit Card'];
-    const dynamicMethods = Array.from(uniqueMethods)
-        .filter(m => CAGING_METHODS.includes(m))
-        .sort();
+    const totalCagedAmount = cagedStats.Check.sum + cagedStats.Cash.sum + cagedStats['Credit Card'].sum;
+    const totalNonCagedAmount = nonCagedStats.EFT.sum + nonCagedStats.Stock.sum + nonCagedStats.Online.sum;
+    const grossTotal = totalCagedAmount + totalNonCagedAmount;
+    const netTotal = grossTotal - totalChargebackSum; // Assuming chargebacks subtract
 
-    // Date Range Logic (Prioritize Query, Fallback to Data)
+    // Date Range Logic
     let minDate = '-';
     let maxDate = '-';
     const qParam = searchParams.get('q');
@@ -157,17 +205,14 @@ function ReportContent() {
                 }
                 return null;
             };
-
             const startQuery = findRule('gte');
             const endQuery = findRule('lte');
-
             if (startQuery) minDate = new Date(startQuery).toLocaleDateString();
             if (endQuery) maxDate = new Date(endQuery).toLocaleDateString();
         } catch (e) {
             console.error("Error parsing query dates", e);
         }
     }
-
     if (minDate === '-' || maxDate === '-') {
         const dates = results.map(r => new Date(r.GiftDate).getTime());
         if (minDate === '-' && dates.length) minDate = new Date(Math.min(...dates)).toLocaleDateString();
@@ -182,6 +227,12 @@ function ReportContent() {
                     body { background: white; }
                     @page { margin: 0.5cm; }
                 }
+                table.report-table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 0.8rem; }
+                table.report-table th, table.report-table td { border: 1px solid black; padding: 4px; }
+                .text-right { text-align: right; }
+                .text-center { text-align: center; }
+                .font-bold { fontWeight: bold; }
+                .bg-gray { background: #eee; }
             `}</style>
 
             {/* HEADER */}
@@ -191,20 +242,7 @@ function ReportContent() {
                     <div style={{ fontSize: '0.9rem', letterSpacing: '2px' }}>PROFESSIONAL</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
-                    <button
-                        className="no-print"
-                        onClick={() => window.print()}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            background: '#0ea5e9',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            display: 'flex', alignItems: 'center', gap: '0.5rem'
-                        }}
-                    >
+                    <button className="no-print" onClick={() => window.print()} style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
                         🖨️ Print / Save PDF
                     </button>
                     {client?.LogoURL ? (
@@ -217,130 +255,151 @@ function ReportContent() {
                 </div>
             </div>
 
-            <h2 style={{ textAlign: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>
-                Weekly Contributions Report
-            </h2>
+            <h2 style={{ textAlign: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>Weeky Contributions Report</h2>
             <div style={{ marginBottom: '1.5rem', fontWeight: 600 }}>
                 Report Date: {new Date().toLocaleDateString()} <br />
                 Account: {client ? `${client.ClientName} (${client.ClientCode})` : 'All Accounts'}
             </div>
 
-            {/* MAIN GRIDS */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
-
-                {/* LEFT: Activity Window */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', fontSize: '0.8rem' }}>
+                {/* LEFT TABLE: Activity Window */}
+                <table className="report-table">
                     <thead>
                         <tr>
-                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left' }}>Activity Window:</th>
-                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{minDate} - {maxDate}</th>
+                            <th className="text-left">Activity Window:</th>
+                            <th className="text-right">{minDate} - {maxDate}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td style={{ border: '1px solid black', padding: '4px' }}>Total Record Count:</td>
-                            <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{count}</td>
+                        <tr><td>TY Letter Count:</td><td className="text-right">{cagedDonors}</td></tr>
+                        <tr><td>Pledged Amount:</td><td className="text-right">${totalPledged.toFixed(2)}</td></tr>
+                        <tr><td>Total # of Caged Envelopes:</td><td className="text-right">{totalCagedEnvelopes}</td></tr>
+                        <tr><td>Total # of Caged Non-Donors:</td><td className="text-right">{cagedNonDonors}</td></tr>
+                        <tr><td>Total # of Caged Donors:</td><td className="text-right">{cagedDonors}</td></tr>
+
+                        <tr><td>Total # of Caged Donors: (Check only)</td><td className="text-right">{cagedStats.Check.count}</td></tr>
+                        <tr><td>Total # of Caged Donors: (Cash only)</td><td className="text-right">{cagedStats.Cash.count}</td></tr>
+                        <tr><td>Total # of Caged Donors: (CC only)</td><td className="text-right">{cagedStats['Credit Card'].count}</td></tr>
+
+                        <tr><td>Total $ of Caged Donors: (Check only)</td><td className="text-right">${cagedStats.Check.sum.toFixed(2)}</td></tr>
+                        <tr><td>Total $ of Caged Donors: (Cash only)</td><td className="text-right">${cagedStats.Cash.sum.toFixed(2)}</td></tr>
+                        <tr><td>Total $ of Caged Donors: (CC only)</td><td className="text-right">${cagedStats['Credit Card'].sum.toFixed(2)}</td></tr>
+
+                        <tr className="font-bold bg-gray">
+                            <td>Caged Total Amount (cc/cash/check):</td>
+                            <td className="text-right">${totalCagedAmount.toFixed(2)}</td>
                         </tr>
-                        <tr>
-                            <td style={{ border: '1px solid black', padding: '4px' }}>Total Amount:</td>
-                            <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${totalAmount.toFixed(2)}</td>
+
+                        {/* Non-Caged Section */}
+                        <tr><td>Total # of Non-Caged Donors: (EFT only)</td><td className="text-right">{nonCagedStats.EFT.count}</td></tr>
+                        <tr><td>Total # of Non-Caged Donors: (Stock only)</td><td className="text-right">{nonCagedStats.Stock.count}</td></tr>
+                        <tr><td>Total # of Non-Caged Donors: (Online only)</td><td className="text-right">{nonCagedStats.Online.count}</td></tr>
+
+                        <tr><td>Total $ of Non-Caged Donors: (EFT only)</td><td className="text-right">${nonCagedStats.EFT.sum.toFixed(2)}</td></tr>
+                        <tr><td>Total $ of Non-Caged Donors: (Stock only)</td><td className="text-right">${nonCagedStats.Stock.sum.toFixed(2)}</td></tr>
+                        <tr><td>Total $ of Non-Caged Donors: (Online only)</td><td className="text-right">${nonCagedStats.Online.sum.toFixed(2)}</td></tr>
+
+                        <tr className="font-bold bg-gray">
+                            <td>Gross Total Amount:</td>
+                            <td className="text-right">${grossTotal.toFixed(2)}</td>
                         </tr>
-                        {/* Breakdown by Method */}
-                        {Object.entries(methods).map(([m, stats]) => (
-                            <tr key={m}>
-                                <td style={{ border: '1px solid black', padding: '4px' }}>{m} Total:</td>
-                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${stats.sum.toFixed(2)}</td>
-                            </tr>
-                        ))}
+
+                        <tr><td>Total # of Chargebacks:</td><td className="text-right">{totalChargebackCount}</td></tr>
+                        <tr><td>Total $ of Chargebacks:</td><td className="text-right">${totalChargebackSum.toFixed(2)}</td></tr>
+
+                        <tr className="font-bold" style={{ borderTop: '2px solid black' }}>
+                            <td>Net Total Amount:</td>
+                            <td className="text-right">${netTotal.toFixed(2)}</td>
+                        </tr>
                     </tbody>
                 </table>
 
-                {/* RIGHT: Platform Totals */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', fontSize: '0.8rem' }}>
+                {/* RIGHT TABLE: Platform Totals */}
+                <table className="report-table">
                     <thead>
-                        <tr>
-                            <th colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Platform Totals:</th>
-                        </tr>
+                        <tr><th colSpan={2} className="text-center">Platform Totals:</th></tr>
                     </thead>
                     <tbody>
-                        {Object.entries(platforms).map(([p, stats]) => (
-                            <tr key={p}>
-                                <td style={{ border: '1px solid black', padding: '4px' }}>Total $ of {p}:</td>
-                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>${stats.sum.toFixed(2)}</td>
+                        {targetPlatforms.map(p => (
+                            <tr key={'cnt-' + p}>
+                                <td>Total # of {p}:</td>
+                                <td className="text-right">{platformStats[p].count}</td>
                             </tr>
                         ))}
-                        {Object.entries(platforms).map(([p, stats]) => (
-                            <tr key={p + 'count'}>
-                                <td style={{ border: '1px solid black', padding: '4px' }}>Total # of {p}:</td>
-                                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{stats.count}</td>
+                        {targetPlatforms.map(p => (
+                            <tr key={'sum-' + p}>
+                                <td>Total $ of {p}:</td>
+                                <td className="text-right">${platformStats[p].sum.toFixed(2)}</td>
+                            </tr>
+                        ))}
+                        {/* Chargebacks filler for now */}
+                        {targetPlatforms.map(p => (
+                            <tr key={'cb-' + p}>
+                                <td>Total # of {p} Chargebacks:</td>
+                                <td className="text-right">0</td>
+                            </tr>
+                        ))}
+                        {targetPlatforms.map(p => (
+                            <tr key={'cbs-' + p}>
+                                <td>Total $ of {p} Chargebacks:</td>
+                                <td className="text-right">$0.00</td>
+                            </tr>
+                        ))}
+                        {/* Fees */}
+                        {targetPlatforms.map(p => (
+                            <tr key={'fees-' + p}>
+                                <td>Total $ of {p} Fees:</td>
+                                <td className="text-right">${platformStats[p].fees.toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
 
-            {/* BOTTOM: Caging Activity (Mailcode breakdown) */}
-            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center', background: '#ccc', padding: '4px', border: '1px solid black' }}>
-                Caging Activity (Matrix)
-            </h3>
+            {/* CAGING ACTIVITY MATRIX */}
+            <h3 className="text-center font-bold" style={{ border: '1px solid black', padding: '4px', background: '#ccc', fontSize: '1rem', marginBottom: '0.5rem' }}>Caging Activity Matrix</h3>
+            <table className="report-table">
+                <thead>
+                    <tr className="bg-gray">
+                        <th className="text-left">Mailcode</th>
+                        <th>Donors</th>
+                        <th>Non-Donors</th>
+                        <th>Total $$</th>
+                        <th colSpan={2} style={{ borderLeft: '2px solid black' }}>Check</th>
+                        <th colSpan={2} style={{ borderLeft: '2px solid black' }}>Cash</th>
+                        <th colSpan={2} style={{ borderLeft: '2px solid black' }}>CC</th>
+                    </tr>
+                    <tr className="bg-gray" style={{ fontSize: '0.7rem' }}>
+                        <th></th><th></th><th></th><th></th>
+                        <th style={{ borderLeft: '2px solid black' }}>Donors</th><th>Amount</th>
+                        <th style={{ borderLeft: '2px solid black' }}>Donors</th><th>Amount</th>
+                        <th style={{ borderLeft: '2px solid black' }}>Donors</th><th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {Object.keys(matrix).sort().map(mailCode => {
+                        const row = matrix[mailCode];
+                        return (
+                            <tr key={mailCode}>
+                                <td className="font-bold">{mailCode}</td>
+                                <td className="text-center">{row.donors}</td>
+                                <td className="text-center">{row.nonDonors}</td>
+                                <td className="text-right font-bold">${row.amount.toFixed(2)}</td>
 
-            <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '0.75rem' }}>
-                    <thead>
-                        <tr style={{ background: '#eee' }}>
-                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'left', minWidth: '80px' }}>Mail Code</th>
-                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Donors</th>
-                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Non-Donors</th>
-                            <th style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total $$</th>
+                                <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.check.count || '-'}</td>
+                                <td className="text-right">{row.check.sum ? '$' + row.check.sum.toFixed(2) : '-'}</td>
 
-                            {/* Dynamic Method Columns */}
-                            {dynamicMethods.map(m => (
-                                <th key={m} colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'center', borderLeft: '2px solid black' }}>{m}</th>
-                            ))}
-                        </tr>
-                        <tr style={{ background: '#eee', fontSize: '0.7rem' }}>
-                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
-                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
-                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
-                            <th style={{ border: '1px solid black', padding: '4px' }}></th>
+                                <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.cash.count || '-'}</td>
+                                <td className="text-right">{row.cash.sum ? '$' + row.cash.sum.toFixed(2) : '-'}</td>
 
-                            {dynamicMethods.map(m => (
-                                <>
-                                    <th key={`${m}-cnt`} style={{ border: '1px solid black', borderLeft: '2px solid black', padding: '4px', textAlign: 'center' }}>Donors</th>
-                                    <th key={`${m}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>Amount</th>
-                                </>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {Object.keys(cagingActivity).sort().map(mailCode => {
-                            const row = cagingActivity[mailCode];
-                            return (
-                                <tr key={mailCode}>
-                                    <td style={{ border: '1px solid black', padding: '4px', fontWeight: 600 }}>{mailCode}</td>
-                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{row.donors}</td>
-                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{row.nonDonors}</td>
-                                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right', fontWeight: 600 }}>${row.amount.toFixed(2)}</td>
+                                <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.cc.count || '-'}</td>
+                                <td className="text-right">{row.cc.sum ? '$' + row.cc.sum.toFixed(2) : '-'}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
 
-                                    {dynamicMethods.map(method => {
-                                        const stats = row.methodStats[method] || { count: 0, sum: 0 };
-                                        return (
-                                            <>
-                                                <td key={`${method}-cnt`} style={{ border: '1px solid black', borderLeft: '2px solid black', padding: '4px', textAlign: 'center', color: stats.count ? 'black' : '#ccc' }}>
-                                                    {stats.count}
-                                                </td>
-                                                <td key={`${method}-amt`} style={{ border: '1px solid black', padding: '4px', textAlign: 'right', color: stats.sum ? 'black' : '#ccc' }}>
-                                                    ${stats.sum.toFixed(2)}
-                                                </td>
-                                            </>
-                                        );
-                                    })}
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
         </div>
     );
 }
