@@ -171,6 +171,7 @@ export default function SearchPage() {
         { value: 'method', label: 'Payment Method' },
         { value: 'platform', label: 'Platform' },
         { value: 'checkNumber', label: 'Check Number' },
+        { value: 'compositeId', label: 'Composite ID' }, // Added
         { value: 'donorCity', label: 'City' },
         { value: 'donorState', label: 'State' },
         { value: 'donorZip', label: 'Zip Code' },
@@ -347,7 +348,7 @@ export default function SearchPage() {
 
         // Headers
         const headers = [
-            'DonationID', 'ClientID', 'Date Created', 'CagingID', 'MailCode', 'Prefix',
+            'DonationID', 'ClientID', 'Date Created', 'CagingID', 'MailCode', 'Composite ID', 'Prefix',
             'First Name', 'Middle Name', 'Last Name', 'Suffix', 'Address', 'City', 'State', 'Zip',
             'Phone', 'Email', 'Occupation', 'Employer',
             'Gift Type', 'Gift Method', 'Gift Platform', 'Gift Organization', 'Gift Custodian',
@@ -380,7 +381,9 @@ export default function SearchPage() {
                 esc(rec.CreatedAt ? new Date(rec.CreatedAt).toLocaleDateString('en-US') : ''),
                 esc(rec.DonationID),
                 esc(mailCode),
+                esc(rec.ScanString), // Composite ID
                 esc(rec.DonorPrefix),
+
                 esc(rec.DonorFirstName),
                 esc(rec.DonorMiddleName),
                 esc(rec.DonorLastName),
