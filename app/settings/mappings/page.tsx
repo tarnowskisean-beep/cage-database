@@ -215,21 +215,13 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Source System</label>
-                        <input
-                            list="source_systems"
-                            className="input-field"
+                        <CreatableSelect
+                            label="Source System"
                             value={formData.source_system}
-                            onChange={e => setFormData({ ...formData, source_system: e.target.value })}
-                            placeholder="Select or Type Source Name"
+                            options={['Winred', 'Stripe', 'Anedot', 'Cage', '*']}
+                            onChange={val => setFormData({ ...formData, source_system: val })}
+                            placeholder="Enter Source Name"
                         />
-                        <datalist id="source_systems">
-                            <option value="Winred" />
-                            <option value="Stripe" />
-                            <option value="Anedot" />
-                            <option value="Cage" />
-                            <option value="*" label="Global Default" />
-                        </datalist>
                     </div>
 
                     <div>
