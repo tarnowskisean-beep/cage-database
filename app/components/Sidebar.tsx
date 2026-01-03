@@ -88,7 +88,7 @@ export default function Sidebar() {
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)' }}>
                 {/* Settings Link - ADMIN ONLY */}
                 {session?.user?.role === 'Admin' && (
-                    <Link href="/settings/users" style={{
+                    <Link href="/settings/mappings" style={{
                         display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem',
                         color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'all 0.2s',
                         justifyContent: isCollapsed ? 'center' : 'flex-start'
