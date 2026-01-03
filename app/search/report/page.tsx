@@ -197,6 +197,7 @@ function ReportContent() {
     // ... (Date logic omitted for brevity, reusing existing fallback logic)
     const dates = results.map(r => new Date(r.GiftDate).getTime());
     if (dates.length) {
+        minDate = new Date(Math.min(...dates)).toLocaleDateString();
         maxDate = new Date(Math.max(...dates)).toLocaleDateString();
     }
 
