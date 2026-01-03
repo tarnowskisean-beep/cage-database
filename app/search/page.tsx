@@ -368,6 +368,7 @@ export default function SearchPage() {
                 return str;
             };
 
+            const rec = r as any;
             let mailCode = rec.MailCode || '';
             if (!mailCode && rec.ScanString && rec.ScanString.includes('\t')) {
                 mailCode = rec.ScanString.split('\t')[0];
