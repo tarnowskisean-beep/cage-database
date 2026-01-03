@@ -47,7 +47,7 @@ export async function POST(
         let type = '';
         let filename = '';
         let storageKey = '';
-        let buffer = null;
+        const buffer = null;
         let fileSizeBytes = 0;
 
         if (contentType.includes('application/json')) {

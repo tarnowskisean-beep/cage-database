@@ -59,22 +59,22 @@ export default function BatchesPage() {
 
     const [platforms, setPlatforms] = useState<string[]>([]);
 
-    const fetchClients = async () => {
-        try {
-            const res = await fetch('/api/clients');
-            if (res.ok) setClients(await res.json());
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchPlatforms = async () => {
-        try {
-            const res = await fetch('/api/platforms');
-            if (res.ok) setPlatforms(await res.json());
-        } catch (err) { console.error(err); }
-    };
-
     // Load Data
     useEffect(() => {
+        const fetchClients = async () => {
+            try {
+                const res = await fetch('/api/clients');
+                if (res.ok) setClients(await res.json());
+            } catch (err) { console.error(err); }
+        };
+
+        const fetchPlatforms = async () => {
+            try {
+                const res = await fetch('/api/platforms');
+                if (res.ok) setPlatforms(await res.json());
+            } catch (err) { console.error(err); }
+        };
+
         fetchClients();
         fetchPlatforms();
     }, []);

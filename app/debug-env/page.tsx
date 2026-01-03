@@ -11,12 +11,11 @@ export default async function DebugEnvPage() {
     };
 
     let dbStatus = 'Unknown';
-    let dbError = '';
+    let dbError = null;
 
     try {
-        const start = Date.now();
         await query('SELECT 1');
-        dbStatus = `Connected in ${Date.now() - start}ms`;
+        dbStatus = 'Connected';
     } catch (e: any) {
         dbStatus = 'Failed';
         dbError = e.message;

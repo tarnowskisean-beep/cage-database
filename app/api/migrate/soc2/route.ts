@@ -41,6 +41,19 @@ export async function GET() {
             );
         `);
 
+        // 4. Audit Logs (SOC 2 Requirement)
+        await query(`
+            CREATE TABLE IF NOT EXISTS "AuditLogs" (
+                "LogID" SERIAL PRIMARY KEY,
+                "UserID" INT REFERENCES "Users"("UserID"),
+                "Action" TEXT NOT NULL,
+                "EntityID" TEXT,
+                "Details" TEXT,
+                "IPAddress" TEXT,
+                "Timestamp" TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+
         // Seed Initial Policies if empty
         const policyCheck = await query('SELECT COUNT(*) as count FROM "Policies"');
         if (parseInt(policyCheck.rows[0].count) === 0) {
