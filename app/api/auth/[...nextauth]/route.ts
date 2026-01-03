@@ -43,7 +43,8 @@ export const authOptions: NextAuthOptions = {
                             id: user.UserID.toString(),
                             name: user.Username,
                             email: user.Email,
-                            role: user.Role
+                            role: user.Role,
+                            clientId: user.ClientID // Pass from DB
                         };
                     }
                 } catch (e: any) {
@@ -64,6 +65,7 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.role = (user as any).role;
+                token.clientId = (user as any).clientId;
             }
             return token;
         },
@@ -71,6 +73,7 @@ export const authOptions: NextAuthOptions = {
             if (session?.user) {
                 (session.user as any).role = token.role;
                 (session.user as any).id = token.sub;
+                session.user.clientId = token.clientId as number | undefined;
             }
             return session;
         }

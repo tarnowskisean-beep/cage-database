@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS "Users" (
     "Initials" TEXT NOT NULL,
     "TwoFactorSecret" TEXT,
     "TwoFactorEnabled" BOOLEAN DEFAULT FALSE,
+    "ClientID" INT REFERENCES "Clients"("ClientID"),
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 

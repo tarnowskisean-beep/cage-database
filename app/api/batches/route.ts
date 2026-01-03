@@ -6,7 +6,12 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const clientId = searchParams.get('clientId');
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const clientIdParam = searchParams.get('clientId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
@@ -14,10 +19,19 @@ export async function GET(request: Request) {
     const params: unknown[] = [];
     let paramIndex = 1;
 
-    if (clientId) {
+    // Enforce Client Access Control
+    if (session.user.role === 'ClientUser') {
+      if (!session.user.clientId) {
+        return NextResponse.json({ error: 'Client User has no assigned Client ID' }, { status: 403 });
+      }
       conditions.push(`b."ClientID" = $${paramIndex++}`);
-      params.push(clientId);
+      params.push(session.user.clientId);
+    } else if (clientIdParam) {
+      // Only allow filtering by param if NOT restricted
+      conditions.push(`b."ClientID" = $${paramIndex++}`);
+      params.push(clientIdParam);
     }
+
     if (startDate) {
       conditions.push(`b."Date" >= $${paramIndex++}`);
       params.push(startDate);

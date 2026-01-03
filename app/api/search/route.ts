@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const dynamic = 'force-dynamic';
 
@@ -98,11 +100,27 @@ export async function POST(request: Request) {
         // Extract limit if present, default to 1000 for general use, but Search UI might want smaller?
         // Let's default to 100 IF not specified to match previous behavior vs UI performance, 
         // OR better yet, let's bump default to 500. 100 is too small for a "page".
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { limit = 100, ...searchGroupData } = body;
         const searchGroup = searchGroupData as SearchGroup;
 
         const params: (string | number | boolean | null)[] = [];
-        const whereClause = buildWhereClause(searchGroup, params);
+        let whereClause = buildWhereClause(searchGroup, params);
+
+        // Enforce Client Access Control
+        if (session.user.role === 'ClientUser') {
+            if (!session.user.clientId) {
+                return NextResponse.json({ error: 'Client User has no assigned Client ID' }, { status: 403 });
+            }
+            // Add AND condition to existing whereClause
+            const paramIndex = params.length + 1;
+            params.push(session.user.clientId);
+            whereClause = `(${whereClause}) AND d."ClientID" = $${paramIndex}`;
+        }
 
         // Use the requested limit or default
         const limitClause = limit === 'all' ? '' : `LIMIT ${Number(limit) || 100}`;

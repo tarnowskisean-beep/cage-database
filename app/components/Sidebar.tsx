@@ -75,12 +75,29 @@ export default function Sidebar() {
             {/* Navigation */}
             <nav style={{ flex: 1, padding: '0 1rem' }}>
                 <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <NavItem href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
-                    <NavItem href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
+                    {/* Admin/Clerk specific tabs */}
+                    {session?.user?.role !== 'ClientUser' && (
+                        <>
+                            <NavItem href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
+                            <NavItem href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
+                        </>
+                    )}
+
+                    {/* Shared tabs */}
                     <NavItem href="/batches" icon="📦" label="Batches" active={pathname.startsWith('/batches')} collapsed={isCollapsed} />
-                    <NavItem href="/import" icon="📥" label="Import Revenue" active={pathname.startsWith('/import')} collapsed={isCollapsed} />
+
+                    {/* Admin/Clerk specific tabs */}
+                    {session?.user?.role !== 'ClientUser' && (
+                        <NavItem href="/import" icon="📥" label="Import Revenue" active={pathname.startsWith('/import')} collapsed={isCollapsed} />
+                    )}
+
+                    {/* Shared tabs */}
                     <NavItem href="/search" icon="🔍" label="Search" active={pathname === '/search'} collapsed={isCollapsed} />
-                    <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
+
+                    {/* Admin/Clerk specific tabs */}
+                    {session?.user?.role !== 'ClientUser' && (
+                        <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
+                    )}
                 </ul>
             </nav>
 
