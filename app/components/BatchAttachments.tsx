@@ -40,7 +40,14 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
             if (res.ok) {
                 fetchDocuments();
             } else {
-                alert('Upload failed');
+                let errorMsg = 'Upload failed';
+                try {
+                    const data = await res.json();
+                    errorMsg = data.error || errorMsg;
+                } catch (e) {
+                    errorMsg += ` (${res.status} ${res.statusText})`;
+                }
+                alert('Error: ' + errorMsg);
             }
         } catch (e) {
             console.error(e);
