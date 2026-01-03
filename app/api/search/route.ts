@@ -110,6 +110,7 @@ export async function POST(request: Request) {
         const sql = `
             SELECT 
                 d.*,
+                d."ScanString",
                 b."BatchCode",
                 c."ClientCode", c."ClientName"
             FROM "Donations" d
