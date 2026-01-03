@@ -30,6 +30,12 @@ export async function GET(
         // SOC 2: Audit Log
         await logAction(userId, 'ViewDocument', id, `Viewed ${doc.FileName}`);
 
+        // Link Redirect
+        if (doc.StorageKey && doc.StorageKey.startsWith('link:')) {
+            const url = doc.StorageKey.replace('link:', '');
+            return NextResponse.redirect(url);
+        }
+
         // GCS Signed URL Strategy
         if (doc.StorageKey && doc.StorageKey.startsWith('gcs:') && process.env.GCS_BUCKET_NAME && process.env.GDRIVE_CREDENTIALS) {
             const bucketName = process.env.GCS_BUCKET_NAME;

@@ -25,33 +25,26 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
         fetchDocuments();
     }, [batchId]);
 
-    const handleUpload = async (type: string, file: File) => {
-        if (!file) return;
+    const handleLinkSubmit = async (type: string, url: string) => {
+        if (!url) return;
         setUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', type);
 
         try {
             const res = await fetch(`/api/batches/${batchId}/documents`, {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, url })
             });
+
             if (res.ok) {
                 fetchDocuments();
             } else {
-                let errorMsg = 'Upload failed';
-                try {
-                    const data = await res.json();
-                    errorMsg = data.error || errorMsg;
-                } catch (e) {
-                    errorMsg += ` (${res.status} ${res.statusText})`;
-                }
-                alert('Error: ' + errorMsg);
+                const data = await res.json();
+                alert('Error: ' + (data.error || 'Failed to save link'));
             }
         } catch (e) {
             console.error(e);
-            alert('Upload error');
+            alert('Save error');
         } finally {
             setUploading(false);
         }
@@ -85,41 +78,50 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
                     const uploaded = documents.find(d => d.DocumentType === req.type);
                     return (
                         <div key={req.type} style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '0.5rem', background: 'var(--color-bg-base)', borderRadius: '4px',
+                            display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                            padding: '0.75rem', background: 'var(--color-bg-base)', borderRadius: '4px',
                             border: uploaded ? '1px solid var(--color-active)' : '1px dashed var(--color-border)'
                         }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{req.label}</span>
-                                {uploaded ? (
-                                    <a href={`/api/documents/${uploaded.BatchDocumentID}`} target="_blank" style={{ fontSize: '0.75rem', color: 'var(--color-primary)' }}>
-                                        {uploaded.FileName}
-                                    </a>
-                                ) : (
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--color-error)' }}>Required</span>
-                                )}
+                                {uploaded && <span style={{ color: 'var(--color-active)', fontSize: '0.8rem' }}>✓ Linked</span>}
                             </div>
 
                             {uploaded ? (
-                                <span style={{ color: 'var(--color-active)' }}>✓</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <a href={`/api/documents/${uploaded.BatchDocumentID}`} target="_blank"
+                                        style={{
+                                            fontSize: '0.75rem', color: 'var(--color-primary)',
+                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px'
+                                        }}>
+                                        {uploaded.FileName}
+                                    </a>
+                                </div>
                             ) : (
-                                <label style={{
-                                    cursor: uploading ? 'wait' : 'pointer',
-                                    fontSize: '0.75rem', padding: '0.2rem 0.5rem',
-                                    background: 'var(--color-primary)',
-                                    color: 'var(--color-primary-text)',
-                                    borderRadius: '4px',
-                                    fontWeight: 600
-                                }}>
-                                    {uploading ? '...' : 'Upload'}
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <input
-                                        type="file"
-                                        hidden
-                                        accept="application/pdf,image/*"
-                                        onChange={(e) => e.target.files && handleUpload(req.type, e.target.files[0])}
-                                        disabled={uploading}
+                                        type="text"
+                                        placeholder="Paste Google Drive Link..."
+                                        style={{ flex: 1, fontSize: '0.75rem', padding: '0.25rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleLinkSubmit(req.type, e.currentTarget.value);
+                                                e.currentTarget.value = '';
+                                            }
+                                        }}
                                     />
-                                </label>
+                                    <button
+                                        disabled={uploading}
+                                        style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'var(--color-primary)', color: 'white', borderRadius: '4px' }}
+                                        onClick={(e) => {
+                                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                            handleLinkSubmit(req.type, input.value);
+                                            input.value = '';
+                                        }}
+                                    >
+                                        {uploading ? '...' : 'Save'}
+                                    </button>
+                                </div>
                             )}
                         </div>
                     );

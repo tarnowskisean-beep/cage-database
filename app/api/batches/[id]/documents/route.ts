@@ -28,20 +28,6 @@ export async function GET(
     }
 }
 
-import { Storage } from '@google-cloud/storage';
-
-// Initialize Storage
-// We reuse GDRIVE_CREDENTIALS because it is the same Service Account
-const getStorageClient = () => {
-    if (process.env.GDRIVE_CREDENTIALS) {
-        const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
-        return new Storage({
-            projectId: credentials.project_id,
-            credentials,
-        });
-    }
-    return new Storage(); // Fallback to ADC
-};
 
 export async function POST(
     request: Request,
@@ -55,38 +41,28 @@ export async function POST(
 
         const userId = parseInt((session.user as any).id);
 
-        const formData = await request.formData();
-        const file = formData.get('file') as File;
-        const type = formData.get('type') as string;
+        // Determine if Request is JSON (Link) or FormData (File - Legacy support kept but UI removed)
+        const contentType = request.headers.get('content-type') || '';
 
-        if (!file || !type) {
-            return NextResponse.json({ error: 'Missing file or type' }, { status: 400 });
-        }
-
-        const filename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const bucketName = process.env.GCS_BUCKET_NAME;
-
-        let storageKey = 'db-stored';
+        let type = '';
+        let filename = '';
+        let storageKey = '';
         let buffer = null;
+        let fileSizeBytes = 0;
 
-        // Check if environment is configured for GCS
-        if (bucketName && process.env.GDRIVE_CREDENTIALS) {
-            // Upload to Google Cloud Storage (No size limit, Secure)
-            const storage = getStorageClient();
-            const bucket = storage.bucket(bucketName);
-            const destination = `bath-attachments/${id}/${filename}`;
-            const fileObj = bucket.file(destination);
+        if (contentType.includes('application/json')) {
+            // Handle Link
+            const body = await request.json();
+            type = body.type;
+            const url = body.url;
 
-            const fileBuffer = Buffer.from(await file.arrayBuffer());
-            await fileObj.save(fileBuffer);
+            if (!url || !type) return NextResponse.json({ error: 'Missing url or type' }, { status: 400 });
 
-            storageKey = `gcs:${destination}`;
+            filename = 'External Link';
+            storageKey = `link:${url}`; // Store the link prefixed
+            fileSizeBytes = url.length;
         } else {
-            // Fallback to Database (4.5MB Limit Applies)
-            if (file.size > 4.5 * 1024 * 1024) {
-                return NextResponse.json({ error: 'File too large for database. Set GCS_BUCKET_NAME and GDRIVE_CREDENTIALS for large files.' }, { status: 413 });
-            }
-            buffer = Buffer.from(await file.arrayBuffer());
+            return NextResponse.json({ error: 'Only Links are supported now.' }, { status: 400 });
         }
 
         // Check if Batch Exists
@@ -100,7 +76,7 @@ export async function POST(
         );
 
         // SOC 2: Audit Log
-        await logAction(userId, 'UploadDocument', id, `Uploaded ${filename} as ${type} (${file.size} bytes) via ${storageKey.split(':')[0]}`);
+        await logAction(userId, 'UploadDocument', id, `Added Link ${storageKey}`);
 
         return NextResponse.json({ success: true });
     } catch (e: any) {
