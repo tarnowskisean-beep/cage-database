@@ -68,6 +68,34 @@ export async function POST(request: Request) {
     // Initials from session if available, else derive from name, else fallback
     const userInitials = (session.user.name || 'Unknown').slice(0, 2).toUpperCase();
 
+    // 1. Get Client Code
+    const clientRes = await query('SELECT "ClientCode" FROM "Clients" WHERE "ClientID" = $1', [clientId]);
+    if (clientRes.rows.length === 0) throw new Error('Client not found');
+    const clientCode = clientRes.rows[0].ClientCode;
+
+    // 2. Platform Abbreviation
+    const platform = body.defaultGiftPlatform || 'Cage';
+    const abbreviations: Record<string, string> = {
+      'Chainbridge': 'CB',
+      'Stripe': 'ST',
+      'National Capital': 'NC',
+      'City National': 'CN',
+      'Propay': 'PP',
+      'Anedot': 'AN',
+      'Winred': 'WR',
+      'Cage': 'CG',
+      'Import': 'IM'
+    };
+    const platCode = abbreviations[platform] || platform.substring(0, 2).toUpperCase();
+
+    // 3. Date Format (YYYY.MM.DD)
+    const dateObj = new Date(body.date || new Date().toISOString());
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}.${mm}.${dd}`;
+
+    // 4. Daily Sequence
     const countRes = await query(`
         SELECT COUNT(*) as count 
         FROM "Batches" 
@@ -76,7 +104,10 @@ export async function POST(request: Request) {
       `, [userId, body.date || new Date().toISOString()]);
 
     const dailyCount = parseInt(countRes.rows[0].count) + 1;
-    const batchCode = `${userInitials}.${dailyCount.toString().padStart(2, '0')}`;
+    const suffix = `${userInitials}.${dailyCount.toString().padStart(2, '0')}`;
+
+    // 5. Final Batch Code
+    const batchCode = `${clientCode}.${platCode}.${dateStr}.${suffix}`;
 
     const result = await query(`
         INSERT INTO "Batches" (
