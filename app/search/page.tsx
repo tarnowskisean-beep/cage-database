@@ -334,7 +334,9 @@ export default function SearchPage() {
                 body: JSON.stringify(query)
             });
             const data = await res.json();
-            setResults(Array.isArray(data) ? data : []);
+            const rows = Array.isArray(data) ? data : [];
+            console.log('Search Results:', rows.slice(0, 3)); // Debug log
+            setResults(rows);
         } catch (e) {
             console.error(e);
             alert('Search failed');
@@ -370,9 +372,12 @@ export default function SearchPage() {
             };
 
             const rec = r as any;
+            // Robust check for ScanString casing
+            const scanString = rec.ScanString || rec.scanString || rec.scanstring || '';
+
             let mailCode = rec.MailCode || '';
-            if (!mailCode && rec.ScanString && rec.ScanString.includes('\t')) {
-                mailCode = rec.ScanString.split('\t')[0];
+            if (!mailCode && scanString && scanString.includes('\t')) {
+                mailCode = scanString.split('\t')[0];
             }
 
             return [
@@ -381,7 +386,7 @@ export default function SearchPage() {
                 esc(rec.CreatedAt ? new Date(rec.CreatedAt).toLocaleDateString('en-US') : ''),
                 esc(rec.DonationID),
                 esc(mailCode),
-                esc(rec.ScanString), // Composite ID
+                esc(scanString), // Composite ID
                 esc(rec.DonorPrefix),
 
                 esc(rec.DonorFirstName),
