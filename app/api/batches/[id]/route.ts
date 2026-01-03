@@ -21,3 +21,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params;
+        const body = await request.json();
+        const { status } = body;
+
+        // Construct update query dynamically (simplistic for now)
+        if (status) {
+            const result = await query(`
+                UPDATE "Batches" 
+                SET "Status" = $1 
+                WHERE "BatchID" = $2
+                RETURNING *
+            `, [status, id]);
+            return NextResponse.json(result.rows[0]);
+        }
+
+        return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

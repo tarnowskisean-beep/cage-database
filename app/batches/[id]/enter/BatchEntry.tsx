@@ -54,6 +54,25 @@ export default function BatchEntry({ id }: { id: string }) {
         }));
     };
 
+    const toggleBatchStatus = async () => {
+        if (!batch) return;
+        const newStatus = batch.Status === 'Open' ? 'Closed' : 'Open';
+        if (batch.Status === 'Reconciled') return alert("Reconciled batches cannot be reopened.");
+
+        if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
+
+        try {
+            const res = await fetch(`/api/batches/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) {
+                window.location.reload(); // Simple reload to reflect state
+            }
+        } catch (e) { console.error(e); }
+    };
+
     if (!isMounted || loading) return <div className="p-8" style={{ color: 'var(--color-text-muted)' }}>Loading...</div>;
 
     return (
@@ -68,18 +87,48 @@ export default function BatchEntry({ id }: { id: string }) {
                     <span style={{ color: 'var(--color-text-muted)' }}>{batch?.ClientCode}</span>
                     <span style={{
                         padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                        background: batch?.Status === 'Open' ? '#4ade80' : batch?.Status === 'Submitted' ? '#c084fc' : '#334155',
+                        background: batch?.Status === 'Open' ? '#4ade80' :
+                            batch?.Status === 'Closed' ? '#fb923c' :
+                                batch?.Status === 'Reconciled' ? '#c084fc' : '#334155',
                         color: batch?.Status === 'Open' ? '#022c22' : 'white',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                     }}>
-                        {batch?.Status === 'Open' ? '🟢 ACTIVE' : batch?.Status === 'Submitted' ? '🟣 SUBMITTED' : `🔒 ${batch?.Status}`}
+                        {batch?.Status === 'Open' ? '🟢 OPEN' :
+                            batch?.Status === 'Closed' ? '🟠 CLOSED' :
+                                batch?.Status === 'Reconciled' ? '🔒 RECONCILED' :
+                                    batch?.Status}
                     </span>
                     {editingId && <span style={{ background: '#3b82f6', color: 'white', padding: '0.1rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>EDITING MODE</span>}
                 </div>
                 <div>
+                    {batch?.Status !== 'Reconciled' && (
+                        <button
+                            onClick={toggleBatchStatus}
+                            style={{
+                                background: 'transparent',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-muted)',
+                                padding: '0.2rem 0.6rem',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                marginRight: '1rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {batch?.Status === 'Open' ? '🔒 Close Batch' : '🔓 Reopen Batch'}
+                        </button>
+                    )}
                     <button
                         onClick={handleFillFakeData}
-                        style={{ background: 'transparent', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '1rem', cursor: 'pointer' }}
+                        disabled={batch?.Status === 'Reconciled'}
+                        style={{
+                            background: 'transparent',
+                            border: `1px solid ${batch?.Status === 'Reconciled' ? 'var(--color-text-muted)' : 'var(--color-primary)'}`,
+                            color: batch?.Status === 'Reconciled' ? 'var(--color-text-muted)' : 'var(--color-primary)',
+                            padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '1rem',
+                            cursor: batch?.Status === 'Reconciled' ? 'not-allowed' : 'pointer',
+                            opacity: batch?.Status === 'Reconciled' ? 0.5 : 1
+                        }}
                         title="Auto-fill with Fake Data"
                     >
                         ⚡ Fill Fake
@@ -292,9 +341,15 @@ export default function BatchEntry({ id }: { id: string }) {
 
                             <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
                                 <button className="btn-primary" style={{ flex: 1, background: 'var(--color-border)' }} onClick={resetForm}>Reset</button>
-                                <button className="btn-primary" style={{ flex: 2, background: editingId ? 'var(--color-active)' : undefined }} onClick={handleSave} disabled={saving}>
-                                    {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
-                                </button>
+                                {batch?.Status === 'Reconciled' ? (
+                                    <button className="btn-primary" style={{ flex: 2, background: 'var(--color-text-muted)', cursor: 'not-allowed' }} disabled>
+                                        🔒 Batch Locked (Reconciled)
+                                    </button>
+                                ) : (
+                                    <button className="btn-primary" style={{ flex: 2, background: editingId ? 'var(--color-active)' : undefined }} onClick={handleSave} disabled={saving}>
+                                        {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
+                                    </button>
+                                )}
                             </div>
                         </div>
 

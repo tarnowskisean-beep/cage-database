@@ -104,6 +104,18 @@ export default function BatchesPage() {
                     ))}
                 </select>
 
+                <select
+                    className="input-field"
+                    style={{ width: 'auto', minWidth: '150px' }}
+                    value={filters.status}
+                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                >
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Reconciled">Reconciled</option>
+                </select>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
                     <input
@@ -115,18 +127,6 @@ export default function BatchesPage() {
                         onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
                     />
                 </div>
-
-                <select
-                    className="input-field"
-                    style={{ width: 'auto', minWidth: '150px' }}
-                    value={filters.status}
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                >
-                    <option value="">All Statuses</option>
-                    <option value="Open">Open</option>
-                    <option value="Submitted">Submitted</option>
-                    <option value="Closed">Closed</option>
-                </select>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
@@ -389,14 +389,17 @@ function BatchRow({ batch }: { batch: Batch }) {
                 <span style={{
                     padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
                     background: batch.Status === 'Open' ? 'rgba(74, 222, 128, 0.2)' :
-                        batch.Status === 'Submitted' ? 'rgba(192, 132, 252, 0.2)' :
-                            'rgba(148, 163, 184, 0.2)',
+                        batch.Status === 'Closed' ? 'rgba(251, 146, 60, 0.2)' :
+                            batch.Status === 'Reconciled' ? 'rgba(192, 132, 252, 0.2)' :
+                                'rgba(148, 163, 184, 0.2)',
                     color: batch.Status === 'Open' ? '#4ade80' :
-                        batch.Status === 'Submitted' ? '#c084fc' :
-                            'var(--color-text-muted)',
+                        batch.Status === 'Closed' ? '#fb923c' :
+                            batch.Status === 'Reconciled' ? '#c084fc' :
+                                'var(--color-text-muted)',
                     border: `1px solid ${batch.Status === 'Open' ? '#4ade80' :
-                        batch.Status === 'Submitted' ? '#c084fc' :
-                            'var(--color-border)'
+                            batch.Status === 'Closed' ? '#fb923c' :
+                                batch.Status === 'Reconciled' ? '#c084fc' :
+                                    'var(--color-border)'
                         }`
                 }}>
                     {batch.Status}
