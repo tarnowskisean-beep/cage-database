@@ -460,9 +460,9 @@ export default function SearchPage() {
 
     return (
         <div>
-            <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <header className="page-header">
                 <div>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>Search</h1>
+                    <h1>Search</h1>
                     <p style={{ color: 'var(--color-text-muted)' }}>Search donations by date, donor, or client.</p>
                 </div>
                 <Link href="/" className="btn-secondary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
@@ -566,39 +566,41 @@ export default function SearchPage() {
 
             {/* Results Table */}
             {searched && (
-                <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>Results ({results.length}{results.length >= 100 ? '+' : ''})</h3>
+                <div className="glass-panel" style={{ padding: '0' }}>
+                    <div style={{ padding: '1.5rem 1.5rem 0.5rem 1.5rem' }}>
+                        <h3 style={{ marginBottom: '0.5rem' }}>Results ({results.length}{results.length >= 100 ? '+' : ''})</h3>
+                    </div>
                     {results.length === 0 ? (
                         <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>No matches found.</div>
                     ) : (
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
+                            <table className="data-table" style={{ minWidth: '800px' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)' }}>
-                                        <th style={{ padding: '0.75rem' }}>Date</th>
-                                        <th style={{ padding: '0.75rem' }}>Donor</th>
-                                        <th style={{ padding: '0.75rem' }}>Amount</th>
-                                        <th style={{ padding: '0.75rem' }}>Method</th>
-                                        <th style={{ padding: '0.75rem' }}>Client</th>
-                                        <th style={{ padding: '0.75rem' }}>Batch</th>
-                                        <th style={{ padding: '0.75rem' }}>Details</th>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Donor</th>
+                                        <th>Amount</th>
+                                        <th>Method</th>
+                                        <th>Client</th>
+                                        <th>Batch</th>
+                                        <th>Details</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {results.map(r => (
-                                        <tr key={r.DonationID} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                                            <td style={{ padding: '0.75rem' }}>{new Date(r.GiftDate).toLocaleDateString()}</td>
-                                            <td style={{ padding: '0.75rem' }}>
+                                        <tr key={r.DonationID}>
+                                            <td>{new Date(r.GiftDate).toLocaleDateString()}</td>
+                                            <td>
                                                 <div style={{ fontWeight: 500 }}>{r.DonorFirstName} {r.DonorLastName}</div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{r.DonorCity}, {r.DonorState}</div>
                                             </td>
-                                            <td style={{ padding: '0.75rem', fontWeight: 600, color: 'var(--color-active)' }}>
+                                            <td style={{ fontWeight: 600, color: 'var(--color-active)' }}>
                                                 ${Number(r.GiftAmount).toFixed(2)}
                                             </td>
-                                            <td style={{ padding: '0.75rem' }}>{r.GiftMethod}</td>
-                                            <td style={{ padding: '0.75rem' }}>{r.ClientCode}</td>
-                                            <td style={{ padding: '0.75rem' }}>{r.BatchCode}</td>
-                                            <td style={{ padding: '0.75rem' }}>
+                                            <td>{r.GiftMethod}</td>
+                                            <td>{r.ClientCode}</td>
+                                            <td>{r.BatchCode}</td>
+                                            <td>
                                                 <Link href={`/batches/${r.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
                                                     View &rarr;
                                                 </Link>

@@ -75,9 +75,9 @@ export default function BatchesPage() {
 
     return (
         <div>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <header className="page-header">
                 <div>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Batches</h1>
+                    <h1>Batches</h1>
                     <p style={{ color: 'var(--color-text-muted)' }}>Manage and process donation batches</p>
                 </div>
                 <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
@@ -158,20 +158,22 @@ export default function BatchesPage() {
             </div>
 
             {/* Batch List */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                <h3 style={{ marginBottom: '1.5rem' }}>Active Batches</h3>
+            <div className="glass-panel" style={{ padding: '0' }}>
+                <div style={{ padding: '1.5rem 1.5rem 0.5rem 1.5rem' }}>
+                    <h3 style={{ marginBottom: '0.5rem' }}>Active Batches</h3>
+                </div>
                 {batches.length === 0 ? (
                     <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>No batches found. Create one to get started.</div>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <table className="data-table">
                         <thead>
-                            <tr style={{ borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)' }}>
-                                <th style={{ padding: '1rem' }}>Batch ID</th>
-                                <th style={{ padding: '1rem' }}>Client</th>
-                                <th style={{ padding: '1rem' }}>Created</th>
-                                <th style={{ padding: '1rem' }}>Status</th>
-                                <th style={{ padding: '1rem' }}>Mode</th>
-                                <th style={{ padding: '1rem' }}>Actions</th>
+                            <tr>
+                                <th>Batch ID</th>
+                                <th>Client</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                                <th>Mode</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -381,11 +383,11 @@ function StatCard({ label, value, icon }: { label: string, value: string, icon: 
 
 function BatchRow({ batch }: { batch: Batch }) {
     return (
-        <tr style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-            <td style={{ padding: '1rem', fontWeight: 600 }}>{batch.BatchCode}</td>
-            <td style={{ padding: '1rem' }}>{batch.ClientCode}</td>
-            <td style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>{new Date(batch.Date).toLocaleDateString()}</td>
-            <td style={{ padding: '1rem' }}>
+        <tr>
+            <td style={{ fontWeight: 600 }}>{batch.BatchCode}</td>
+            <td>{batch.ClientCode}</td>
+            <td style={{ color: 'var(--color-text-muted)' }}>{new Date(batch.Date).toLocaleDateString()}</td>
+            <td>
                 <span style={{
                     padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
                     background: batch.Status === 'Open' ? 'rgba(74, 222, 128, 0.2)' :
@@ -405,8 +407,8 @@ function BatchRow({ batch }: { batch: Batch }) {
                     {batch.Status}
                 </span>
             </td>
-            <td style={{ padding: '1rem' }}>{batch.EntryMode}</td>
-            <td style={{ padding: '1rem' }}>
+            <td>{batch.EntryMode}</td>
+            <td>
                 <Link href={`/batches/${batch.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
                     Open &rarr;
                 </Link>

@@ -103,9 +103,9 @@ export default function ClientsPage() {
 
     return (
         <div>
-            <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <header className="page-header">
                 <div>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Client Directory</h1>
+                    <h1>Client Directory</h1>
                     <p style={{ color: 'var(--color-text-muted)' }}>Manage and view all registered clients</p>
                 </div>
                 <button
@@ -117,26 +117,26 @@ export default function ClientsPage() {
                 </button>
             </header>
 
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+            <div className="glass-panel" style={{ padding: '0' }}>
                 {loading ? (
                     <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading Clients...</div>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <table className="data-table">
                         <thead>
-                            <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
-                                <th style={{ padding: '1rem' }}>Code</th>
-                                <th style={{ padding: '1rem' }}>Name</th>
-                                <th style={{ padding: '1rem' }}>Type</th>
-                                <th style={{ padding: '1rem' }}>Actions</th>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {clients.map(client => (
-                                <tr key={client.ClientID} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                                    <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-active)' }}>{client.ClientCode}</td>
-                                    <td style={{ padding: '1rem', fontWeight: 500, color: 'var(--color-text-main)' }}>{client.ClientName}</td>
-                                    <td style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>{client.ClientType || '-'}</td>
-                                    <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                <tr key={client.ClientID}>
+                                    <td style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-active)' }}>{client.ClientCode}</td>
+                                    <td style={{ fontWeight: 500 }}>{client.ClientName}</td>
+                                    <td style={{ color: 'var(--color-text-muted)' }}>{client.ClientType || '-'}</td>
+                                    <td style={{ display: 'flex', gap: '0.5rem' }}>
                                         <button
                                             onClick={() => openEdit(client)}
                                             style={{
