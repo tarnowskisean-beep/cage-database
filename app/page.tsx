@@ -207,17 +207,23 @@ export default function Home() {
             {/* Revenue by Client */}
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <h3 style={{ marginBottom: '1.5rem' }}>Revenue by Client</h3>
-              <div style={{ height: '300px' }}>
+              <div style={{ height: '500px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.byClient} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <BarChart data={stats.byClient} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
                     <XAxis type="number" stroke="var(--color-text-muted)" tickFormatter={(val) => `$${val}`} />
-                    <YAxis dataKey="ClientName" type="category" stroke="var(--color-text-muted)" width={150} />
+                    <YAxis
+                      dataKey="ClientName"
+                      type="category"
+                      stroke="var(--color-text-muted)"
+                      width={220}
+                      tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
+                    />
                     <Tooltip
                       contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }}
                       formatter={(value: number | undefined) => formatCurrency(value || 0)}
                     />
-                    <Bar dataKey="total" fill="var(--color-active)" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total" fill="var(--color-active)" radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
