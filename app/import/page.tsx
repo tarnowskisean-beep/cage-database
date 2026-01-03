@@ -283,16 +283,32 @@ export default function ImportPage() {
                                             style={{ padding: '0.4rem' }}
                                         >
                                             <option value="">-- Ignore --</option>
-                                            <option value="Gift Date">Gift Date</option>
-                                            <option value="Gift Amount">Gift Amount</option>
-                                            <option value="First Name">First Name</option>
-                                            <option value="Last Name">Last Name</option>
-                                            <option value="External Batch ID">External Batch ID</option>
-                                            <option value="Gift Type">Gift Type</option>
-                                            <option value="Address">Address</option>
-                                            <option value="City">City</option>
-                                            <option value="State">State</option>
-                                            <option value="Zip">Zip</option>
+                                            <optgroup label="Transaction Data">
+                                                <option value="Gift Date">Gift Date</option>
+                                                <option value="Gift Amount">Gift Amount</option>
+                                                <option value="Gift Fee">Gift Fee</option>
+                                                <option value="Gift Platform">Gift Platform</option>
+                                                <option value="Gift Method">Gift Method</option>
+                                                <option value="Transaction Type">Transaction Type</option>
+                                                <option value="Check Number">Check Number</option>
+                                                <option value="Secondary ID">Secondary ID (Source ID)</option>
+                                            </optgroup>
+                                            <optgroup label="Donor Data">
+                                                <option value="First Name">First Name</option>
+                                                <option value="Last Name">Last Name</option>
+                                                <option value="Address">Address</option>
+                                                <option value="City">City</option>
+                                                <option value="State">State</option>
+                                                <option value="Zip">Zip</option>
+                                                <option value="Email">Email</option>
+                                                <option value="Phone">Phone</option>
+                                                <option value="Employer">Employer</option>
+                                                <option value="Occupation">Occupation</option>
+                                            </optgroup>
+                                            <optgroup label="System">
+                                                <option value="External Batch ID">External Batch ID</option>
+                                                <option value="Yes Inactive">Yes Inactive</option>
+                                            </optgroup>
                                         </select>
                                     </div>
                                 ))}

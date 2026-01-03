@@ -174,10 +174,11 @@ function RuleModal({ rule, onClose, onSave }: { rule: MappingRule | null, onClos
 
     // Common Target Columns (Suggestion List)
     const targetOptions = [
-        'Gift Type', 'Gift Method', 'Gift Platform', 'Gift Amount',
-        'Gift Date', 'Gift Year', 'Gift Quarter',
+        'Gift Date', 'Gift Amount', 'Gift Fee', 'Gift Platform', 'Gift Method',
+        'Transaction Type', 'Check Number', 'Secondary ID',
         'First Name', 'Last Name', 'Address', 'City', 'State', 'Zip',
-        'Yes Inactive', 'External Batch ID'
+        'Email', 'Phone', 'Employer', 'Occupation',
+        'External Batch ID', 'Yes Inactive'
     ];
 
     const handleSubmit = async (e: React.FormEvent) => {
