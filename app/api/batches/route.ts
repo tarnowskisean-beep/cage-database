@@ -64,10 +64,24 @@ export async function POST(request: Request) {
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const userId = parseInt(session.user.id);
+    let userId = parseInt(session.user.id);
+    let userInitials = (session.user.name || 'Unknown').substring(0, 2).toUpperCase();
+
+    // Fallback: If session ID is missing or NaN, lookup by Email
     if (isNaN(userId)) {
-      console.error('Invalid User ID in session:', session.user);
-      return NextResponse.json({ error: 'Invalid Session' }, { status: 401 });
+      console.warn('Session User ID is NaN, attempting DB lookup for:', session.user.email);
+      if (session.user.email) {
+        const userRes = await query('SELECT "UserID", "Username" FROM "Users" WHERE "Email" = $1', [session.user.email]);
+        if (userRes.rows.length > 0) {
+          userId = userRes.rows[0].UserID;
+          userInitials = userRes.rows[0].Username.substring(0, 2).toUpperCase();
+        } else {
+          console.error('User not found by email:', session.user.email);
+          return NextResponse.json({ error: 'User lookup failed: ' + session.user.email }, { status: 401 });
+        }
+      } else {
+        return NextResponse.json({ error: 'Invalid Session: No ID or Email' }, { status: 401 });
+      }
     }
     // Initials from session if available, else derive from name, else fallback
     const userInitials = (session.user.name || 'Unknown').slice(0, 2).toUpperCase();
