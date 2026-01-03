@@ -44,3 +44,7 @@ export async function GET() {
         return NextResponse.json({ error: e.message, version: 'V5' }, { status: 500 });
     }
 }
+
+export async function POST() {
+    return GET();
+}

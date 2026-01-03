@@ -202,11 +202,16 @@ export default function LoginPage() {
                         onClick={async () => {
                             if (!confirm('This will repair the database structure and reset the admin password. Continue?')) return;
                             try {
-                                const res = await fetch('/api/dev/seed-user');
-                                const data = await res.json();
-                                alert(data.message || JSON.stringify(data));
+                                const res = await fetch('/api/dev/seed-user', { method: 'POST' });
+                                const text = await res.text();
+                                try {
+                                    const data = JSON.parse(text);
+                                    alert(data.message || JSON.stringify(data));
+                                } catch (err) {
+                                    alert(`Failed to parse JSON. Status: ${res.status}. Response: ${text.substring(0, 100)}...`);
+                                }
                             } catch (e) {
-                                alert('Error: ' + e);
+                                alert('Network Error: ' + e);
                             }
                         }}
                         style={{
