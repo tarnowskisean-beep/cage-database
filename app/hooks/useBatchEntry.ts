@@ -303,13 +303,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 isInactive: formData.isInactive === 'True',
                 checkNumber: formData.checkNumber || formData.scanString,
 
-                // Mapped for Backend API (snake_case vs PascalCase needs care, but our API handles logic)
-                // Actually our POST/PUT expects specific keys. Let's map to what API expects.
-                // For PUT: we use PascalCase keys in the API body destructuring in our new route
-                // For POST: we used snakeish camelCase. 
-                // Let's standarize on what the API reads.
-
-                // Common
+                // Mapped for Backend API
                 GiftAmount: parseFloat(formData.amount),
                 SecondaryID: formData.checkNumber || formData.scanString,
                 CheckNumber: formData.checkNumber || formData.scanString,
@@ -317,10 +311,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 GiftMethod: formData.method,
                 GiftPlatform: formData.platform,
                 GiftType: formData.giftType,
-                // ... map defaults if needed, but form has them
                 GiftYear: formData.giftYear ? parseInt(formData.giftYear) : undefined,
                 GiftQuarter: formData.giftQuarter,
-
                 DonorPrefix: formData.donorPrefix,
                 DonorFirstName: formData.donorFirstName,
                 DonorMiddleName: formData.donorMiddleName,
@@ -335,7 +327,6 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 DonorPhone: formData.donorPhone,
                 DonorEmail: formData.donorEmail,
                 OrganizationName: formData.organizationName,
-
                 GiftPledgeAmount: parseFloat(formData.pledgeAmount) || 0,
                 GiftFee: parseFloat(formData.giftFee) || 0,
                 GiftCustodian: formData.giftCustodian,
@@ -355,20 +346,11 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     body: JSON.stringify(payload)
                 });
             } else {
-                // CREATE
-                res = await fetch(`/api/batches/${id}/donations`, {
+                // CREATE - USE POST BYPASS ROUTE
+                res = await fetch(`/api/save-donation`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        // POST route expects camelCase. We need to maintain compatibility or update POST.
-                        // Let's send BOTH sets of keys to be safe, or check POST route.
-                        // Checked POST route: expects lowerCamelCase keys like 'amount', 'donorFirstName' etc.
-                        // BUT our PUT route expects PascalCase.
-                        // We will send the payload merged with formData to cover bases.
-                        ...formData,
-                        amount: parseFloat(formData.amount), // Override string
-                        // ... other fields are already in formData
-                    })
+                    body: JSON.stringify({ ...payload, batchId: id }) // ADD BATCH ID TO BODY
                 });
             }
 
@@ -384,7 +366,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     ...initialFormState,
                     platform: prev.platform,
                     giftType: prev.giftType,
-                    method: forced || prev.method, // Keep current if not forced, or reset to forced
+                    method: forced || prev.method,
                     postMarkYear: prev.postMarkYear,
                     postMarkQuarter: prev.postMarkQuarter,
                     giftYear: prev.giftYear,
@@ -403,7 +385,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     const data = JSON.parse(text);
                     errorMsg += ` - ${data.error || ''} ${data.details || ''}`;
                 } catch {
-                    errorMsg += ` - ${text.substring(0, 100)}`; // Show first 100 chars of HTML/text
+                    errorMsg += ` - ${text.substring(0, 100)}`;
                 }
                 console.error('Save failed:', errorMsg);
                 alert(`Failed to save: ${errorMsg}`);
