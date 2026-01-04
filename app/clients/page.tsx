@@ -10,13 +10,20 @@ export default function ClientsPage() {
 
     const refreshClients = () => {
         setLoading(true);
-        fetch('/api/clients')
-            .then(res => res.json())
+        // Prevent caching of old empty lists
+        fetch('/api/clients', { cache: 'no-store' })
+            .then(async res => {
+                if (!res.ok) throw new Error(`Status: ${res.status}`);
+                return res.json();
+            })
             .then(data => {
                 setClients(Array.isArray(data) ? data : []);
                 setLoading(false);
             })
-            .catch(console.error);
+            .catch(err => {
+                console.error("Failed to load clients:", err);
+                setLoading(false); // Ensure loading stops even on error
+            });
     };
 
     useEffect(() => {

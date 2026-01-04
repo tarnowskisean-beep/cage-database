@@ -181,7 +181,7 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
 
     // Fetch Clients on mount
     useEffect(() => {
-        fetch('/api/clients').then(res => res.json()).then(data => setClients(data));
+        fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(data => setClients(data));
 
         // If editing, fetch current user's allowed clients
         if (user && user.Role === 'ClientUser') {

@@ -37,8 +37,11 @@ function DashboardContent() {
 
   // Fetch Clients
   useEffect(() => {
-    fetch('/api/clients')
-      .then(res => res.json())
+    fetch('/api/clients', { cache: 'no-store' })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load clients');
+        return res.json();
+      })
       .then(data => setClients(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);

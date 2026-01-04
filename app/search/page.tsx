@@ -270,7 +270,7 @@ export default function SearchPage() {
         setEndDate(range.end);
 
         // Fetch Clients for dropdown
-        fetch('/api/clients')
+        fetch('/api/clients', { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {

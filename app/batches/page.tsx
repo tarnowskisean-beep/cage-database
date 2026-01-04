@@ -199,7 +199,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
     });
 
     useEffect(() => {
-        fetch('/api/clients').then(r => r.json()).then(setClients);
+        fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(data => setClients(data || []));
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {

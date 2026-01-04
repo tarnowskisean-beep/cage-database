@@ -11,7 +11,7 @@ export default function ReconciliationDashboard() {
     const [selectedClient, setSelectedClient] = useState('');
 
     useEffect(() => {
-        fetch('/api/clients').then(res => res.json()).then(setClients).catch(console.error);
+        fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(setClients).catch(console.error);
     }, []);
 
     useEffect(() => {

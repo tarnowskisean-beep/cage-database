@@ -64,7 +64,7 @@ export default function ImportPage() {
     // Load Clients and Sources on Mount
     // FIX: Use useEffect to avoid running fetch during server-side prerendering
     useEffect(() => {
-        fetch('/api/clients').then(res => res.json()).then(data => setClients(data));
+        fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(data => setClients(data));
         fetch('/api/import/sources').then(res => res.json()).then(data => setAvailableSources(data));
     }, []);
 
