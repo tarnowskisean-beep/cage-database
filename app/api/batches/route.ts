@@ -62,11 +62,15 @@ export async function GET(request: Request) {
         b."BatchID", b."BatchCode", b."EntryMode", b."PaymentCategory", b."Status", b."Date", b."CreatedAt",
         b."ImportSessionID",
         c."ClientCode", c."ClientName",
-        u."Username" as "CreatedBy"
+        u."Username" as "CreatedBy",
+        COUNT(d."DonationID")::int as "ItemCount",
+        COALESCE(SUM(d."GiftAmount"), 0) as "TotalAmount"
       FROM "Batches" b
       JOIN "Clients" c ON b."ClientID" = c."ClientID"
       JOIN "Users" u ON b."CreatedBy" = u."UserID"
+      LEFT JOIN "Donations" d ON b."BatchID" = d."BatchID"
       ${whereClause}
+      GROUP BY b."BatchID", c."ClientCode", c."ClientName", u."Username"
       ORDER BY b."CreatedAt" DESC
     `, params);
 

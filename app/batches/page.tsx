@@ -7,29 +7,36 @@ import { useRouter } from 'next/navigation';
 function BatchesContent() {
     const router = useRouter();
     const [batches, setBatches] = useState<any[]>([]);
+    const [clients, setClients] = useState<any[]>([]);
     const [stats, setStats] = useState({ open: 0, closed: 0, total: 0 });
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [clientFilter, setClientFilter] = useState('All');
     const [showCreateModal, setShowCreateModal] = useState(false);
 
-    // Fetch batches
+    // Fetch batches and clients
     useEffect(() => {
-        fetch('/api/batches')
-            .then(res => res.json())
-            .then(data => {
-                setBatches(data);
+        const fetchBatches = fetch('/api/batches').then(res => res.json());
+        const fetchClients = fetch('/api/clients').then(res => res.json());
+
+        Promise.all([fetchBatches, fetchClients])
+            .then(([batchData, clientData]) => {
+                setBatches(batchData);
+                setClients(clientData);
+
                 // Calculate quick stats
-                const open = data.filter((b: any) => b.Status === 'Open').length;
-                const closed = data.filter((b: any) => b.Status === 'Closed').length;
-                setStats({ open, closed, total: data.length });
+                const open = batchData.filter((b: any) => b.Status === 'Open').length;
+                const closed = batchData.filter((b: any) => b.Status === 'Closed').length;
+                setStats({ open, closed, total: batchData.length });
                 setLoading(false);
             })
             .catch(console.error);
     }, []);
 
     const filteredBatches = batches.filter(b => {
-        if (filter === 'All') return true;
-        return b.Status === filter;
+        const matchesStatus = statusFilter === 'All' || b.Status === statusFilter;
+        const matchesClient = clientFilter === 'All' || b.ClientCode === clientFilter;
+        return matchesStatus && matchesClient;
     });
 
     return (
@@ -48,7 +55,7 @@ function BatchesContent() {
             </header>
 
             {/* Filter Bar & Stats */}
-            <div className="flex flex-col md:flex-row gap-6 mb-8">
+            <div className="flex flex-col xl:flex-row gap-6 mb-8">
                 {/* Stats Group */}
                 <div className="flex gap-4">
                     <div className="glass-panel px-6 py-4 flex flex-col justify-center min-w-[140px]">
@@ -63,23 +70,38 @@ function BatchesContent() {
 
                 <div className="flex-1"></div>
 
-                {/* Filter Tabs */}
-                <div className="glass-panel p-1 flex self-start">
-                    {['All', 'Open', 'Closed'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f)}
-                            className={`
-                                px-6 py-2 rounded text-sm font-medium transition-all
-                                ${filter === f
-                                    ? 'bg-white text-black shadow-sm'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                }
-                            `}
-                        >
-                            {f}
-                        </button>
-                    ))}
+                {/* Filters */}
+                <div className="flex gap-4 items-center">
+                    {/* Client Filter */}
+                    <select
+                        className="glass-panel px-4 py-2 text-sm text-gray-300 bg-transparent border-none focus:ring-0 cursor-pointer min-w-[150px]"
+                        value={clientFilter}
+                        onChange={(e) => setClientFilter(e.target.value)}
+                    >
+                        <option value="All">All Clients</option>
+                        {clients.map(c => (
+                            <option key={c.ClientID} value={c.ClientCode}>{c.ClientCode} - {c.ClientName}</option>
+                        ))}
+                    </select>
+
+                    {/* Status Tabs */}
+                    <div className="glass-panel p-1 flex">
+                        {['All', 'Open', 'Closed'].map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setStatusFilter(f)}
+                                className={`
+                                    px-6 py-2 rounded text-sm font-medium transition-all
+                                    ${statusFilter === f
+                                        ? 'bg-white text-black shadow-sm'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    }
+                                `}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -88,7 +110,7 @@ function BatchesContent() {
                 {loading ? (
                     <div className="p-12 text-center text-gray-500 animate-pulse uppercase tracking-widest text-xs">Loading Batches...</div>
                 ) : filteredBatches.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 italic">No batches found.</div>
+                    <div className="p-12 text-center text-gray-500 italic">No batches found matching filters.</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="data-table">
@@ -96,9 +118,8 @@ function BatchesContent() {
                                 <tr>
                                     <th>Batch ID</th>
                                     <th>Client</th>
-                                    <th>Description</th>
                                     <th className="text-center">Status</th>
-                                    <th className="text-right">Items</th>
+                                    <th className="text-right">Count</th>
                                     <th className="text-right">Total</th>
                                     <th className="text-right">Action</th>
                                 </tr>
@@ -106,9 +127,12 @@ function BatchesContent() {
                             <tbody>
                                 {filteredBatches.map(batch => (
                                     <tr key={batch.BatchID} onClick={() => router.push(`/batches/${batch.BatchID}/enter`)} className="cursor-pointer group">
-                                        <td className="font-mono text-gray-400 group-hover:text-white">#{batch.BatchID}</td>
+                                        <td>
+                                            <span className="font-mono text-gray-300 text-xs group-hover:text-white transition-colors">
+                                                {batch.BatchCode}
+                                            </span>
+                                        </td>
                                         <td className="font-medium text-white">{batch.ClientCode}</td>
-                                        <td className="text-gray-400">{batch.Description || '-'}</td>
                                         <td className="text-center">
                                             <span className={`
                                                 inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border
@@ -120,8 +144,8 @@ function BatchesContent() {
                                                 {batch.Status}
                                             </span>
                                         </td>
-                                        <td className="text-right text-gray-400">{batch.ItemCount}</td>
-                                        <td className="text-right font-medium text-white">
+                                        <td className="text-right text-gray-400 font-mono">{batch.ItemCount}</td>
+                                        <td className="text-right font-medium text-white font-mono">
                                             ${Number(batch.TotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td className="text-right">
