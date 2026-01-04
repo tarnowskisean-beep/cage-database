@@ -13,73 +13,30 @@ export default function Sidebar() {
     if (pathname === '/login') return null;
 
     return (
-        <aside style={{
-            width: isCollapsed ? '80px' : 'var(--sidebar-width)',
-            background: 'var(--color-bg-sidebar)',
-            borderRight: '1px solid var(--color-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            transition: 'width 0.3s ease',
-            position: 'relative',
-            flexShrink: 0
-        }}>
+        <aside className={`h-screen sticky top-0 flex flex-col border-r border-[var(--glass-border)] bg-[rgba(15,23,42,0.4)] backdrop-blur-xl transition-all duration-300 z-50 ${isCollapsed ? 'w-20' : 'w-[280px]'}`}>
+
             {/* Collapse Toggle */}
             <button
                 onClick={toggleSidebar}
-                style={{
-                    position: 'absolute',
-                    right: '-12px',
-                    top: '20px',
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    background: 'var(--color-primary)',
-                    color: 'var(--color-primary-text)',
-                    border: '2px solid var(--color-bg-base)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                }}
+                className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-blue-400 transition-colors z-50 ring-2 ring-[#0f172a]"
             >
                 {isCollapsed ? '→' : '←'}
             </button>
 
             {/* Brand Header */}
-            <div style={{ padding: '2rem 1.5rem', marginBottom: '1rem', textAlign: 'center', opacity: isCollapsed ? 0.8 : 1 }}>
-                <div style={{
-                    marginBottom: '0.5rem',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    transform: isCollapsed ? 'scale(0.8)' : 'scale(1)',
-                    transition: 'transform 0.3s ease'
-                }}>
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div className={`p-6 flex flex-col items-center justify-center transition-all duration-300 ${isCollapsed ? 'mb-4' : 'mb-8'}`}>
+                <div className={`transition-transform duration-300 ${isCollapsed ? 'scale-75' : 'scale-100'}`}>
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_10px_rgba(192,160,98,0.3)]">
                         <circle cx="24" cy="24" r="23" stroke="#C0A062" strokeWidth="1.5" />
                         <path d="M24 8L27 21L40 24L27 27L24 40L21 27L8 24L21 21L24 8Z" fill="#C0A062" />
                     </svg>
                 </div>
                 {!isCollapsed && (
-                    <div style={{ animation: 'fadeIn 0.5s ease' }}>
-                        <h2 style={{
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
-                            letterSpacing: '0.1em',
-                            margin: 0,
-                            fontFamily: 'var(--font-serif)',
-                            color: 'white'
-                        }}>
+                    <div className="mt-4 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <h2 className="text-xl font-bold tracking-[0.15em] font-display text-white">
                             COMPASS
                         </h2>
-                        <span style={{
-                            fontSize: '0.65rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.2em',
-                            color: '#C0A062',
-                            display: 'block',
-                            marginTop: '0.25rem'
-                        }}>
+                        <span className="text-[0.65rem] uppercase tracking-[0.25em] text-[#C0A062] block mt-1">
                             Professional Services
                         </span>
                     </div>
@@ -87,8 +44,8 @@ export default function Sidebar() {
             </div>
 
             {/* Navigation */}
-            <nav style={{ flex: 1, padding: '0 1rem' }}>
-                <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <nav className="flex-1 px-4 overflow-y-auto custom-scrollbar">
+                <ul className="space-y-2">
                     {/* Admin/Clerk specific tabs */}
                     {session?.user?.role !== 'ClientUser' && (
                         <>
@@ -120,46 +77,34 @@ export default function Sidebar() {
             </nav>
 
             {/* User Profile & Settings */}
-            <div style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)' }}>
+            <div className={`mt-auto border-t border-[var(--glass-border)] bg-black/10`}>
                 {/* Settings Link - ADMIN ONLY */}
                 {session?.user?.role === 'Admin' && (
-                    <>
-                        <Link href="/settings/mappings" style={{
-                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem 1.5rem',
-                            color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'all 0.2s',
-                            justifyContent: isCollapsed ? 'center' : 'flex-start'
-                        }}>
-                            <span style={{ fontSize: '1.25rem' }}>⚙️</span>
-                            {!isCollapsed && <span style={{ fontSize: '0.9rem' }}>Settings</span>}
-                        </Link>
-
-
-                    </>
+                    <Link
+                        href="/settings/mappings"
+                        className={`flex items-center gap-4 px-6 py-4 text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                    >
+                        <span className="text-xl">⚙️</span>
+                        {!isCollapsed && <span className="text-sm font-medium">Settings</span>}
+                    </Link>
                 )}
 
                 {/* User Info */}
-                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{
-                        width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-primary)', color: 'var(--color-primary-text)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0
-                    }}>
+                <div className={`p-4 border-t border-[var(--glass-border)] flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-lg shrink-0">
                         {session?.user?.name ? session.user.name.slice(0, 1).toUpperCase() : 'AG'}
                     </div>
 
                     {!isCollapsed && (
-                        <div style={{ flex: 1, overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-text-main)' }}>
+                        <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-white truncate">
                                 {session?.user?.name || 'Alyssa Graham'}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{session?.user?.role || 'Clerk'}</span>
+                            <div className="flex items-center justify-between mt-0.5">
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider">{session?.user?.role || 'Clerk'}</span>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
-                                    style={{
-                                        background: 'none', border: 'none', color: 'var(--color-error)',
-                                        fontSize: '0.7rem', cursor: 'pointer', padding: 0,
-                                        textDecoration: 'none', fontFamily: 'inherit'
-                                    }}
+                                    className="text-[10px] text-red-400 hover:text-red-300 transition-colors uppercase font-bold tracking-wide"
                                 >
                                     Sign Out
                                 </button>
@@ -175,21 +120,24 @@ export default function Sidebar() {
 function NavItem({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) {
     return (
         <li>
-            <Link href={href} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius-none)',
-                color: active ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-                background: active ? 'rgba(255,255,255,0.05)' : 'transparent',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                borderLeft: active ? '2px solid var(--color-primary)' : '2px solid transparent'
-            }}>
-                <span style={{ fontSize: '1.25rem' }}>{icon}</span>
-                {!collapsed && <span style={{ fontWeight: 400 }}>{label}</span>}
+            <Link
+                href={href}
+                className={`
+                    group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200
+                    ${active
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white hover:border-white/5 border border-transparent'}
+                    ${collapsed ? 'justify-center px-2' : ''}
+                `}
+            >
+                <span className={`text-xl transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+                    {icon}
+                </span>
+                {!collapsed && (
+                    <span className={`font-medium text-sm tracking-wide ${active ? 'text-white' : ''}`}>
+                        {label}
+                    </span>
+                )}
             </Link>
         </li>
     );
