@@ -112,8 +112,11 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
         );
 
         return NextResponse.json(result.rows[0]);
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('POST /api/batches/[id]/donations error:', error);
+        return NextResponse.json({
+            error: error.message || 'Internal Server Error',
+            details: error.detail || error.code || 'No details'
+        }, { status: 500 });
     }
 }

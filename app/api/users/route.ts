@@ -14,6 +14,10 @@ export async function GET() {
         }
 
         const res = await query('SELECT "UserID", "Username", "Email", "Role", "Initials", "IsActive", "CreatedAt" FROM "Users" ORDER BY "Username" ASC');
+
+        console.log(`GET /api/users: Request by Admin ${(session.user as any).id} (${(session.user as any).email})`);
+        console.log(`GET /api/users: Returning ${res.rows.length} users. User IDs: ${res.rows.map(u => u.UserID).join(', ')}`);
+
         return NextResponse.json(res.rows);
     } catch (error) {
         console.error('GET /api/users error:', error);
