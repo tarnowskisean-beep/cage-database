@@ -61,10 +61,11 @@ export async function POST(req: Request) {
         await Promise.all(tasks);
 
         await logAudit(
-            parseInt(userId),
             'AcceptPolicy',
-            null,
-            `Accepted Policies: ${policyIds.join(',')}`
+            'USER_POLICY',
+            String(userId),
+            `User ${userId} accepted policies: ${policyIds.join(', ')}`,
+            String(userId)
         );
 
         return NextResponse.json({ success: true });

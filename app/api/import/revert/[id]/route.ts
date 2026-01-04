@@ -52,7 +52,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             'ImportSession',
             String(sessionId),
             `Reverted Import Session ${sessionId}. Deleted ${count} donations and ${delBatches.rowCount} batches.`,
-            session.user.email
+            session.user.email || 'unknown'
         );
 
         return NextResponse.json({
