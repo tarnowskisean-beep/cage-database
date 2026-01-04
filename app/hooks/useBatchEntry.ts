@@ -397,9 +397,16 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     scanRef.current?.focus();
                 }
             } else {
-                const data = await res.json();
-                console.error('Save failed:', data);
-                alert(`Failed to save: ${data.error} \n\nDetails: ${data.details || ''}`);
+                const text = await res.text();
+                let errorMsg = `Status: ${res.status}`;
+                try {
+                    const data = JSON.parse(text);
+                    errorMsg += ` - ${data.error || ''} ${data.details || ''}`;
+                } catch {
+                    errorMsg += ` - ${text.substring(0, 100)}`; // Show first 100 chars of HTML/text
+                }
+                console.error('Save failed:', errorMsg);
+                alert(`Failed to save: ${errorMsg}`);
             }
         } catch (e: any) {
             console.error(e);
