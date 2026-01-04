@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from '@/lib/db';
 import { formatName, formatAddress, formatState, formatZip, cleanText, formatEmail, formatPhone } from '@/lib/cleaners';
 
@@ -31,8 +33,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
-        console.log('POST /api/batches/[id]/donations Body:', JSON.stringify(body, null, 2));
 
         // Clean & Standardize Inputs
         const donorFirstName = formatName(body.donorFirstName);

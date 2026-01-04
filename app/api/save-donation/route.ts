@@ -1,5 +1,7 @@
 
 import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from '@/lib/db';
 import { formatName, formatAddress, formatState, formatZip, cleanText, formatEmail, formatPhone } from '@/lib/cleaners';
 
@@ -7,6 +9,11 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         console.log('POST /api/save-donation Body:', JSON.stringify(body, null, 2));
 

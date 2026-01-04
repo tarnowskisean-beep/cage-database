@@ -134,12 +134,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         const scan = formData.scanString; // Don't trim immediately, tabs matter depending on scanner config, but usually safe to trim ends.
         if (!scan) return;
 
-        console.log("Processing Scan:", scan.replace(/\t/g, '[TAB]'));
-
-        // DETECT SCAN TYPE
-        // METHOD B: Datamatrix (Contains Tabs)
         if (scan.includes('\t')) {
-            console.log("Detected Datamatrix (Tab-delimited)");
             const parts = scan.split('\t');
 
             // Expected Format (based on common standards or previous context):
@@ -200,7 +195,6 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         }
 
         // METHOD A: Barcode / Manual Lookup (Single Key)
-        console.log("Detected Barcode/Key Lookup");
         try {
             const res = await fetch(`/api/lookup/caging/${encodeURIComponent(scan.trim())}`);
             if (res.ok) {
@@ -218,7 +212,6 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                         mailCode: rec.MailCode || '',
                     }));
                 } else {
-                    console.log("No match found in prospects.");
                     alert(`No prospect found for ID: ${scan.trim()}`);
                 }
             } else {

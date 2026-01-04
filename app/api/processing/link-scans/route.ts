@@ -3,12 +3,19 @@ import { query } from '@/lib/db';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Storage } from '@google-cloud/storage';
 import { google } from 'googleapis';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { batchId, documentId } = await request.json();
 
         if (!process.env.GEMINI_API_KEY) {
@@ -49,7 +56,6 @@ export async function POST(request: Request) {
             if (driveFileId && process.env.GDRIVE_CREDENTIALS) {
                 // Authenticated Google Drive Access
                 try {
-                    console.log('Attempting Authenticated G-Drive Download:', driveFileId);
                     const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
                     const auth = google.auth.fromJSON(credentials);
                     // Scope for read-only drive access
@@ -64,7 +70,6 @@ export async function POST(request: Request) {
                     }, { responseType: 'arraybuffer' });
 
                     fileBuffer = Buffer.from(response.data as ArrayBuffer);
-                    console.log('Successfully downloaded via Drive API');
 
                 } catch (authErr: any) {
                     console.warn('Authenticated Drive download failed, falling back to public fetch:', authErr.message);
