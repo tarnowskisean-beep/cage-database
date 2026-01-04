@@ -196,10 +196,9 @@ export default function SearchPage() {
 
     // --- RENDERERS ---
     const renderRule = (rule: UISearchRule) => (
-        <div key={rule.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <div key={rule.id} className="flex gap-2 items-center mb-2">
             <select
-                className="input-field"
-                style={{ width: '150px' }}
+                className="input-field w-32"
                 value={rule.field}
                 onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, field: e.target.value })))}
             >
@@ -207,8 +206,7 @@ export default function SearchPage() {
             </select>
 
             <select
-                className="input-field"
-                style={{ width: '150px' }}
+                className="input-field w-32"
                 value={rule.operator}
                 onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, operator: e.target.value as RuleOperator })))}
             >
@@ -216,8 +214,7 @@ export default function SearchPage() {
             </select>
 
             <input
-                className="input-field"
-                style={{ width: '200px' }}
+                className="input-field w-48"
                 value={rule.value}
                 onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, value: e.target.value })))}
                 placeholder="Value..."
@@ -225,28 +222,20 @@ export default function SearchPage() {
 
             <button
                 onClick={() => setUiQuery(prev => removeNode(prev, rule.id))}
-                style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '1.2rem' }}
+                className="text-red-400 hover:text-red-300 text-xl font-bold px-2"
                 title="Remove Rule"
             >
-                ×
+                &times;
             </button>
         </div>
     );
 
     const renderGroup = (group: UISearchGroup, isRoot = false) => (
-        <div key={group.id} style={{
-            padding: '1rem',
-            border: isRoot ? 'none' : '1px solid var(--color-border)',
-            background: isRoot ? 'transparent' : 'var(--color-bg-elevated)',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1rem',
-            position: 'relative'
-        }}>
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
-                <span style={{ fontWeight: 600, color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Logic Group:</span>
+        <div key={group.id} className={`p-4 rounded-lg mb-4 ${isRoot ? '' : 'bg-white/5 border border-white/10'}`}>
+            <div className="flex gap-4 mb-2 items-center">
+                <span className="font-semibold text-gray-400 text-sm">{isRoot ? 'Main Logic' : 'Sub-Group'}:</span>
                 <select
-                    className="input-field"
-                    style={{ width: '80px', fontWeight: 600, color: 'var(--color-primary)' }}
+                    className="input-field w-24 font-bold text-blue-400"
                     value={group.combinator}
                     onChange={e => setUiQuery(prev => updateUIGroup(prev, group.id, g => ({ ...g, combinator: e.target.value as Operator })))}
                 >
@@ -254,17 +243,17 @@ export default function SearchPage() {
                     <option value="OR">OR</option>
                 </select>
 
-                <div style={{ flex: 1 }}></div>
+                <div className="flex-1"></div>
 
                 <button
                     onClick={() => setUiQuery(prev => addRuleToGroup(prev, group.id))}
-                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '4px', color: 'var(--color-text-main)' }}
+                    className="text-xs px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white transition-colors"
                 >
                     + Rule
                 </button>
             </div>
 
-            <div style={{ paddingLeft: isRoot ? 0 : '1rem' }}>
+            <div className={`pl-4 ${isRoot ? '' : 'border-l-2 border-white/5'}`}>
                 {group.rules.map(item => {
                     if ('combinator' in item) return renderGroup(item as UISearchGroup);
                     // @ts-ignore
@@ -519,26 +508,25 @@ export default function SearchPage() {
     };
 
     return (
-        <div>
-            <header className="page-header">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <header className="page-header mb-8 flex items-end justify-between">
                 <div>
-                    <h1>Search</h1>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Search donations by date, donor, or client.</p>
+                    <h1 className="text-4xl font-display font-bold text-white mb-2 drop-shadow-md">Global Search</h1>
+                    <p className="text-gray-400 font-light">Advanced donation querying and reporting</p>
                 </div>
-                <Link href="/" className="btn-secondary" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
+                <Link href="/" className="text-blue-400 hover:text-white transition-colors text-sm font-medium">Back to All Batches &rarr;</Link>
             </header>
 
             {/* Simple Search Form matching Dashboard Style */}
-            <div className="glass-panel" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>🔍</span>
-                    <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
+            <div className="glass-panel p-4 mb-6 flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-2 text-blue-400">
+                    <span className="text-xl">🔍</span>
+                    <span className="font-semibold text-xs uppercase tracking-wider">Filters</span>
                 </div>
 
                 {/* Client */}
                 <select
-                    className="input-field"
-                    style={{ width: 'auto', minWidth: '200px' }}
+                    className="input-field min-w-[200px]"
                     value={clientCode}
                     onChange={e => setClientCode(e.target.value)}
                 >
@@ -549,35 +537,31 @@ export default function SearchPage() {
                 </select>
 
                 {/* Date Range */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">From</span>
                     <input
                         type="date"
                         className="input-field"
-                        style={{ width: 'auto' }}
                         value={startDate}
                         onChange={e => setStartDate(e.target.value)}
                         onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
                     />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">To</span>
                     <input
                         type="date"
                         className="input-field"
-                        style={{ width: 'auto' }}
                         value={endDate}
                         onChange={e => setEndDate(e.target.value)}
                         onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
                     />
                 </div>
 
-                {/* Filters Removed: Ref #, Donor Name, Min $, Max $ */}
+                <div className="flex-1"></div>
 
-                <div style={{ flex: 1 }}></div>
-
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-primary" onClick={handleSearch} disabled={loading} style={{ padding: '0.5rem 1rem' }}>
+                <div className="flex gap-2">
+                    <button className="btn-primary" onClick={handleSearch} disabled={loading}>
                         {loading ? 'Searching...' : 'Run Search'}
                     </button>
                     {(
@@ -592,25 +576,25 @@ export default function SearchPage() {
                                 setAmountMax('');
                                 setUiQuery({ id: 'root', combinator: 'AND', rules: [] }); // Clear advanced rules
                             }}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg text-sm font-bold uppercase transition-colors"
                         >
-                            Clear
+                            Reset
                         </button>
                     )}
                 </div>
             </div>
 
             {/* Advanced Filters Toggle */}
-            <div style={{ marginBottom: '2rem' }}>
+            <div className="mb-8">
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    className="flex items-center gap-2 text-blue-400 hover:text-white transition-colors text-sm font-medium"
                 >
                     {showAdvanced ? '▼ Hide Advanced Rules' : '▶ Show Advanced Rules'}
                 </button>
 
                 {showAdvanced && (
-                    <div style={{ marginTop: '1rem' }}>
+                    <div className="mt-4 animate-in slide-in-from-top-2">
                         {renderGroup(uiQuery, true)}
                     </div>
                 )}
@@ -618,23 +602,27 @@ export default function SearchPage() {
 
             {/* Action Buttons Row (Only if results exist) */}
             {results.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
-                    <button className="btn-secondary" onClick={handleExportCSV}>Export CSV</button>
-                    <button className="btn-secondary" onClick={handleGenerateReport}>📄 Report</button>
+                <div className="flex justify-end gap-4 mb-4">
+                    <button className="px-4 py-2 border border-blue-500 text-blue-400 rounded hover:bg-blue-500 hover:text-white transition-colors flex items-center gap-2" onClick={handleExportCSV}>
+                        <span>⬇</span> Export CSV
+                    </button>
+                    <button className="px-4 py-2 border border-gray-600 text-gray-300 rounded hover:bg-white/10 transition-colors flex items-center gap-2" onClick={handleGenerateReport}>
+                        <span>📄</span> PDF Report
+                    </button>
                 </div>
             )}
 
             {/* Results Table */}
             {searched && (
-                <div className="glass-panel" style={{ padding: '0' }}>
-                    <div style={{ padding: '1.5rem 1.5rem 0.5rem 1.5rem' }}>
-                        <h3 style={{ marginBottom: '0.5rem' }}>Results ({results.length}{results.length >= 100 ? '+' : ''})</h3>
+                <div className="glass-panel p-0 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-white/5">
+                        <h3 className="text-white font-bold">Results ({results.length}{results.length >= 100 ? '+' : ''})</h3>
                     </div>
                     {results.length === 0 ? (
-                        <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>No matches found.</div>
+                        <div className="p-12 text-center text-gray-500 italic">No matches found.</div>
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table className="data-table" style={{ minWidth: '800px' }}>
+                        <div className="overflow-x-auto">
+                            <table className="data-table min-w-full">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
@@ -648,20 +636,20 @@ export default function SearchPage() {
                                 </thead>
                                 <tbody>
                                     {results.map(r => (
-                                        <tr key={r.DonationID}>
-                                            <td>{new Date(r.GiftDate).toLocaleDateString()}</td>
+                                        <tr key={r.DonationID} className="group hover:bg-white/5 transition-colors">
+                                            <td className="text-gray-300">{new Date(r.GiftDate).toLocaleDateString()}</td>
                                             <td>
-                                                <div style={{ fontWeight: 500 }}>{r.DonorFirstName} {r.DonorLastName}</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{r.DonorCity}, {r.DonorState}</div>
+                                                <div className="font-medium text-white">{r.DonorFirstName} {r.DonorLastName}</div>
+                                                <div className="text-xs text-gray-500">{r.DonorCity}, {r.DonorState}</div>
                                             </td>
-                                            <td style={{ fontWeight: 600, color: 'var(--color-active)' }}>
+                                            <td className="font-mono text-emerald-400 font-medium">
                                                 ${Number(r.GiftAmount).toFixed(2)}
                                             </td>
-                                            <td>{r.GiftMethod}</td>
-                                            <td>{r.ClientCode}</td>
-                                            <td>{r.BatchCode}</td>
+                                            <td className="text-gray-400">{r.GiftMethod}</td>
+                                            <td className="text-white">{r.ClientCode}</td>
+                                            <td className="font-mono text-xs text-gray-500">{r.BatchCode}</td>
                                             <td>
-                                                <Link href={`/batches/${r.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-400 hover:text-white text-xs font-bold uppercase tracking-wide hover:underline">
                                                     View &rarr;
                                                 </Link>
                                             </td>

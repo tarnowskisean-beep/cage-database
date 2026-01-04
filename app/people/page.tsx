@@ -1,11 +1,8 @@
-
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-
-
 
 function PeopleContent() {
     const router = useRouter();
@@ -23,7 +20,6 @@ function PeopleContent() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Debounce search? Or just fetch on mount + when q changes
         setLoading(true);
         const params = new URLSearchParams();
         if (q) params.set('q', q);
@@ -55,26 +51,25 @@ function PeopleContent() {
             {/* Header Section */}
             <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h2 className="text-sm font-medium tracking-wide text-[var(--color-accent)] uppercase mb-2">CRM</h2>
-                    <h1 className="text-5xl font-display text-white tracking-tight">Donor Directory</h1>
+                    <h2 className="text-sm font-medium tracking-wide text-blue-400 uppercase mb-2">CRM</h2>
+                    <h1 className="text-5xl font-display text-white tracking-tight font-bold drop-shadow-md">Donor Directory</h1>
                     <p className="text-gray-400 mt-2 max-w-xl text-lg font-light">Manage your donor relationships and view lifetime value analytics across all clients.</p>
                 </div>
 
                 <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end">
-
                     {/* Filters */}
                     <div className="flex gap-2">
                         <input
                             type="number"
                             placeholder="Min Giving ($)"
-                            className="bg-[#1f1f1f] border border-[var(--color-border)] rounded text-white px-4 py-3 w-32 outline-none focus:border-[var(--color-accent)] text-xs"
+                            className="input-field w-32"
                             value={minAmount}
                             onChange={e => setMinAmount(e.target.value)}
                         />
                         <input
                             type="text"
                             placeholder="City"
-                            className="bg-[#1f1f1f] border border-[var(--color-border)] rounded text-white px-4 py-3 w-32 outline-none focus:border-[var(--color-accent)] text-xs"
+                            className="input-field w-32"
                             value={city}
                             onChange={e => setCity(e.target.value)}
                         />
@@ -82,20 +77,20 @@ function PeopleContent() {
 
                     <div className="relative group flex-1 md:flex-none">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg className="h-5 w-5 text-gray-500 group-focus-within:text-[var(--color-accent)] transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                             </svg>
                         </div>
                         <input
                             type="text"
-                            className="bg-[#1f1f1f] border border-[var(--color-border)] rounded text-white px-12 py-3 w-full md:w-80 outline-none focus:border-[var(--color-accent)] transition-all placeholder-gray-600 font-light"
-                            placeholder="Search..."
+                            className="input-field pl-12 pr-4 w-full md:w-80"
+                            placeholder="Search donors..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
 
-                    <button type="submit" className="bg-[var(--color-accent)] text-black px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-white transition-colors shadow-[0_0_10px_rgba(192,160,98,0.2)]">
+                    <button type="submit" className="btn-primary shadow-lg hover:shadow-blue-500/20">
                         Search
                     </button>
                 </form>
@@ -103,55 +98,59 @@ function PeopleContent() {
 
             {/* Content Area */}
             {loading ? (
-                <div className="w-full h-64 animate-pulse bg-white/5 rounded"></div>
+                <div className="w-full h-64 animate-pulse glass-panel flex items-center justify-center">
+                    <div className="text-gray-500 font-medium">Loading network...</div>
+                </div>
             ) : donors.length === 0 ? (
-                <div className="py-32 text-center border border-dashed border-gray-800 rounded">
-                    <p className="text-gray-500">No Donors Found</p>
+                <div className="py-32 text-center border border-dashed border-gray-700 rounded-xl bg-white/5">
+                    <div className="text-4xl mb-4">👥</div>
+                    <p className="text-gray-400 text-lg">No Donors Found</p>
+                    <p className="text-sm text-gray-600">Try adjusting your filters</p>
                 </div>
             ) : (
-                <div className="bg-[#1a1a1a] border border-gray-800 rounded overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-[#222] text-gray-500 font-medium uppercase tracking-wider text-xs border-b border-gray-800">
+                <div className="glass-panel p-0 overflow-hidden">
+                    <table className="data-table">
+                        <thead>
                             <tr>
-                                <th className="px-6 py-4">Name</th>
-                                <th className="px-6 py-4">Contact</th>
-                                <th className="px-6 py-4">Location</th>
-                                <th className="px-6 py-4 text-center">Gifts</th>
-                                <th className="px-6 py-4 text-right">Lifetime Value</th>
-                                <th className="px-6 py-4 text-right">Last Gift</th>
-                                <th className="px-6 py-4">Action</th>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Location</th>
+                                <th className="text-center">Gifts</th>
+                                <th className="text-right">Lifetime Value</th>
+                                <th className="text-right">Last Gift</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800">
+                        <tbody>
                             {donors.map(d => (
-                                <tr key={d.DonorID} className="hover:bg-[#222] transition-colors group">
-                                    <td className="px-6 py-4">
+                                <tr key={d.DonorID} className="group transition-colors">
+                                    <td>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold text-xs border border-gray-700">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/10 shadow-inner">
                                                 {d.FirstName?.[0]}{d.LastName?.[0]}
                                             </div>
-                                            <span className="font-semibold text-white">{d.FirstName} {d.LastName}</span>
+                                            <span className="font-semibold text-white group-hover:text-blue-300 transition-colors">{d.FirstName} {d.LastName}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-400 text-xs">
-                                        <div>{d.Email || '-'}</div>
+                                    <td className="text-gray-400 text-xs">
+                                        <div className="mb-0.5">{d.Email || '-'}</div>
                                         <div>{d.Phone}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-400">
+                                    <td className="text-gray-400">
                                         {d.City ? `${d.City}, ${d.State}` : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-center text-gray-400 font-mono">
+                                    <td className="text-center text-blue-300 font-mono font-medium bg-blue-500/5 py-1 rounded">
                                         {d.TotalGifts}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono text-white">
+                                    <td className="text-right font-mono text-emerald-400 font-medium">
                                         ${Number(d.LifetimeValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                     </td>
-                                    <td className="px-6 py-4 text-right text-gray-500 text-xs">
+                                    <td className="text-right text-gray-500 text-xs font-mono">
                                         {d.LastGiftDate ? new Date(d.LastGiftDate).toLocaleDateString() : '-'}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <Link href={`/people/${d.DonorID}`} className="text-[var(--color-accent)] hover:underline text-xs font-bold uppercase tracking-wide">
-                                            View
+                                    <td>
+                                        <Link href={`/people/${d.DonorID}`} className="text-blue-400 hover:text-white text-xs font-bold uppercase tracking-wide hover:underline decoration-blue-500 decoration-2 underline-offset-4">
+                                            View Profile &rarr;
                                         </Link>
                                     </td>
                                 </tr>
@@ -166,7 +165,7 @@ function PeopleContent() {
 
 export default function PeopleDirectory() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#2A2829] flex items-center justify-center text-gray-500">Loading directory...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-blue-400 animate-pulse">Loading directory...</div>}>
             <PeopleContent />
         </Suspense>
     );
