@@ -55,7 +55,7 @@ export async function POST(request: Request) {
                     // Scope for read-only drive access
                     (auth as any).scopes = ['https://www.googleapis.com/auth/drive.readonly'];
 
-                    const drive = google.drive({ version: 'v3', auth });
+                    const drive = google.drive({ version: 'v3', auth: auth as any });
 
                     // Get file as stream/buffer
                     const response = await drive.files.get({
