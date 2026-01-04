@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Storage } from '@google-cloud/storage';
+import { google } from 'googleapis';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
         let fileBuffer: Buffer | null = null;
         let mimeType = 'application/pdf'; // Assuming PDF for scans
 
-        import { google } from 'googleapis';
+
 
         // 2. Download File
         if (StorageKey.startsWith('link:')) {
