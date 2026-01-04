@@ -15,7 +15,7 @@ export async function GET(
         // For now, we assume authenticated users can view.
 
         const result = await query(
-            `SELECT "FileName", "FileContent", "DocumentType", "StorageKey", "BlobUrl" 
+            `SELECT "FileName", "DocumentType", "StorageKey", "BlobUrl" 
              FROM "BatchDocuments" 
              WHERE "BatchDocumentID" = $1`,
             [id]
