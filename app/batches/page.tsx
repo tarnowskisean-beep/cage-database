@@ -13,6 +13,35 @@ function BatchesContent() {
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('All');
     const [clientFilter, setClientFilter] = useState('All');
+
+    // Default Week Calculation: Most Recent Saturday -> Following Friday
+    // If today is Saturday, Start = Today. If today is Friday, Start = Last Saturday.
+    const [startDate, setStartDate] = useState(() => {
+        const d = new Date();
+        const day = d.getDay(); // 0 is Sun, 6 is Sat
+        const diff = d.getDate() - day + (day === 6 ? 0 : -1); // adjust when day is sunday
+        // Actually, logic for "Most Recent Saturday":
+        // If today is Sat (6), diff is 0.
+        // If today is Sun (0), we want yesterday (-1).
+        // If today is Fri (5), we want -6.
+        // Formula: lastSaturday = date - ((date.getDay() + 1) % 7) 
+        // Wait, simpler: (day + 1) % 7 is days since Saturday (Sat=0, Sun=1...)
+        const daysSinceSat = (day + 1) % 7;
+        d.setDate(d.getDate() - daysSinceSat);
+        return d.toISOString().substring(0, 10);
+    });
+
+    const [endDate, setEndDate] = useState(() => {
+        // End Date is Start Date + 6 days
+        const start = new Date(startDate); // This might fail due to closure, better recalculate or use effect. 
+        // Let's just recalculate for safety in initial state:
+        const d = new Date();
+        const day = d.getDay();
+        const daysSinceSat = (day + 1) % 7;
+        d.setDate(d.getDate() - daysSinceSat + 6); // +6 days from Saturday is Friday
+        return d.toISOString().substring(0, 10);
+    });
+
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     // Fetch batches and clients
@@ -54,7 +83,12 @@ function BatchesContent() {
     const filteredBatches = batches.filter(b => {
         const matchesStatus = statusFilter === 'All' || b.Status === statusFilter;
         const matchesClient = clientFilter === 'All' || b.ClientCode === clientFilter;
-        return matchesStatus && matchesClient;
+
+        // Date Range Check
+        const batchDate = b.Date ? b.Date.substring(0, 10) : '';
+        const matchesDate = (!startDate || batchDate >= startDate) && (!endDate || batchDate <= endDate);
+
+        return matchesStatus && matchesClient && matchesDate;
     });
 
     return (
@@ -90,6 +124,23 @@ function BatchesContent() {
 
                 {/* Filters */}
                 <div className="flex gap-4 items-center">
+                    {/* Date Filter */}
+                    <div className="flex items-center gap-2 glass-panel px-3 py-1 bg-zinc-900/50">
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-transparent text-gray-300 text-sm border-none focus:ring-0 w-[130px] p-0"
+                        />
+                        <span className="text-gray-600">-</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-transparent text-gray-300 text-sm border-none focus:ring-0 w-[130px] p-0"
+                        />
+                    </div>
+
                     {/* Client Filter */}
                     <select
                         className="glass-panel px-4 py-2 text-sm text-gray-300 bg-transparent border-none focus:ring-0 cursor-pointer min-w-[150px]"
