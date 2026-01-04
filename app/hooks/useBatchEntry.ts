@@ -112,6 +112,12 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
             if (res.ok) {
                 const data = await res.json();
                 setRecords(Array.isArray(data) ? data : []);
+            } else {
+                const err = await res.json();
+                console.error("Fetch failed:", err);
+                if (err.error && err.error.includes("ScanDocumentID")) {
+                    alert("DATABASE UPDATE REQUIRED: Please run the migration link provided.");
+                }
             }
         } catch (e) { console.error(e); }
     }, [id]);

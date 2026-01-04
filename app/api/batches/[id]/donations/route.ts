@@ -23,9 +23,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             GiftAmount: parseFloat(row.GiftAmount)
         }));
         return NextResponse.json(rows);
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error.message, details: error }, { status: 500 });
     }
 }
 
