@@ -171,7 +171,17 @@ function BatchesContent() {
 
 function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: () => void }) {
     const [clients, setClients] = useState<any[]>([]);
-    const [formData, setFormData] = useState({ clientId: '', description: '', date: new Date().toISOString().substring(0, 10) });
+    const [formData, setFormData] = useState({
+        clientId: '',
+        description: '',
+        date: new Date().toISOString().substring(0, 10),
+        entryMode: 'Data Entry',
+        paymentCategory: 'Check',
+        defaultGiftPlatform: 'Chainbridge',
+        defaultTransactionType: 'Contribution',
+        defaultGiftYear: new Date().getFullYear().toString(),
+        defaultGiftQuarter: 'Q1'
+    });
 
     useEffect(() => {
         fetch('/api/clients').then(r => r.json()).then(setClients);
@@ -225,13 +235,60 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                             required
                         />
                     </div>
-                    <div className="flex gap-4 pt-4">
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Entry Mode</label>
+                            <select
+                                className="input-field"
+                                value={formData.entryMode}
+                                onChange={e => setFormData({ ...formData, entryMode: e.target.value })}
+                            >
+                                <option value="Data Entry">Data Entry</option>
+                                <option value="Import">Import</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Payment Category</label>
+                            <select
+                                className="input-field"
+                                value={formData.paymentCategory}
+                                onChange={e => setFormData({ ...formData, paymentCategory: e.target.value })}
+                            >
+                                <option value="Check">Check</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Wire">Wire</option>
+                                <option value="In-Kind">In-Kind</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Platform / Source</label>
+                        <select
+                            className="input-field"
+                            value={formData.defaultGiftPlatform}
+                            onChange={e => setFormData({ ...formData, defaultGiftPlatform: e.target.value })}
+                        >
+                            <option value="Chainbridge">Chainbridge</option>
+                            <option value="Stripe">Stripe</option>
+                            <option value="Anedot">Anedot</option>
+                            <option value="Winred">Winred</option>
+                            <option value="City National">City National</option>
+                            <option value="National Capital">National Capital</option>
+                            <option value="Propay">Propay</option>
+                            <option value="Cage">Cage (Internal)</option>
+                        </select>
+                    </div>
+
+                    <div className="flex gap-4 pt-4 border-t border-white/10 mt-6">
                         <button type="button" onClick={onClose} className="flex-1 btn-secondary">Cancel</button>
                         <button type="submit" className="flex-1 btn-primary">Create Batch</button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 
