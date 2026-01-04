@@ -70,9 +70,9 @@ export async function POST(
         if (batchCheck.rows.length === 0) return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
 
         await query(
-            `INSERT INTO "BatchDocuments" ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent")
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [id, type, filename, storageKey, userId, buffer]
+            `INSERT INTO "BatchDocuments" ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy")
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, type, filename, storageKey, userId]
         );
 
         // SOC 2: Audit Log
