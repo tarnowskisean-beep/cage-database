@@ -129,25 +129,7 @@ export default function Sidebar() {
                             {!isCollapsed && <span style={{ fontSize: '0.9rem' }}>Settings</span>}
                         </Link>
 
-                        <div style={{ height: '1px', background: 'var(--color-border)', margin: '0.5rem 0' }} />
 
-                        <Link href="/debug-full" style={{
-                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem 1.5rem',
-                            color: '#93c5fd', textDecoration: 'none', transition: 'all 0.2s',
-                            justifyContent: isCollapsed ? 'center' : 'flex-start'
-                        }}>
-                            <span style={{ fontSize: '1.5rem' }}>🚑</span>
-                            {!isCollapsed && <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Diagnostics</span>}
-                        </Link>
-
-                        <Link href="/fix-schema" style={{
-                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem 1.5rem',
-                            color: '#fca5a5', textDecoration: 'none', transition: 'all 0.2s',
-                            justifyContent: isCollapsed ? 'center' : 'flex-start'
-                        }}>
-                            <span style={{ fontSize: '1.25rem' }}>🛠️</span>
-                            {!isCollapsed && <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Repair DB</span>}
-                        </Link>
                     </>
                 )}
 
