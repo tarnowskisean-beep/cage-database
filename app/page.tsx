@@ -7,20 +7,46 @@ import { useRouter } from 'next/navigation';
 function DashboardContent() {
   const [stats, setStats] = useState<any>(null);
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Filters
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Fetch Clients
   useEffect(() => {
-    fetch('/api/stats')
+    fetch('/api/clients')
+      .then(res => res.json())
+      .then(data => setClients(data || []))
+      .catch(console.error);
+  }, []);
+
+  // Fetch Stats (Debounced or on Filter Change)
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (selectedClient) params.append('clientId', selectedClient);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    fetch(`/api/stats?${params.toString()}`)
       .then(res => {
         if (!res.ok) throw new Error('API Failed');
         return res.json();
       })
-      .then(data => setStats(data))
+      .then(data => {
+        setStats(data);
+        setError(false);
+      })
       .catch(err => {
         console.error(err);
         setError(true);
-      });
-  }, []);
+      })
+      .finally(() => setLoading(false));
+  }, [selectedClient, startDate, endDate]);
 
   if (error) {
     return (
@@ -43,7 +69,7 @@ function DashboardContent() {
     );
   }
 
-  if (!stats) {
+  if (!stats && loading) {
     return (
       <div className="p-8 flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-4">
@@ -55,19 +81,62 @@ function DashboardContent() {
   }
 
   // Chart Data Preparation (Monochrome)
-  const chartData = (stats.chartData || []).map((d: any) => ({
+  const chartData = (stats?.chartData || []).map((d: any) => ({
     ...d,
     color: '#ffffff' // White bars
   }));
 
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-8">
-      <header className="page-header flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="page-header flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
           <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Executive Overview</h2>
           <h1 className="text-4xl">Dashboard</h1>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* FILTERS */}
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            className="input-field"
+            style={{ width: '180px', padding: '0.4rem' }}
+            value={selectedClient}
+            onChange={e => setSelectedClient(e.target.value)}
+          >
+            <option value="">All Clients</option>
+            {clients.map(c => (
+              <option key={c.ClientID} value={c.ClientID}>{c.ClientName} ({c.ClientCode})</option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            className="input-field"
+            style={{ width: '140px', padding: '0.4rem' }}
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            placeholder="Start Date"
+          />
+          <span className="text-gray-500">-</span>
+          <input
+            type="date"
+            className="input-field"
+            style={{ width: '140px', padding: '0.4rem' }}
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            placeholder="End Date"
+          />
+
+          {(selectedClient || startDate || endDate) && (
+            <button
+              onClick={() => { setSelectedClient(''); setStartDate(''); setEndDate(''); }}
+              className="text-xs text-red-400 hover:text-red-300 ml-2"
+            >
+              Clear
+            </button>
+          )}
+
+          <span className="text-gray-600 mx-2">|</span>
+
           <span className="text-xs text-gray-500 uppercase tracking-widest">
             Last Updated: {new Date().toLocaleTimeString()}
           </span>
@@ -89,15 +158,17 @@ function DashboardContent() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Total Revenue</p>
-              <h3 className="text-3xl font-display mt-2 text-white">${stats.totalValidAmount.toLocaleString()}</h3>
+              <h3 className="text-3xl font-display mt-2 text-white">
+                {stats?.totalValidAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || '$0.00'}
+              </h3>
             </div>
             <div className="p-2 bg-white/5 rounded text-white">
               <span className="text-xl">💰</span>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="text-white font-medium">+12%</span>
-            <span>vs last period</span>
+            <span className="text-white font-medium">Filtered</span>
+            <span>view</span>
           </div>
         </div>
 
@@ -109,14 +180,14 @@ function DashboardContent() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Open Batches</p>
-              <h3 className="text-3xl font-display mt-2 text-white">{stats.openBatches}</h3>
+              <h3 className="text-3xl font-display mt-2 text-white">{stats?.openBatches || 0}</h3>
             </div>
             <div className="p-2 bg-white/5 rounded text-white">
               <span className="text-xl">📂</span>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            {stats.openBatches > 0 ? (
+            {(stats?.openBatches || 0) > 0 ? (
               <span className="text-amber-400 font-medium">Action Required</span>
             ) : (
               <span className="text-gray-500">All cleared</span>
@@ -129,7 +200,7 @@ function DashboardContent() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Active Clients</p>
-              <h3 className="text-3xl font-display mt-2 text-white">{stats.activeClients}</h3>
+              <h3 className="text-3xl font-display mt-2 text-white">{stats?.activeClients || 0}</h3>
             </div>
             <div className="p-2 bg-white/5 rounded text-white">
               <span className="text-xl">🏢</span>
@@ -146,7 +217,7 @@ function DashboardContent() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Unique Donors</p>
-              <h3 className="text-3xl font-display mt-2 text-white">{stats.uniqueDonors.toLocaleString()}</h3>
+              <h3 className="text-3xl font-display mt-2 text-white">{stats?.uniqueDonors?.toLocaleString() || 0}</h3>
             </div>
             <div className="p-2 bg-white/5 rounded text-white">
               <span className="text-xl">👥</span>
@@ -224,7 +295,7 @@ function DashboardContent() {
             <h3 className="text-lg font-display text-white">System Activity</h3>
           </div>
           <div className="p-0 overflow-y-auto max-h-[400px]">
-            {stats.recentLogs && stats.recentLogs.length > 0 ? (
+            {stats?.recentLogs && stats.recentLogs.length > 0 ? (
               <div className="divide-y divide-white/5">
                 {stats.recentLogs.map((log: any) => (
                   <div key={log.AuditID} className="p-4 hover:bg-white/5 transition-colors">
