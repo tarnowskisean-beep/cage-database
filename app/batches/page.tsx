@@ -273,14 +273,13 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 onChange={e => setFormData({ ...formData, paymentCategory: e.target.value })}
                             >
                                 <option value="Check">Check</option>
-                                <option value="Credit Card">Credit Card</option>
                                 <option value="Cash">Cash</option>
-                                <option value="Wire">Wire</option>
-                                <option value="In-Kind">In-Kind</option>
-                                <option value="Stock">Stock</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Online">Online</option>
                                 <option value="EFT">EFT</option>
+                                <option value="Stock">Stock</option>
                                 <option value="Crypto">Crypto</option>
-                                <option value="Mixed">Mixed</option>
+                                <option value="In-Kind">In-Kind</option>
                             </select>
                         </div>
                     </div>
