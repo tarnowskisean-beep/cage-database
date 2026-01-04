@@ -14,32 +14,29 @@ function BatchesContent() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [clientFilter, setClientFilter] = useState('All');
 
+    // Helper to get local date string YYYY-MM-DD
+    const getLocalDateString = (date: Date) => {
+        const offset = date.getTimezoneOffset();
+        const adjusted = new Date(date.getTime() - (offset * 60 * 1000));
+        return adjusted.toISOString().split('T')[0];
+    };
+
     // Default Week Calculation: Most Recent Saturday -> Following Friday
-    // If today is Saturday, Start = Today. If today is Friday, Start = Last Saturday.
     const [startDate, setStartDate] = useState(() => {
         const d = new Date();
         const day = d.getDay(); // 0 is Sun, 6 is Sat
-        const diff = d.getDate() - day + (day === 6 ? 0 : -1); // adjust when day is sunday
-        // Actually, logic for "Most Recent Saturday":
-        // If today is Sat (6), diff is 0.
-        // If today is Sun (0), we want yesterday (-1).
-        // If today is Fri (5), we want -6.
-        // Formula: lastSaturday = date - ((date.getDay() + 1) % 7) 
-        // Wait, simpler: (day + 1) % 7 is days since Saturday (Sat=0, Sun=1...)
+        // Calculate days since last Saturday (if today is Sat, 0. Sun, 1. Fri, 6)
         const daysSinceSat = (day + 1) % 7;
         d.setDate(d.getDate() - daysSinceSat);
-        return d.toISOString().substring(0, 10);
+        return getLocalDateString(d);
     });
 
     const [endDate, setEndDate] = useState(() => {
-        // End Date is Start Date + 6 days
-        const start = new Date(startDate); // This might fail due to closure, better recalculate or use effect. 
-        // Let's just recalculate for safety in initial state:
         const d = new Date();
         const day = d.getDay();
         const daysSinceSat = (day + 1) % 7;
         d.setDate(d.getDate() - daysSinceSat + 6); // +6 days from Saturday is Friday
-        return d.toISOString().substring(0, 10);
+        return getLocalDateString(d);
     });
 
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -240,7 +237,12 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
     const [formData, setFormData] = useState({
         clientId: '',
         description: '',
-        date: new Date().toISOString().substring(0, 10),
+        date: (() => {
+            const d = new Date();
+            const offset = d.getTimezoneOffset();
+            const adjusted = new Date(d.getTime() - (offset * 60 * 1000));
+            return adjusted.toISOString().split('T')[0];
+        })(),
         entryMode: 'Scan/Barcode', // User Preference Default
         paymentCategory: 'Check',
         defaultGiftPlatform: 'Chainbridge',
