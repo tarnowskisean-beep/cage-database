@@ -314,7 +314,6 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 <option value="Scan/Barcode">Scan/Barcode</option>
                                 <option value="Manual">Manual</option>
                                 <option value="Zeros">Zeros</option>
-                                <option value="Import">Import</option>
                             </select>
                         </div>
                         <div>
