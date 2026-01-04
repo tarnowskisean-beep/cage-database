@@ -25,6 +25,9 @@ function BatchesContent() {
                 const safeBatches = Array.isArray(batchData) ? batchData : [];
                 const safeClients = Array.isArray(clientData) ? clientData : [];
 
+                if (!Array.isArray(batchData)) console.error("Batches API returned non-array:", batchData);
+                if (!Array.isArray(clientData)) console.error("Clients API returned non-array:", clientData);
+
                 setBatches(safeBatches);
                 setClients(safeClients);
 
@@ -34,7 +37,12 @@ function BatchesContent() {
                 setStats({ open, closed, total: safeBatches.length });
                 setLoading(false);
             })
-            .catch(console.error);
+            .catch(err => {
+                console.error("Failed to load dashboard data:", err);
+                setBatches([]);
+                setClients([]);
+                setLoading(false);
+            });
     }, []);
 
     const filteredBatches = batches.filter(b => {
