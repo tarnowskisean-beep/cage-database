@@ -195,7 +195,8 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
         defaultGiftPlatform: 'Chainbridge',
         defaultTransactionType: 'Contribution',
         defaultGiftYear: new Date().getFullYear().toString(),
-        defaultGiftQuarter: 'Q1'
+        defaultGiftQuarter: 'Q1',
+        defaultGiftType: 'Individual/IRA/Trust'
     });
 
     useEffect(() => {
@@ -313,11 +314,21 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                     value={formData.defaultTransactionType}
                                     onChange={e => setFormData({ ...formData, defaultTransactionType: e.target.value })}
                                 >
-                                    <option value="Contribution">Contribution</option>
-                                    <option value="Pledge Payment">Pledge Payment</option>
-                                    <option value="Non-Monetary/In-Kind">Non-Monetary/In-Kind</option>
+                                    {TRANSACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Default Entity Type</label>
+                            <select
+                                className="input-field"
+                                value={formData.defaultGiftType}
+                                onChange={e => setFormData({ ...formData, defaultGiftType: e.target.value })}
+                            >
+                                <option value="">Select Entity Type...</option>
+                                {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
