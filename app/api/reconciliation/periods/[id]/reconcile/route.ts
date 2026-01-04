@@ -19,10 +19,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             const detailsRes = await client.query(`SELECT "AmountDonorNet", "BatchID" FROM "ReconciliationBatchDetails" WHERE "ReconciliationPeriodID" = $1`, [periodId]);
 
             // Calculate total expected
-            const expectedNet = detailsRes.rows.reduce((sum, row) => sum + parseFloat(row.AmountDonorNet || 0), 0);
+            const expectedNet = detailsRes.rows.reduce((sum: number, row: any) => sum + parseFloat(row.AmountDonorNet || 0), 0);
 
             // Collect Batch IDs for Identity Resolution
-            const batchIds = detailsRes.rows.map(r => r.BatchID).filter(id => id);
+            const batchIds = detailsRes.rows.map((r: any) => r.BatchID).filter((id: any) => id);
 
             const bankRes = await client.query(`
                 SELECT SUM("AmountIn" - "AmountOut") as netBank 
