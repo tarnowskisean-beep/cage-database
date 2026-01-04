@@ -43,6 +43,15 @@ export default async function FixSchemaPage() {
             log(`⚠️ Error on Batches: ${e.message}`);
         }
 
+        // 3. Add Users Columns
+        try {
+            await query(`ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE`);
+            await query(`ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Initials" TEXT`);
+            log('Checked Users Columns (IsActive, Initials)');
+        } catch (e: any) {
+            log(`⚠️ Error on Users: ${e.message}`);
+        }
+
         log('✅ Schema Fix Sequence Completed.');
         status = 'Success';
 

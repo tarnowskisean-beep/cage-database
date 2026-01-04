@@ -44,9 +44,11 @@ export default async function DebugFull() {
             await query('BEGIN');
             const resInsert = await query(`
             INSERT INTO "Donations" (
-                "Amount", "Date", "BatchID", "CreatedBy", "CreatedAt", "UpdatedAt", "GiftType"
+                "GiftAmount", "GiftDate", "BatchID", "CreatedBy", "CreatedAt", "UpdatedAt", 
+                "GiftType", "GiftMethod", "GiftPlatform", "TransactionType", "ClientID"
             ) VALUES (
-                1.00, NOW(), NULL, 1, NOW(), NOW(), 'Check'
+                1.00, NOW(), NULL, 1, NOW(), NOW(), 
+                'Individual', 'Check', 'Cage', 'Donation', 1
             ) RETURNING "DonationID"
         `);
             log(`✅ Insert Success! ID: ${resInsert.rows[0].DonationID}`);
