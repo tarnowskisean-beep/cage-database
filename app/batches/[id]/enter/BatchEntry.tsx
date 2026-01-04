@@ -101,10 +101,13 @@ export default function BatchEntry({ id }: { id: string }) {
                 };
 
                 promises.push(
-                    fetch(`/api/batches/${id}/donations`, {
+                    fetch(`/api/save-donation`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(fakePayload)
+                        body: JSON.stringify({
+                            ...fakePayload,
+                            batchId: id // Critical for bypass route
+                        })
                     })
                 );
             }
