@@ -10,7 +10,9 @@ export interface Batch {
     DefaultGiftType?: string;
     DefaultGiftMethod?: string;
     DefaultGiftYear?: number;
+    DefaultTransactionType?: string; // New Field
     DefaultGiftQuarter?: string;
+    ImportSessionID?: number;
     PaymentCategory: string;
 }
 
@@ -22,13 +24,17 @@ export interface Client {
 
 export interface DonationRecord {
     DonationID: number;
+    BatchID: number;
+    ClientID: number;
     GiftAmount: number;
     GiftPledgeAmount?: number;
     GiftFee?: number;
-    SecondaryID?: string; // AI Linking
+    SecondaryID: string; // Used for Check # or Auth Code
+    CheckNumber?: string;
     ScanDocumentID?: number;
     ScanPageNumber?: number;
-    ScanString?: string;
+    ScanString: string;
+    TransactionType?: string; // New Field
     // Audit
     CreatedAt: string;
     CreatedBy: string;

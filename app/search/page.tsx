@@ -272,8 +272,18 @@ export default function SearchPage() {
         // Fetch Clients for dropdown
         fetch('/api/clients')
             .then(res => res.json())
-            .then(data => setClients(data))
-            .catch(console.error);
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setClients(data);
+                } else {
+                    console.error("Clients API returned non-array:", data);
+                    setClients([]);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to fetch clients:", err);
+                setClients([]);
+            });
     }, []);
 
     const handleSearch = async () => {

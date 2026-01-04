@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { METHODS, PLATFORMS, GIFT_TYPES, TRANSACTION_TYPES } from '@/lib/constants';
 
 function BatchesContent() {
     const router = useRouter();
@@ -175,7 +176,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
         clientId: '',
         description: '',
         date: new Date().toISOString().substring(0, 10),
-        entryMode: 'Data Entry',
+        entryMode: 'Scan/Barcode', // User Preference Default
         paymentCategory: 'Check',
         defaultGiftPlatform: 'Chainbridge',
         defaultTransactionType: 'Contribution',
@@ -244,7 +245,9 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 value={formData.entryMode}
                                 onChange={e => setFormData({ ...formData, entryMode: e.target.value })}
                             >
-                                <option value="Data Entry">Data Entry</option>
+                                <option value="Scan/Barcode">Scan/Barcode</option>
+                                <option value="Manual">Manual</option>
+                                <option value="Zeros">Zeros</option>
                                 <option value="Import">Import</option>
                             </select>
                         </div>
@@ -260,26 +263,75 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 <option value="Cash">Cash</option>
                                 <option value="Wire">Wire</option>
                                 <option value="In-Kind">In-Kind</option>
+                                <option value="Stock">Stock</option>
+                                <option value="EFT">EFT</option>
+                                <option value="Crypto">Crypto</option>
+                                <option value="Mixed">Mixed</option>
                             </select>
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Platform / Source</label>
-                        <select
-                            className="input-field"
-                            value={formData.defaultGiftPlatform}
-                            onChange={e => setFormData({ ...formData, defaultGiftPlatform: e.target.value })}
-                        >
-                            <option value="Chainbridge">Chainbridge</option>
-                            <option value="Stripe">Stripe</option>
-                            <option value="Anedot">Anedot</option>
-                            <option value="Winred">Winred</option>
-                            <option value="City National">City National</option>
-                            <option value="National Capital">National Capital</option>
-                            <option value="Propay">Propay</option>
-                            <option value="Cage">Cage (Internal)</option>
-                        </select>
+                    {/* Defaults Section */}
+                    <div className="pt-4 border-t border-white/10">
+                        <h3 className="text-sm font-medium text-gray-400 mb-3 uppercase tracking-wide">Batch Defaults</h3>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Platform</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.defaultGiftPlatform}
+                                    onChange={e => setFormData({ ...formData, defaultGiftPlatform: e.target.value })}
+                                >
+                                    <option value="Chainbridge">Chainbridge</option>
+                                    <option value="Stripe">Stripe</option>
+                                    <option value="Anedot">Anedot</option>
+                                    <option value="Winred">Winred</option>
+                                    <option value="City National">City National</option>
+                                    <option value="National Capital">National Capital</option>
+                                    <option value="Propay">Propay</option>
+                                    <option value="Cage">Cage</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Transaction Type</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.defaultTransactionType}
+                                    onChange={e => setFormData({ ...formData, defaultTransactionType: e.target.value })}
+                                >
+                                    <option value="Contribution">Contribution</option>
+                                    <option value="Pledge Payment">Pledge Payment</option>
+                                    <option value="Non-Monetary/In-Kind">Non-Monetary/In-Kind</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Gift Year</label>
+                                <input
+                                    type="number"
+                                    className="input-field"
+                                    value={formData.defaultGiftYear}
+                                    onChange={e => setFormData({ ...formData, defaultGiftYear: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Quarter</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.defaultGiftQuarter}
+                                    onChange={e => setFormData({ ...formData, defaultGiftQuarter: e.target.value })}
+                                >
+                                    <option value="">None</option>
+                                    <option value="Q1">Q1</option>
+                                    <option value="Q2">Q2</option>
+                                    <option value="Q3">Q3</option>
+                                    <option value="Q4">Q4</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex gap-4 pt-4 border-t border-white/10 mt-6">

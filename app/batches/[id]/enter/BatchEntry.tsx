@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { METHODS, PLATFORMS, GIFT_TYPES, YES_NO_OPTIONS } from '@/lib/constants';
+import { METHODS, PLATFORMS, GIFT_TYPES, TRANSACTION_TYPES, YES_NO_OPTIONS } from '@/lib/constants';
 import { Label } from '@/app/components/ui/Label';
 import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
@@ -345,7 +345,13 @@ export default function BatchEntry({ id }: { id: string }) {
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Type</Label>
+                                <Label>Trans. Type</Label>
+                                <Select value={formData.transactionType} onChange={handleChange('transactionType')}>
+                                    {TRANSACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                </Select>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                <Label>Entity Type</Label>
                                 <Select value={formData.giftType} onChange={handleChange('giftType')}>
                                     {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                 </Select>

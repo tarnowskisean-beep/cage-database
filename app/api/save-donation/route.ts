@@ -58,7 +58,8 @@ export async function POST(request: Request) {
         // Apply Defaults if missing
         const finalMethod = giftMethod || batch.DefaultGiftMethod || 'Check';
         const finalPlatform = giftPlatform || batch.DefaultGiftPlatform || 'Cage';
-        const finalType = giftType || batch.DefaultGiftType || 'Individual';
+        const finalType = giftType || batch.DefaultGiftType || 'Individual/Trust/IRA';
+        const finalTransactionType = body.transactionType || batch.DefaultTransactionType || 'Contribution';
 
         const result = await query(
             `INSERT INTO "Donations" 
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
              "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment",
              "MailCode"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36)
             RETURNING *`,
             [
                 batch.ClientID,
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
                 checkNumber, // SecondaryID
                 checkNumber, // CheckNumber
                 scanString,
+                finalTransactionType,
                 finalMethod,
                 finalPlatform,
                 batch.Date, // BatchDate

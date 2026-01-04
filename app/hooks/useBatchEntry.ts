@@ -40,6 +40,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         // TRANSACTION
         platform: '',
         giftType: '',
+        transactionType: '', // New Field
         method: '',
         isInactive: 'False',
         postMarkYear: new Date().getFullYear().toString(),
@@ -96,6 +97,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     ...prev,
                     platform: data.DefaultGiftPlatform || 'Cage',
                     giftType: data.DefaultGiftType || 'Individual/Trust/IRA',
+                    transactionType: data.DefaultTransactionType || 'Contribution',
                     method: defaultMethod,
                     giftYear: data.DefaultGiftYear?.toString(),
                     giftQuarter: data.DefaultGiftQuarter,
@@ -239,6 +241,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
             scanString: record.ScanString || '',
             platform: record.GiftPlatform || batch?.DefaultGiftPlatform || '',
             giftType: record.GiftType || batch?.DefaultGiftType || '',
+            transactionType: record.TransactionType || batch?.DefaultTransactionType || 'Contribution',
             method: record.GiftMethod || batch?.DefaultGiftMethod || '',
             postMarkYear: record.PostMarkYear?.toString() || new Date().getFullYear().toString(),
             postMarkQuarter: record.PostMarkQuarter || `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
@@ -310,6 +313,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 GiftMethod: formData.method,
                 GiftPlatform: formData.platform,
                 GiftType: formData.giftType,
+                TransactionType: formData.transactionType,
                 GiftYear: formData.giftYear ? parseInt(formData.giftYear) : undefined,
                 GiftQuarter: formData.giftQuarter,
                 DonorPrefix: formData.donorPrefix,
@@ -359,18 +363,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 setEditingId(null); // Clear edit mode
                 await fetchRecords();
 
-                // RESET FORM
-                const forced = batch ? getForcedMethod(batch.PaymentCategory) : null;
-                setFormData(prev => ({
-                    ...initialFormState,
-                    platform: prev.platform,
-                    giftType: prev.giftType,
-                    method: forced || prev.method,
-                    postMarkYear: prev.postMarkYear,
-                    postMarkQuarter: prev.postMarkQuarter,
-                    giftYear: prev.giftYear,
-                    giftQuarter: prev.giftQuarter
-                }));
+                // RESET FORM (CORRECTLY, WITH DEFAULTS)
+                resetForm();
 
                 if (batch?.EntryMode === 'Manual') {
                     manualEntryRef.current?.focus();
@@ -397,7 +391,28 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         }
     };
 
-    const resetForm = () => setFormData(initialFormState);
+    const resetForm = () => {
+        if (!batch) {
+            setFormData(initialFormState);
+            return;
+        }
+
+        const forced = getForcedMethod(batch.PaymentCategory);
+        setFormData(prev => ({
+            ...initialFormState,
+            // RESTORE DEFAULTS
+            platform: batch.DefaultGiftPlatform || 'Cage',
+            giftType: batch.DefaultGiftType || 'Individual/Trust/IRA',
+            transactionType: batch.DefaultTransactionType || 'Contribution',
+            method: forced || batch.DefaultGiftMethod || 'Check',
+
+            // Keep current date context
+            postMarkYear: prev.postMarkYear,
+            postMarkQuarter: prev.postMarkQuarter,
+            giftYear: prev.giftYear,
+            giftQuarter: prev.giftQuarter
+        }));
+    };
 
     return {
         isMounted,
