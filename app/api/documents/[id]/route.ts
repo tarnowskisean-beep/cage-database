@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { logAction } from '@/lib/audit';
+import { logAudit } from '@/lib/audit';
 import { Storage } from '@google-cloud/storage';
 
 export async function GET(
@@ -29,7 +29,7 @@ export async function GET(
         const doc = result.rows[0];
 
         // SOC 2: Audit Log
-        await logAction(userId, 'ViewDocument', id, `Viewed ${doc.FileName}`);
+        await logAudit('VIEW_DOCUMENT', 'BATCH_DOCUMENT', id, `Viewed ${doc.FileName}`, 'SYSTEM');
 
         // Link Redirect
         if (doc.StorageKey && doc.StorageKey.startsWith('link:')) {

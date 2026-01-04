@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { logAction } from '@/lib/audit';
+import { logAudit } from '@/lib/audit';
 
 export async function GET(
     request: Request,
@@ -76,7 +76,7 @@ export async function POST(
         );
 
         // SOC 2: Audit Log
-        await logAction(userId, 'UploadDocument', id, `Added Link ${storageKey}`);
+        await logAudit('UPLOAD_DOCUMENT', 'BATCH_DOCUMENT', id, `Added Link ${storageKey}`, 'SYSTEM');
 
         return NextResponse.json({ success: true });
     } catch (e: any) {

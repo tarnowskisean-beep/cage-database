@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { logAction } from "@/lib/audit";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -11,12 +11,12 @@ export async function POST(req: Request) {
     try {
         const { action, details } = await req.json();
 
-        await logAction(
-            parseInt(session.user.id),
+        await logAudit(
             action,
+            'CLIENT_ACTION',
             null,
-            details,
-            req.headers.get('x-forwarded-for') || '0.0.0.0'
+            JSON.stringify(details),
+            session.user.email || 'unknown'
         );
 
         return NextResponse.json({ success: true });

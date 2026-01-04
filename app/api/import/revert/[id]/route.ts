@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { logAction } from "@/lib/audit";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -47,11 +47,12 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         const count = (delDonationsDirect.rowCount || 0) + (delDonationsBatch.rowCount || 0);
 
         // Log Audit
-        await logAction(
-            (session.user as any).id,
+        await logAudit(
             'RevertImport',
+            'ImportSession',
             String(sessionId),
-            `Reverted Import Session ${sessionId}. Deleted ${count} donations and ${delBatches.rowCount} batches.`
+            `Reverted Import Session ${sessionId}. Deleted ${count} donations and ${delBatches.rowCount} batches.`,
+            session.user.email
         );
 
         return NextResponse.json({

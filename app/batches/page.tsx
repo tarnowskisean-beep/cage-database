@@ -262,7 +262,6 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
     };
 
     return (
-    return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
             <div className="glass-panel w-[800px] p-8 bg-[#1a1a1a]">
                 <h2 className="text-xl font-bold text-white mb-6">Start New Batch</h2>
@@ -484,8 +483,8 @@ function ModeOption({ label, selected, onClick }: { label: string, selected?: bo
         <button
             onClick={onClick}
             className={`p-3 rounded-md border font-medium transition-all ${selected
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                    : 'border-gray-700 hover:border-gray-500 text-gray-400'
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                : 'border-gray-700 hover:border-gray-500 text-gray-400'
                 }`}
         >
             {label}
