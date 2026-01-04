@@ -12,7 +12,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix", 
                "DonorAddress", "DonorCity", "DonorState", "DonorZip", "DonorEmployer", "DonorOccupation",
                "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
-               "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment"
+               "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment",
+               "ScanDocumentID", "ScanPageNumber"
         FROM "Donations" 
         WHERE "BatchID" = $1 
         ORDER BY "CreatedAt" DESC

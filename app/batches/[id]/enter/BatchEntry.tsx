@@ -463,15 +463,59 @@ export default function BatchEntry({ id }: { id: string }) {
                                     borderBottom: '1px solid var(--color-border)',
                                     background: r.DonationID === editingId ? 'rgba(59, 130, 246, 0.15)' : (r.DonationID === lastSavedId ? 'rgba(51, 204, 102, 0.1)' : 'transparent'),
                                     cursor: 'pointer',
-                                    borderLeft: r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent'
+                                    borderLeft: r.ScanDocumentID ? '4px solid #10b981' : (r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent')
                                 }}
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>${Number(r.GiftAmount).toFixed(2)}</span>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                                    {r.DonorFirstName} {r.DonorLastName}
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>{r.DonorFirstName} {r.DonorLastName}</span>
+                                    {r.ScanDocumentID && (
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.open(`/api/documents/${r.ScanDocumentID}#page=${r.ScanPageNumber}`, '_blank');
+                                                }}
+                                                title={`View Scan on Page ${r.ScanPageNumber}`}
+                                                style={{
+                                                    background: '#d1fae5',
+                                                    color: '#065f46',
+                                                    border: '1px solid #10b981',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.75rem',
+                                                    padding: '0.1rem 0.4rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.2rem'
+                                                }}
+                                            >
+                                                📎 {r.ScanPageNumber}
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const reason = prompt("Report AI Error:\nWhat is wrong with this link? (e.g. Wrong Page, Wrong Donor)");
+                                                    if (reason) {
+                                                        alert("Feedback received. We will use this to train future models.");
+                                                    }
+                                                }}
+                                                title="Report Bad Link"
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.8rem',
+                                                    color: '#ef4444'
+                                                }}
+                                            >
+                                                ⚠️
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

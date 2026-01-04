@@ -25,9 +25,15 @@ export interface DonationRecord {
     GiftAmount: number;
     GiftPledgeAmount?: number;
     GiftFee?: number;
-    SecondaryID?: string; // Check Number
+    SecondaryID?: string; // AI Linking
+    ScanDocumentID?: number;
+    ScanPageNumber?: number;
     ScanString?: string;
+    // Audit
     CreatedAt: string;
+    CreatedBy: string;
+    LastModifiedAt?: string;
+    LastModifiedBy?: string;
     GiftMethod: string;
     GiftType: string;
     DonorFirstName?: string;

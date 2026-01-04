@@ -132,6 +132,45 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
                                     </button>
                                 </div>
                             )}
+
+                            {/* AI ANALYZE BUTTON - Only for PDFs */}
+                            {uploaded && (req.type === 'ReplySlipsPDF' || req.type === 'ChecksPDF') && (
+                                <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm("Run AI Analysis on this document? This may take a minute.")) return;
+                                            try {
+                                                const res = await fetch('/api/processing/link-scans', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ batchId, documentId: uploaded.BatchDocumentID })
+                                                });
+                                                const data = await res.json();
+                                                if (res.ok) {
+                                                    alert(`Analysis Complete!\nProcessed: ${data.processed}\nMatched: ${data.matched}`);
+                                                    window.location.reload(); // Reload to see linkages
+                                                } else {
+                                                    alert('Analysis failed: ' + data.error);
+                                                }
+                                            } catch (e: any) { alert('Error: ' + e.message); }
+                                        }}
+                                        style={{
+                                            fontSize: '0.7rem',
+                                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem'
+                                        }}
+                                    >
+                                        <span>✨</span> Analyze
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
