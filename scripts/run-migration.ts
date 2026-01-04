@@ -8,7 +8,7 @@
 // So I will make a temporary "Super Admin" script that bypasses auth just for this one-time CLI execution.
 // OR, I can just write a script that imports 'query' and does it directly.
 
-import { query } from '../lib/db.ts';
+import { query } from '../lib/db';
 import fs from 'fs';
 import Papa from 'papaparse';
 
