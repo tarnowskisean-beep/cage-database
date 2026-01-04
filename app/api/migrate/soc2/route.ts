@@ -54,14 +54,30 @@ export async function GET() {
             );
         `);
 
-        // 5. Concurrency Control (Optimistic Locking)
+        // 5. Concurrency Control (Optimistic Locking) & Schema Alignment
         try {
             // Check if Version column exists, if not add it
-            // Note: Postgres specific syntax for 'ADD COLUMN IF NOT EXISTS'
             await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "Version" INT DEFAULT 1`);
             await query(`ALTER TABLE "Batches" ADD COLUMN IF NOT EXISTS "Version" INT DEFAULT 1`);
+
+            // Fix for Missing Columns (Bulk Add / Save Issue)
+            const missingCols = [
+                'MailCode', 'DonorPrefix', 'DonorFirstName', 'DonorMiddleName', 'DonorLastName', 'DonorSuffix',
+                'DonorAddress', 'DonorCity', 'DonorState', 'DonorZip', 'DonorEmployer', 'DonorOccupation',
+                'GiftCustodian', 'GiftConduit', 'PostMarkYear', 'PostMarkQuarter', 'Comment', 'OrganizationName',
+                'DonorEmail', 'DonorPhone', 'CheckNumber', 'ScanString'
+            ];
+            for (const col of missingCols) {
+                await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "${col}" TEXT`);
+            }
+            await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "GiftType" TEXT`);
+            await query(`ALTER TABLE "Batches" ADD COLUMN IF NOT EXISTS "DefaultGiftType" TEXT`);
+
+            await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "GiftPledgeAmount" DECIMAL(18,2) DEFAULT 0`);
+            await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "IsInactive" BOOLEAN DEFAULT FALSE`);
+
         } catch (colErr) {
-            console.warn('Concurrency columns might already exist or failed:', colErr);
+            console.warn('Concurrency/Schema columns might already exist or failed:', colErr);
         }
 
         // Seed Initial Policies if empty
