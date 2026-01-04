@@ -198,7 +198,7 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Client Code</label>
                             <input
                                 type="text"
-                                className="input-field"
+                                className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                 value={formData.code}
                                 onChange={e => setFormData({ ...formData, code: e.target.value })}
                                 required
@@ -209,7 +209,7 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                         <div>
                             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Status</label>
                             <select
-                                className="input-field cursor-pointer"
+                                className="input-field cursor-pointer bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                 value={formData.status}
                                 onChange={e => setFormData({ ...formData, status: e.target.value })}
                             >
@@ -223,7 +223,7 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                         <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Official Name</label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                             required
@@ -233,7 +233,7 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                     <div>
                         <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Client Type</label>
                         <select
-                            className="input-field cursor-pointer"
+                            className="input-field cursor-pointer bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                             value={formData.clientType}
                             onChange={e => setFormData({ ...formData, clientType: e.target.value })}
                         >
@@ -258,14 +258,25 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileChange}
-                                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 transition-colors"
+                                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 transition-colors cursor-pointer"
                             />
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-4 border-t border-white/10 mt-6">
-                        <button type="button" onClick={onClose} className="flex-1 btn-secondary" disabled={uploading}>Cancel</button>
-                        <button type="submit" className="flex-1 btn-primary" disabled={uploading}>
+                    <div className="flex gap-4 pt-6 border-t border-white/10 mt-6">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-4 py-3 rounded bg-transparent border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors text-xs font-bold uppercase tracking-widest"
+                            disabled={uploading}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 btn-primary"
+                            disabled={uploading}
+                        >
                             {uploading ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
