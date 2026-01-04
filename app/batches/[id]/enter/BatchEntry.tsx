@@ -450,7 +450,18 @@ export default function BatchEntry({ id }: { id: string }) {
                 <div style={{ width: '300px', background: 'var(--color-bg-sidebar)', borderLeft: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' }}>
 
                     {/* ATTACHMENTS */}
-                    {batch && <BatchAttachments batchId={id} paymentCategory={batch.PaymentCategory} />}
+                    {batch && (
+                        <BatchAttachments
+                            batchId={id}
+                            paymentCategory={batch.PaymentCategory}
+                            activeScan={
+                                editingId ? (() => {
+                                    const r = records.find(rec => rec.DonationID === editingId);
+                                    return r ? { documentId: r.ScanDocumentID || null, pageNumber: r.ScanPageNumber || null } : undefined;
+                                })() : undefined
+                            }
+                        />
+                    )}
 
                     <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem' }}>RECENT SCANS</div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>

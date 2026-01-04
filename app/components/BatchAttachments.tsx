@@ -9,7 +9,7 @@ interface Document {
     UploadedAt: string;
 }
 
-export default function BatchAttachments({ batchId, paymentCategory }: { batchId: string, paymentCategory: string }) {
+export default function BatchAttachments({ batchId, paymentCategory, activeScan }: { batchId: string, paymentCategory: string, activeScan?: { documentId: number | null, pageNumber: number | null } }) {
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -85,6 +85,20 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{req.label}</span>
                                 {uploaded && <span style={{ color: 'var(--color-active)', fontSize: '0.8rem' }}>✓ Linked</span>}
+                                {uploaded && activeScan && activeScan.documentId === uploaded.BatchDocumentID && (
+                                    <span style={{
+                                        marginLeft: '0.5rem',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        color: '#065f46',
+                                        background: '#d1fae5',
+                                        padding: '0.1rem 0.4rem',
+                                        borderRadius: '4px',
+                                        border: '1px solid #10b981'
+                                    }}>
+                                        ⬅️ Found on Page {activeScan.pageNumber}
+                                    </span>
+                                )}
                             </div>
 
                             {uploaded ? (
