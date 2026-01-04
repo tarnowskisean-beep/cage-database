@@ -36,8 +36,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Spec said "Any batch dated in this week".
         // Let's query Batches by Date Range + Status=Closed.
 
+
         const batchesRes = await query(`
-            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory"
+            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared"
             FROM "Batches"
             WHERE "ClientID" = $1 
             AND "Date" >= $2 AND "Date" <= $3
@@ -55,7 +56,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 type: 'Batch',
                 desc: `${b.BatchCode} (${b.PaymentCategory})`,
                 amount: parseFloat(sum.rows[0].total || 0),
-                date: b.Date
+                date: b.Date,
+                cleared: b.Cleared || false
             });
         }
 
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Fees are tricky. They are attached to donations.
         // Transfers are in ReconciliationBankTransactions (TransactionType='Transfer Out', etc.)
         const txnsRes = await query(`
-            SELECT "TransactionID", "TransactionDate", "Description", "AmountOut", "AmountIn"
+            SELECT "TransactionID", "TransactionDate", "Description", "AmountOut", "AmountIn", "Cleared"
             FROM "ReconciliationBankTransactions"
             WHERE "ReconciliationPeriodID" = $1
             ORDER BY "TransactionDate" ASC
@@ -74,7 +76,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             type: t.AmountOut > 0 ? 'Payment' : 'Deposit',
             desc: t.Description,
             amount: t.AmountOut > 0 ? -parseFloat(t.AmountOut) : parseFloat(t.AmountIn),
-            date: t.TransactionDate
+            date: t.TransactionDate,
+            cleared: t.Cleared || false
         }));
 
         const result = {
