@@ -1,11 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function PeopleDirectory() {
+
+function PeopleContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const q = searchParams.get('q') || '';
@@ -115,5 +116,13 @@ export default function PeopleDirectory() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function PeopleDirectory() {
+    return (
+        <Suspense fallback={<div className="p-12 text-center text-gray-400">Loading directory...</div>}>
+            <PeopleContent />
+        </Suspense>
     );
 }
