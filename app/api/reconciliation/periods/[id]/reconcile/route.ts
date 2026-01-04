@@ -1,8 +1,4 @@
-
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { transaction } from '@/lib/db';
+import { resolveBatchDonations } from '@/lib/people';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
@@ -15,8 +11,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     try {
         const result = await transaction(async (client) => {
-            const detailsRes = await client.query(`SELECT "AmountDonorNet" FROM "ReconciliationBatchDetails" WHERE "ReconciliationPeriodID" = $1`, [periodId]);
-            const expectedNet = parseFloat(detailsRes.rows[0]?.AmountDonorNet || 0);
+            // 1. Get Financials
+            const detailsRes = await client.query(`SELECT "AmountDonorNet", "BatchID" FROM "ReconciliationBatchDetails" WHERE "ReconciliationPeriodID" = $1`, [periodId]);
+
+            // Calculate total expected
+            const expectedNet = detailsRes.rows.reduce((sum, row) => sum + parseFloat(row.AmountDonorNet || 0), 0);
+
+            // Collect Batch IDs for Identity Resolution
+            const batchIds = detailsRes.rows.map(r => r.BatchID).filter(id => id);
 
             const bankRes = await client.query(`
                 SELECT SUM("AmountIn" - "AmountOut") as netBank 
@@ -29,6 +31,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             const variance = actualNet - expectedNet;
 
             if (Math.abs(variance) < 0.01) {
+                // SUCCESS: Logic
+
+                // 1. Trigger Identity Resolution (Async or Await?)
+                // We await it to ensure data consistency before calling it "Done".
+                if (batchIds.length > 0) {
+                    await resolveBatchDonations(batchIds);
+                }
+
                 await client.query(`
                     UPDATE "ReconciliationPeriods"
                     SET "Status" = 'Reconciled', "BankBalanceVerified" = TRUE
@@ -36,6 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 `, [periodId]);
                 return { success: true, status: 'Reconciled', variance: 0 };
             } else {
+                // FAILURE: Exception
                 await client.query(`
                     UPDATE "ReconciliationPeriods" SET "Status" = 'Exception' WHERE "ReconciliationPeriodID" = $1
                 `, [periodId]);
@@ -53,6 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         return NextResponse.json(result);
 
     } catch (e: any) {
+        console.error("Reconciliation Error:", e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
