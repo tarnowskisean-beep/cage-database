@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 
 export default function Sidebar() {
-    const pathname = usePathname();
+    const pathname = usePathname() || '';
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { data: session } = useSession();
 
