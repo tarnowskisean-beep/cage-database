@@ -351,28 +351,17 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                     {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </select>
                             </div>
+                            {/* Transaction Type removed per user request (defaults to Contribution) */}
                             <div>
-                                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Transaction Type</label>
+                                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Entity Type</label>
                                 <select
                                     className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
-                                    value={formData.defaultTransactionType}
-                                    onChange={e => setFormData({ ...formData, defaultTransactionType: e.target.value })}
+                                    value={formData.defaultGiftType}
+                                    onChange={e => setFormData({ ...formData, defaultGiftType: e.target.value })}
                                 >
-                                    {TRANSACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Default Entity Type</label>
-                            <select
-                                className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
-                                value={formData.defaultGiftType}
-                                onChange={e => setFormData({ ...formData, defaultGiftType: e.target.value })}
-                            >
-                                <option value="">Select Entity Type...</option>
-                                {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

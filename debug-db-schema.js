@@ -27,12 +27,17 @@ async function inspectSchema() {
 
         if (clientTable) {
             console.log(`\nColumns for ${clientTable.table_name}:`);
-            const columns = await pool.query(`
-            SELECT column_name, data_type 
-            FROM information_schema.columns 
-            WHERE table_name = $1
-        `, [clientTable.table_name]);
-            console.log(columns.rows);
+            const tablesOfInterest = ['Donations', 'Donors'];
+
+            for (const tbl of tablesOfInterest) {
+                const res = await pool.query(`
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = $1
+            `, [tbl]);
+                console.log(`\nColumns for ${tbl}:`);
+                console.log(res.rows);
+            }
         } else {
             console.log('No table with "client" in name found.');
         }
