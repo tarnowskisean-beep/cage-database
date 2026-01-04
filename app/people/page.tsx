@@ -29,7 +29,9 @@ function PeopleContent() {
         fetch(`/api/people?${params.toString()}`)
             .then(res => res.json())
             .then(data => {
-                setDonors(data.data || []);
+                // Handle both { data: [...] } and direct array [...] responses, and error objects
+                const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+                setDonors(list);
             })
             .catch(console.error)
             .finally(() => setLoading(false));

@@ -21,13 +21,16 @@ function BatchesContent() {
 
         Promise.all([fetchBatches, fetchClients])
             .then(([batchData, clientData]) => {
-                setBatches(batchData);
-                setClients(clientData);
+                const safeBatches = Array.isArray(batchData) ? batchData : [];
+                const safeClients = Array.isArray(clientData) ? clientData : [];
+
+                setBatches(safeBatches);
+                setClients(safeClients);
 
                 // Calculate quick stats
-                const open = batchData.filter((b: any) => b.Status === 'Open').length;
-                const closed = batchData.filter((b: any) => b.Status === 'Closed').length;
-                setStats({ open, closed, total: batchData.length });
+                const open = safeBatches.filter((b: any) => b.Status === 'Open').length;
+                const closed = safeBatches.filter((b: any) => b.Status === 'Closed').length;
+                setStats({ open, closed, total: safeBatches.length });
                 setLoading(false);
             })
             .catch(console.error);

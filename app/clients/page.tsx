@@ -13,7 +13,7 @@ export default function ClientsPage() {
         fetch('/api/clients')
             .then(res => res.json())
             .then(data => {
-                setClients(data);
+                setClients(Array.isArray(data) ? data : []);
                 setLoading(false);
             })
             .catch(console.error);
