@@ -88,6 +88,9 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         <button className="bg-[var(--color-bg-elevated)] hover:bg-white hover:text-black border border-[var(--color-border)] text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wide transition-all">
                             Edit Profile
                         </button>
+                        <a href={`/api/people/${donorId}/export`} target="_blank" className="ml-2 bg-[var(--color-bg-elevated)] hover:bg-white hover:text-black border border-[var(--color-border)] text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wide transition-all inline-block">
+                            Export History
+                        </a>
                     </div>
                 </div>
             </div>
@@ -143,6 +146,17 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                 </div>
             </div>
 
+            {/* CRM Notes Section */}
+            <div className="glass-panel p-6 mb-8">
+                <h3 className="text-xl font-display text-white mb-4">Donor Log (CRM)</h3>
+                <div className="space-y-4 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
+                    {/* Notes List */}
+                    <NotesList donorId={donorId} />
+                </div>
+                {/* Add Note Form */}
+                <AddNoteForm donorId={donorId} />
+            </div>
+
             {/* Timeline / History Table */}
             <div className="glass-panel overflow-hidden">
                 <div className="px-8 py-6 border-b border-[var(--color-border)] bg-[#1f1f1f]">
@@ -193,5 +207,82 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             </div>
 
         </div>
+    );
+}
+
+function NotesList({ donorId }: { donorId: string }) {
+    const [notes, setNotes] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!donorId) return;
+        // Interval poll for simple real-time effect
+        const fetchNotes = () => {
+            fetch(`/api/people/${donorId}/notes`)
+                .then(res => res.json())
+                .then(setNotes)
+                .catch(console.error);
+        };
+        fetchNotes();
+        const interval = setInterval(fetchNotes, 5000);
+        return () => clearInterval(interval);
+    }, [donorId]);
+
+    if (notes.length === 0) return <p className="text-gray-500 text-sm italic">No notes recorded yet.</p>;
+
+    return (
+        <>
+            {notes.map(note => (
+                <div key={note.NoteID} className="bg-[#111] p-3 rounded border border-gray-800">
+                    <p className="text-gray-300 text-sm">{note.Content}</p>
+                    <div className="flex justify-between items-center mt-2 text-[10px] text-gray-500 uppercase tracking-wider">
+                        <span>{note.AuthorName}</span>
+                        <span>{new Date(note.CreatedAt).toLocaleString()}</span>
+                    </div>
+                </div>
+            ))}
+        </>
+    );
+}
+
+function AddNoteForm({ donorId }: { donorId: string }) {
+    const [content, setContent] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!content.trim()) return;
+        setSubmitting(true);
+        try {
+            await fetch(`/api/people/${donorId}/notes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            setContent('');
+            // Optimistically or wait for re-fetch (handled by NotesList poller)
+        } catch (e) {
+            alert('Failed to add note');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+                type="text"
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="Add a note..."
+                className="flex-1 bg-[#111] border border-gray-700 rounded px-4 py-2 text-sm text-white focus:border-[var(--color-accent)] outline-none"
+            />
+            <button
+                type="submit"
+                disabled={submitting}
+                className="bg-[var(--color-accent)] text-black px-4 py-2 rounded text-xs font-bold uppercase disabled:opacity-50"
+            >
+                Add
+            </button>
+        </form>
     );
 }

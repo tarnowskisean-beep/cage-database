@@ -12,6 +12,9 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q') || '';
+    const minParam = searchParams.get('min');
+    const cityParam = searchParams.get('city');
+
     const page = parseInt(searchParams.get('page') || '1');
     const limit = 20;
     const offset = (page - 1) * limit;
@@ -21,20 +24,35 @@ export async function GET(req: NextRequest) {
             SELECT 
                 d."DonorID", d."FirstName", d."LastName", d."Email", d."Phone", d."City", d."State",
                 COUNT(don."DonationID") as "TotalGifts",
-                SUM(don."GiftAmount") as "LifetimeValue",
+                COALESCE(SUM(don."GiftAmount"), 0) as "LifetimeValue",
                 MAX(don."GiftDate") as "LastGiftDate"
             FROM "Donors" d
             LEFT JOIN "Donations" don ON d."DonorID" = don."DonorID"
             WHERE 1=1
         `;
         const params: any[] = [];
+        let paramIdx = 1;
 
         if (q) {
             params.push(`%${q}%`);
-            sql += ` AND (d."FirstName" ILIKE $1 OR d."LastName" ILIKE $1 OR d."Email" ILIKE $1)`;
+            sql += ` AND (d."FirstName" ILIKE $${paramIdx} OR d."LastName" ILIKE $${paramIdx} OR d."Email" ILIKE $${paramIdx})`;
+            paramIdx++;
+        }
+
+        if (cityParam) {
+            params.push(`%${cityParam}%`);
+            sql += ` AND d."City" ILIKE $${paramIdx}`;
+            paramIdx++;
         }
 
         sql += ` GROUP BY d."DonorID"`;
+
+        if (minParam) {
+            params.push(parseFloat(minParam));
+            sql += ` HAVING COALESCE(SUM(don."GiftAmount"), 0) >= $${paramIdx}`;
+            paramIdx++;
+        }
+
         sql += ` ORDER BY "LifetimeValue" DESC NULLS LAST LIMIT ${limit} OFFSET ${offset}`;
 
         const res = await query(sql, params);
