@@ -220,8 +220,11 @@ function ReportContent() {
         cc: { count: 0, sum: 0 }
     });
 
-    // Helper to render currency
-    const fmt = (n: number) => `$${n.toFixed(2)}`;
+    // Helper to render currency with commas
+    const fmt = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+    // Helper to render numbers with commas (no $)
+    const num = (n: number | undefined) => (n || 0).toLocaleString();
 
     return (
         <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif', color: 'black', background: 'white' }}>
@@ -239,18 +242,29 @@ function ReportContent() {
                 .bg-gray { background: #eee; }
             `}</style>
 
-            {/* Header Section (Same as before) */}
+            {/* Header Section */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'flex-start' }}>
                 <div>
                     <h1 style={{ fontWeight: 'bold', fontSize: '1.5rem', marginBottom: '0.25rem' }}>COMPASS</h1>
                     <div style={{ fontSize: '0.9rem', letterSpacing: '2px' }}>PROFESSIONAL</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
-                    <button className="no-print" onClick={() => window.print()} style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
-                        🖨️ Print / Save PDF
-                    </button>
+                    <div className="no-print" style={{ display: 'flex', gap: '1rem' }}>
+                        <button
+                            onClick={() => window.history.back()}
+                            style={{ padding: '0.5rem 1rem', background: '#ffffff', color: '#333', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                            &larr; Back
+                        </button>
+                        <button
+                            onClick={() => window.print()}
+                            style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                            🖨️ Print / Save PDF
+                        </button>
+                    </div>
                     {client?.LogoURL ? (
-                        <img src={client.LogoURL} alt="Client Logo" style={{ height: '60px', objectFit: 'contain' }} />
+                        <img src={client.LogoURL} alt="Client Logo" style={{ height: '90px', objectFit: 'contain' }} />
                     ) : (
                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', fontStyle: 'italic', fontFamily: 'serif' }}>
                             {client ? client.ClientCode : 'Multi-Client Report'}
@@ -259,7 +273,7 @@ function ReportContent() {
                 </div>
             </div>
 
-            <h2 style={{ textAlign: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>Weeky Contributions Report</h2>
+            <h2 style={{ textAlign: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>Weekly Contributions Report</h2>
             <div style={{ marginBottom: '1.5rem', fontWeight: 600 }}>
                 Report Date: {new Date().toLocaleDateString()} <br />
                 Account: {client ? `${client.ClientName} (${client.ClientCode})` : 'All Accounts'}
@@ -278,15 +292,15 @@ function ReportContent() {
                     </thead>
                     <tbody>
                         <tr><td>Pledged Amount:</td><td className="text-right">{fmt(totalPledged)}</td></tr>
-                        <tr><td>Total # of Caged Envelopes:</td><td className="text-right">{totalCagedEnvelopes}</td></tr>
-                        <tr><td>Total # of Caged Non-Donors:</td><td className="text-right">{cagedNonDonors}</td></tr>
-                        <tr><td>Total # of Caged Donors:</td><td className="text-right">{cagedDonors}</td></tr>
+                        <tr><td>Total # of Caged Envelopes:</td><td className="text-right">{num(totalCagedEnvelopes)}</td></tr>
+                        <tr><td>Total # of Caged Non-Donors:</td><td className="text-right">{num(cagedNonDonors)}</td></tr>
+                        <tr><td>Total # of Caged Donors:</td><td className="text-right">{num(cagedDonors)}</td></tr>
 
                         {/* Dynamic Caged Stats */}
                         {Object.entries(cagedStats).map(([method, s]) => (
                             <tr key={'caged-cnt-' + method}>
                                 <td>Total # of Caged Donors: ({method} only)</td>
-                                <td className="text-right">{s.count}</td>
+                                <td className="text-right">{num(s.count)}</td>
                             </tr>
                         ))}
                         {Object.entries(cagedStats).map(([method, s]) => (
@@ -305,7 +319,7 @@ function ReportContent() {
                         {Object.entries(nonCagedStats).map(([method, s]) => (
                             <tr key={'noncaged-cnt-' + method}>
                                 <td>Total # of Non-Caged Donors: ({method} only)</td>
-                                <td className="text-right">{s.count}</td>
+                                <td className="text-right">{num(s.count)}</td>
                             </tr>
                         ))}
                         {Object.entries(nonCagedStats).map(([method, s]) => (
@@ -320,7 +334,7 @@ function ReportContent() {
                             <td className="text-right">{fmt(grossTotal)}</td>
                         </tr>
 
-                        <tr><td>Total # of Chargebacks:</td><td className="text-right">{totalChargebackCount}</td></tr>
+                        <tr><td>Total # of Chargebacks:</td><td className="text-right">{num(totalChargebackCount)}</td></tr>
                         <tr><td>Total $ of Chargebacks:</td><td className="text-right">{fmt(totalChargebackSum)}</td></tr>
 
                         <tr className="font-bold" style={{ borderTop: '2px solid black' }}>
@@ -339,7 +353,7 @@ function ReportContent() {
                         {Object.entries(platformStats).sort().map(([p, s]) => (
                             <tr key={'p-cnt-' + p}>
                                 <td>Total # of {p}:</td>
-                                <td className="text-right">{s.count}</td>
+                                <td className="text-right">{num(s.count)}</td>
                             </tr>
                         ))}
                         {Object.entries(platformStats).sort().map(([p, s]) => (
@@ -386,17 +400,17 @@ function ReportContent() {
                             return (
                                 <tr key={mailCode}>
                                     <td className="font-bold">{mailCode}</td>
-                                    <td className="text-center">{row.donors}</td>
-                                    <td className="text-center">{row.nonDonors}</td>
+                                    <td className="text-center">{num(row.donors)}</td>
+                                    <td className="text-center">{num(row.nonDonors)}</td>
                                     <td className="text-right font-bold">{fmt(row.amount)}</td>
 
-                                    <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.check.count || '-'}</td>
+                                    <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.check.count ? num(row.check.count) : '-'}</td>
                                     <td className="text-right">{row.check.sum ? fmt(row.check.sum) : '-'}</td>
 
-                                    <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.cash.count || '-'}</td>
+                                    <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.cash.count ? num(row.cash.count) : '-'}</td>
                                     <td className="text-right">{row.cash.sum ? fmt(row.cash.sum) : '-'}</td>
 
-                                    <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.cc.count || '-'}</td>
+                                    <td className="text-center" style={{ borderLeft: '2px solid black' }}>{row.cc.count ? num(row.cc.count) : '-'}</td>
                                     <td className="text-right">{row.cc.sum ? fmt(row.cc.sum) : '-'}</td>
                                 </tr>
                             );
@@ -404,17 +418,17 @@ function ReportContent() {
                         {/* Totals Row */}
                         <tr className="bg-gray font-bold" style={{ borderTop: '2px solid black' }}>
                             <td className="text-right">TOTALS:</td>
-                            <td className="text-center">{matrixTotals.donors}</td>
-                            <td className="text-center">{matrixTotals.nonDonors}</td>
+                            <td className="text-center">{num(matrixTotals.donors)}</td>
+                            <td className="text-center">{num(matrixTotals.nonDonors)}</td>
                             <td className="text-right">{fmt(matrixTotals.amount)}</td>
 
-                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{matrixTotals.check.count}</td>
+                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{num(matrixTotals.check.count)}</td>
                             <td className="text-right">{fmt(matrixTotals.check.sum)}</td>
 
-                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{matrixTotals.cash.count}</td>
+                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{num(matrixTotals.cash.count)}</td>
                             <td className="text-right">{fmt(matrixTotals.cash.sum)}</td>
 
-                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{matrixTotals.cc.count}</td>
+                            <td className="text-center" style={{ borderLeft: '2px solid black' }}>{num(matrixTotals.cc.count)}</td>
                             <td className="text-right">{fmt(matrixTotals.cc.sum)}</td>
                         </tr>
                     </tbody>
