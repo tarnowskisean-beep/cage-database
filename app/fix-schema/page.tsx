@@ -16,7 +16,8 @@ export default async function FixSchemaPage() {
             'MailCode', 'DonorPrefix', 'DonorFirstName', 'DonorMiddleName', 'DonorLastName', 'DonorSuffix',
             'DonorAddress', 'DonorCity', 'DonorState', 'DonorZip', 'DonorEmployer', 'DonorOccupation',
             'GiftCustodian', 'GiftConduit', 'PostMarkYear', 'PostMarkQuarter', 'Comment', 'OrganizationName',
-            'DonorEmail', 'DonorPhone', 'CheckNumber', 'ScanString', 'GiftType', 'Version', 'GiftPledgeAmount', 'IsInactive'
+            'DonorEmail', 'DonorPhone', 'CheckNumber', 'ScanString', 'GiftType', 'Version', 'GiftPledgeAmount', 'IsInactive',
+            'UpdatedAt'
         ];
 
         for (const col of missingCols) {
@@ -26,6 +27,7 @@ export default async function FixSchemaPage() {
                 if (col === 'Version') type = 'INT DEFAULT 1';
                 if (col === 'GiftPledgeAmount') type = 'DECIMAL(18,2) DEFAULT 0';
                 if (col === 'IsInactive') type = 'BOOLEAN DEFAULT FALSE';
+                if (col === 'UpdatedAt') type = 'TIMESTAMP WITH TIME ZONE DEFAULT NOW()';
 
                 await query(`ALTER TABLE "Donations" ADD COLUMN IF NOT EXISTS "${col}" ${type}`);
                 log(`Checked/Added Donation Column: ${col}`);
