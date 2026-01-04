@@ -55,12 +55,11 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             </nav>
 
             {/* Profile Header Card */}
-            <div className="glass-panel p-8 mb-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--color-accent)] to-transparent opacity-10 blur-3xl rounded-full translate-x-12 -translate-y-12"></div>
+            <div className="glass-panel p-8 mb-8 relative overflow-hidden bg-[#1a1a1a]">
 
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
                     {/* Avatar */}
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#333] to-[#111] border-2 border-[var(--color-accent)] text-white flex items-center justify-center font-display text-4xl shadow-2xl shrink-0">
+                    <div className="w-24 h-24 rounded-full bg-[#111] border border-gray-700 text-white flex items-center justify-center font-display text-4xl shadow-lg shrink-0">
                         {donor.FirstName?.[0]}{donor.LastName?.[0]}
                     </div>
 
@@ -69,15 +68,15 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         <h1 className="text-4xl font-display text-white mb-2">{donor.FirstName} {donor.LastName}</h1>
                         <div className="flex flex-wrap gap-6 text-sm text-gray-400 mt-4">
                             <div className="flex items-center gap-2">
-                                <span className="bg-white/10 p-2 rounded-full"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></span>
+                                <span className="bg-white/5 p-2 rounded-full"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></span>
                                 {donor.Email}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="bg-white/10 p-2 rounded-full"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></span>
+                                <span className="bg-white/5 p-2 rounded-full"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></span>
                                 {donor.Phone || 'No Phone'}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="bg-white/10 p-2 rounded-full"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></span>
+                                <span className="bg-white/5 p-2 rounded-full"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></span>
                                 {donor.City}, {donor.State}
                             </div>
                         </div>
@@ -85,10 +84,10 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
 
                     {/* Quick Action */}
                     <div>
-                        <button className="bg-[var(--color-bg-elevated)] hover:bg-white hover:text-black border border-[var(--color-border)] text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wide transition-all">
+                        <button className="bg-[#333] hover:bg-white hover:text-black border border-gray-600 text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wide transition-all">
                             Edit Profile
                         </button>
-                        <a href={`/api/people/${donorId}/export`} target="_blank" className="ml-2 bg-[var(--color-bg-elevated)] hover:bg-white hover:text-black border border-[var(--color-border)] text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wide transition-all inline-block">
+                        <a href={`/api/people/${donorId}/export`} target="_blank" className="ml-2 bg-[#333] hover:bg-white hover:text-black border border-gray-600 text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wide transition-all inline-block">
                             Export History
                         </a>
                     </div>
@@ -97,15 +96,13 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                 {/* Impact Card */}
-                <div className="glass-panel p-8 relative overflow-hidden group">
-                    {/* Gold glow */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[var(--color-accent)]/10 to-transparent"></div>
+                <div className="glass-panel p-8 relative overflow-hidden group bg-[#1a1a1a]">
 
                     <p className="text-xs font-bold text-[var(--color-accent)] uppercase tracking-widest mb-1 relative z-10">Lifetime Value</p>
-                    <p className="text-5xl font-display text-white mt-2 relative z-10 shadow-black drop-shadow-lg">
+                    <p className="text-5xl font-display text-white mt-2 relative z-10">
                         ${Number(stats.totalGiven || 0).toLocaleString()}
                     </p>
-                    <div className="mt-4 text-sm text-gray-400 relative z-10 border-t border-[var(--color-accent)]/20 pt-4 flex justify-between">
+                    <div className="mt-4 text-sm text-gray-400 relative z-10 border-t border-gray-800 pt-4 flex justify-between">
                         <span>Since {new Date(donor.CreatedAt).getFullYear()}</span>
                         <span className="text-[var(--color-accent)]">Top 10%</span>
                     </div>

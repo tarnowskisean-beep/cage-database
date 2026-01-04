@@ -313,81 +313,103 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
             </header>
 
             {/* Main Split Interface */}
-            <main className="flex-1 max-w-[1800px] mx-auto w-full p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <main className="flex-1 max-w-[1920px] mx-auto w-full p-6 grid grid-cols-1 lg:grid-cols-2 gap-0 border-t border-gray-800">
 
-                {/* Money In */}
-                <div className="glass-panel flex flex-col h-[calc(100vh-250px)]">
-                    <div className="p-4 border-b border-[var(--color-border)] bg-[#1f1f1f] flex justify-between items-center sticky top-0">
-                        <h3 className="font-display text-lg text-white">Checks & Payments (Money In)</h3>
-                        <span className="text-green-500 font-mono text-sm">+{totalDeposits.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                {/* Money In Table */}
+                <div className="flex flex-col border-r border-gray-800 bg-[#111]">
+                    <div className="p-4 bg-[#1a1a1a] border-b border-gray-800 flex justify-between items-center sticky top-0 z-10">
+                        <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-400">Deposits & Credits</h3>
+                        <span className="text-green-500 font-mono text-sm font-bold">+{totalDeposits.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar">
-                        {moneyIn.map((item) => (
-                            <div
-                                key={item.BatchID}
-                                onClick={() => toggleClear(item.BatchID, 'batch')}
-                                className={`
-                                    flex items-center justify-between p-3 rounded border cursor-pointer transition-all select-none
-                                    ${clearedItems.has(item.BatchID)
-                                        ? 'bg-blue-900/10 border-blue-500/30'
-                                        : 'bg-transparent border-transparent hover:bg-white/5'
-                                    }
-                                `}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`
-                                         w-4 h-4 rounded border flex items-center justify-center transition-colors
-                                         ${clearedItems.has(item.BatchID) ? 'bg-blue-500 border-blue-500' : 'border-gray-600'}
-                                     `}>
-                                        {clearedItems.has(item.BatchID) && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-200">Batch #{item.BatchID}</p>
-                                        <p className="text-[10px] text-gray-500">{new Date(item.DepositDate).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <p className="font-mono text-sm text-green-400">${Number(item.AmountDonorNet).toFixed(2)}</p>
-                            </div>
-                        ))}
-                        {moneyIn.length === 0 && <div className="p-8 text-center text-gray-600 italic">No deposits found for this period.</div>}
+                    <div className="flex-1 overflow-y-auto bg-[#111]">
+                        <table className="w-full text-left text-xs border-collapse">
+                            <thead className="bg-[#151515] text-gray-500 sticky top-0 z-10 border-b border-gray-800 font-medium uppercase tracking-wider">
+                                <tr>
+                                    <th className="p-3 w-10 text-center">✓</th>
+                                    <th className="p-3">Date</th>
+                                    <th className="p-3">Ref #</th>
+                                    <th className="p-3">Memo</th>
+                                    <th className="p-3 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                                {moneyIn.map((item) => (
+                                    <tr
+                                        key={item.BatchID}
+                                        onClick={() => toggleClear(item.BatchID, 'batch')}
+                                        className={`
+                                            cursor-pointer transition-colors hover:bg-[#222]
+                                            ${clearedItems.has(item.BatchID) ? 'bg-[#1a2e1a] hover:bg-[#1f361f]' : ''}
+                                        `}
+                                    >
+                                        <td className="p-3 text-center">
+                                            <div className={`
+                                                w-4 h-4 mx-auto rounded border flex items-center justify-center
+                                                ${clearedItems.has(item.BatchID) ? 'bg-green-600 border-green-600 text-white' : 'border-gray-600'}
+                                            `}>
+                                                {clearedItems.has(item.BatchID) && <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                                            </div>
+                                        </td>
+                                        <td className="p-3 font-mono text-gray-300">{new Date(item.DepositDate).toLocaleDateString()}</td>
+                                        <td className="p-3 text-gray-400">Batch #{item.BatchID}</td>
+                                        <td className="p-3 text-gray-400 truncate max-w-[150px]">{item.PaymentCategory}</td>
+                                        <td className="p-3 text-right font-mono text-green-400 font-medium">${Number(item.AmountDonorNet).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                                {moneyIn.length === 0 && (
+                                    <tr><td colSpan={5} className="p-8 text-center text-gray-600 italic">No deposits found.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                {/* Money Out */}
-                <div className="glass-panel flex flex-col h-[calc(100vh-250px)]">
-                    <div className="p-4 border-b border-[var(--color-border)] bg-[#1f1f1f] flex justify-between items-center sticky top-0">
-                        <h3 className="font-display text-lg text-white">Withdrawals & Expenses (Money Out)</h3>
-                        <span className="text-red-500 font-mono text-sm">-{totalWithdrawals.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                {/* Money Out Table */}
+                <div className="flex flex-col bg-[#111]">
+                    <div className="p-4 bg-[#1a1a1a] border-b border-gray-800 flex justify-between items-center sticky top-0 z-10">
+                        <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-400">Checks & Payments</h3>
+                        <span className="text-red-500 font-mono text-sm font-bold">-{totalWithdrawals.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar">
-                        {moneyOut.map((item) => (
-                            <div
-                                key={item.BankTransactionID}
-                                onClick={() => toggleClear(item.BankTransactionID, 'transaction')}
-                                className={`
-                                    flex items-center justify-between p-3 rounded border cursor-pointer transition-all select-none
-                                    ${clearedItems.has(item.BankTransactionID)
-                                        ? 'bg-blue-900/10 border-blue-500/30'
-                                        : 'bg-transparent border-transparent hover:bg-white/5'
-                                    }
-                                `}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`
-                                         w-4 h-4 rounded border flex items-center justify-center transition-colors
-                                         ${clearedItems.has(item.BankTransactionID) ? 'bg-blue-500 border-blue-500' : 'border-gray-600'}
-                                     `}>
-                                        {clearedItems.has(item.BankTransactionID) && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-200">{item.Description || 'Bank Transaction'}</p>
-                                        <p className="text-[10px] text-gray-500">{new Date(item.TransactionDate).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <p className="font-mono text-sm text-red-400">-${Number(item.AmountOut).toFixed(2)}</p>
-                            </div>
-                        ))}
-                        {moneyOut.length === 0 && <div className="p-8 text-center text-gray-600 italic">No withdrawals found for this period.</div>}
+                    <div className="flex-1 overflow-y-auto bg-[#111]">
+                        <table className="w-full text-left text-xs border-collapse">
+                            <thead className="bg-[#151515] text-gray-500 sticky top-0 z-10 border-b border-gray-800 font-medium uppercase tracking-wider">
+                                <tr>
+                                    <th className="p-3 w-10 text-center">✓</th>
+                                    <th className="p-3">Date</th>
+                                    <th className="p-3">Type</th>
+                                    <th className="p-3">Payee / Description</th>
+                                    <th className="p-3 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                                {moneyOut.map((item) => (
+                                    <tr
+                                        key={item.BankTransactionID}
+                                        onClick={() => toggleClear(item.BankTransactionID, 'transaction')}
+                                        className={`
+                                            cursor-pointer transition-colors hover:bg-[#222]
+                                            ${clearedItems.has(item.BankTransactionID) ? 'bg-[#1a2e1a] hover:bg-[#1f361f]' : ''}
+                                        `}
+                                    >
+                                        <td className="p-3 text-center">
+                                            <div className={`
+                                                w-4 h-4 mx-auto rounded border flex items-center justify-center
+                                                ${clearedItems.has(item.BankTransactionID) ? 'bg-green-600 border-green-600 text-white' : 'border-gray-600'}
+                                            `}>
+                                                {clearedItems.has(item.BankTransactionID) && <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                                            </div>
+                                        </td>
+                                        <td className="p-3 font-mono text-gray-300">{new Date(item.TransactionDate).toLocaleDateString()}</td>
+                                        <td className="p-3 text-gray-400">Expenditure</td>
+                                        <td className="p-3 text-gray-400 truncate max-w-[200px]">{item.Description || 'Bank Transaction'}</td>
+                                        <td className="p-3 text-right font-mono text-white font-medium">${Number(item.AmountOut).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                                {moneyOut.length === 0 && (
+                                    <tr><td colSpan={5} className="p-8 text-center text-gray-600 italic">No withdrawals found.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 

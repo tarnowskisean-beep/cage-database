@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;

@@ -103,69 +103,61 @@ function PeopleContent() {
 
             {/* Content Area */}
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {[...Array(8)].map((_, i) => (
-                        <div key={i} className="glass-panel h-64 animate-pulse bg-white/5 border-transparent"></div>
-                    ))}
-                </div>
+                <div className="w-full h-64 animate-pulse bg-white/5 rounded"></div>
             ) : donors.length === 0 ? (
-                <div className="py-32 text-center">
-                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#1f1f1f] text-gray-700 text-4xl mb-6">∅</div>
-                    <h3 className="text-xl text-white font-display mb-2">No Donors Found</h3>
-                    <p className="text-gray-500">Try adjusting your search criteria</p>
+                <div className="py-32 text-center border border-dashed border-gray-800 rounded">
+                    <p className="text-gray-500">No Donors Found</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {donors.map(d => (
-                        <Link href={`/people/${d.DonorID}`} key={d.DonorID} className="group">
-                            <div className="glass-panel p-6 h-full flex flex-col relative transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-[var(--color-border)] hover:border-[var(--color-accent)]">
-
-                                {/* Header / Avatar */}
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#333] to-[#111] border border-[#444] text-white flex items-center justify-center font-display text-xl shadow-lg group-hover:from-[var(--color-accent)] group-hover:to-[#8a723e] group-hover:text-black transition-all duration-500">
-                                        {d.FirstName?.[0]}{d.LastName?.[0]}
-                                    </div>
-                                    {/* Rank Badge (Mock Logic) */}
-                                    {Number(d.LifetimeValue) > 5000 && (
-                                        <span className="bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                                            Top Donor
-                                        </span>
-                                    )}
-                                </div>
-
-                                <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[var(--color-accent)] transition-colors line-clamp-1">
-                                    {d.FirstName} {d.LastName}
-                                </h3>
-
-                                {/* Details */}
-                                <div className="space-y-3 mt-4 flex-1">
-                                    <div className="flex items-center text-xs text-gray-500">
-                                        <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                                        <span className="truncate">{d.Email || 'No Email'}</span>
-                                    </div>
-                                    <div className="flex items-center text-xs text-gray-500">
-                                        <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                        <span className="truncate">{d.City ? `${d.City}, ${d.State}` : 'Unknown Location'}</span>
-                                    </div>
-                                </div>
-
-                                {/* Metrics Footer */}
-                                <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Lifetime</p>
-                                        <p className="text-base font-mono text-white group-hover:text-white transition-colors">
-                                            ${Number(d.LifetimeValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Gifts</p>
-                                        <p className="text-base font-mono text-white">{d.TotalGifts}</p>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </Link>
-                    ))}
+                <div className="bg-[#1a1a1a] border border-gray-800 rounded overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-[#222] text-gray-500 font-medium uppercase tracking-wider text-xs border-b border-gray-800">
+                            <tr>
+                                <th className="px-6 py-4">Name</th>
+                                <th className="px-6 py-4">Contact</th>
+                                <th className="px-6 py-4">Location</th>
+                                <th className="px-6 py-4 text-center">Gifts</th>
+                                <th className="px-6 py-4 text-right">Lifetime Value</th>
+                                <th className="px-6 py-4 text-right">Last Gift</th>
+                                <th className="px-6 py-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                            {donors.map(d => (
+                                <tr key={d.DonorID} className="hover:bg-[#222] transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center font-bold text-xs border border-gray-700">
+                                                {d.FirstName?.[0]}{d.LastName?.[0]}
+                                            </div>
+                                            <span className="font-semibold text-white">{d.FirstName} {d.LastName}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-400 text-xs">
+                                        <div>{d.Email || '-'}</div>
+                                        <div>{d.Phone}</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-400">
+                                        {d.City ? `${d.City}, ${d.State}` : '-'}
+                                    </td>
+                                    <td className="px-6 py-4 text-center text-gray-400 font-mono">
+                                        {d.TotalGifts}
+                                    </td>
+                                    <td className="px-6 py-4 text-right font-mono text-white">
+                                        ${Number(d.LifetimeValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    </td>
+                                    <td className="px-6 py-4 text-right text-gray-500 text-xs">
+                                        {d.LastGiftDate ? new Date(d.LastGiftDate).toLocaleDateString() : '-'}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <Link href={`/people/${d.DonorID}`} className="text-[var(--color-accent)] hover:underline text-xs font-bold uppercase tracking-wide">
+                                            View
+                                        </Link>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>
