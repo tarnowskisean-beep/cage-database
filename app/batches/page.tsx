@@ -238,6 +238,7 @@ function BatchesContent() {
 }
 
 function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: () => void }) {
+    const router = useRouter();
     const [clients, setClients] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         clientId: '',
@@ -263,13 +264,29 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await fetch('/api/batches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-        refresh();
-        onClose();
+        try {
+            const res = await fetch('/api/batches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (!res.ok) throw new Error('Failed to create batch');
+
+            const newBatch = await res.json();
+
+            if (newBatch && newBatch.BatchID) {
+                // Navigate to the Data Entry view for the new batch
+                router.push(`/batches/${newBatch.BatchID}/enter`);
+            } else {
+                // Fallback if ID missing (shouldn't happen)
+                refresh();
+                onClose();
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to create batch');
+        }
     };
 
     return (
