@@ -91,7 +91,7 @@ export async function GET(request: Request) {
             `, params),
 
             // 9. Recent Logs
-            query(`SELECT * FROM "AuditLog" ORDER BY "CreatedAt" DESC LIMIT 5`)
+            query(`SELECT * FROM "AuditLogs" ORDER BY "CreatedAt" DESC LIMIT 5`)
         ]);
 
         const totalRevenue = revenueRes.rows[0]?.total || 0;
