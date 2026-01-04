@@ -85,27 +85,26 @@ export default function BatchesPage() {
     }, [filters]);
 
     return (
-        <div>
-            <header className="page-header">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <header className="page-header mb-8">
                 <div>
-                    <h1>Batches</h1>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Manage and process donation batches</p>
+                    <h1 className="text-3xl font-display text-white mb-2">Batches</h1>
+                    <p className="text-gray-400">Manage and process donation batches</p>
                 </div>
-                <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+                <button className="btn-primary flex items-center gap-2 px-6 py-3" onClick={() => setShowCreateModal(true)}>
                     + New Batch
                 </button>
             </header>
 
             {/* Filter Bar */}
-            <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>🔍</span>
-                    <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
+            <div className="glass-panel p-4 mb-8 flex flex-wrap gap-4 items-center bg-[#1a1a1a]">
+                <div className="flex items-center gap-2 text-gray-400">
+                    <span className="text-xl">🔍</span>
+                    <span className="font-semibold text-sm uppercase tracking-wide">Filters:</span>
                 </div>
 
                 <select
-                    className="input-field"
-                    style={{ width: 'auto', minWidth: '200px' }}
+                    className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none min-w-[200px]"
                     value={filters.clientId}
                     onChange={(e) => setFilters(prev => ({ ...prev, clientId: e.target.value }))}
                 >
@@ -116,8 +115,7 @@ export default function BatchesPage() {
                 </select>
 
                 <select
-                    className="input-field"
-                    style={{ width: 'auto', minWidth: '150px' }}
+                    className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none min-w-[150px]"
                     value={filters.status}
                     onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
                 >
@@ -128,8 +126,7 @@ export default function BatchesPage() {
                 </select>
 
                 <select
-                    className="input-field"
-                    style={{ width: 'auto', minWidth: '150px' }}
+                    className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none min-w-[150px]"
                     value={filters.platform}
                     onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
                 >
@@ -139,24 +136,22 @@ export default function BatchesPage() {
                     ))}
                 </select>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-xs uppercase font-bold">From</span>
                     <input
                         type="date"
-                        className="input-field"
-                        style={{ width: 'auto' }}
+                        className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none"
                         value={filters.startDate}
                         onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
                         onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
                     />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-xs uppercase font-bold">To</span>
                     <input
                         type="date"
-                        className="input-field"
-                        style={{ width: 'auto' }}
+                        className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none"
                         value={filters.endDate}
                         onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
                         onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
@@ -166,7 +161,7 @@ export default function BatchesPage() {
                 {(filters.clientId || filters.startDate || filters.endDate || filters.status || filters.platform) && (
                     <button
                         onClick={() => setFilters({ clientId: '', startDate: '', endDate: '', status: '', platform: '' })}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+                        className="text-red-400 text-sm hover:text-red-300 transition-colors ml-auto"
                     >
                         Clear Filters
                     </button>
@@ -174,32 +169,32 @@ export default function BatchesPage() {
             </div>
 
             {/* Batch Stats */}
-            <div className="stats-grid">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard label="Open Batches" value={batches.filter(b => b.Status === 'Open').length.toString()} icon="📂" />
                 <StatCard label="Pending Review" value={batches.filter(b => b.Status === 'Submitted').length.toString()} icon="👀" />
                 <StatCard label="Total Batches" value={batches.length.toString()} icon="📊" />
             </div>
 
             {/* Batch List */}
-            <div className="glass-panel" style={{ padding: '0' }}>
-                <div style={{ padding: '1.5rem 1.5rem 0.5rem 1.5rem' }}>
-                    <h3 style={{ marginBottom: '0.5rem' }}>Active Batches</h3>
+            <div className="glass-panel p-0 bg-[#1a1a1a] overflow-hidden">
+                <div className="p-6 border-b border-gray-800">
+                    <h3 className="text-lg font-display text-white">Active Batches</h3>
                 </div>
                 {batches.length === 0 ? (
-                    <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>No batches found. Create one to get started.</div>
+                    <div className="p-8 text-center text-gray-500">No batches found. Create one to get started.</div>
                 ) : (
-                    <table className="data-table">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr>
-                                <th>Batch ID</th>
-                                <th>Client</th>
-                                <th>Created</th>
-                                <th>Status</th>
-                                <th>Mode</th>
-                                <th>Actions</th>
+                            <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+                                <th className="p-4 font-semibold">Batch ID</th>
+                                <th className="p-4 font-semibold">Client</th>
+                                <th className="p-4 font-semibold">Created</th>
+                                <th className="p-4 font-semibold">Status</th>
+                                <th className="p-4 font-semibold">Mode</th>
+                                <th className="p-4 font-semibold">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-800">
                             {batches.map(batch => (
                                 <BatchRow key={batch.BatchID} batch={batch} />
                             ))}
@@ -267,18 +262,16 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
     };
 
     return (
-        <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-            <div className="glass-panel" style={{ width: '800px', padding: '2rem', backgroundColor: 'var(--color-bg-surface)' }}>
-                <h2 style={{ marginBottom: '1.5rem' }}>Start New Batch</h2>
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
+            <div className="glass-panel w-[800px] p-8 bg-[#1a1a1a]">
+                <h2 className="text-xl font-bold text-white mb-6">Start New Batch</h2>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Client</label>
+                <div className="grid grid-cols-3 gap-6">
+                    <div className="col-span-3">
+                        <label className="block mb-2 font-medium text-gray-300">Client</label>
                         <select
-                            className="input-field"
+                            className="input-field w-full bg-[#111] border border-gray-700 p-2 rounded text-white"
                             value={formData.clientId}
                             onChange={e => setFormData({ ...formData, clientId: e.target.value })}
                         >
@@ -289,9 +282,9 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         </select>
                     </div>
 
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Entry Mode</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                    <div className="col-span-3">
+                        <label className="block mb-2 font-medium text-gray-300">Entry Mode</label>
+                        <div className="grid grid-cols-3 gap-2">
                             {/* Combined Barcode/Datamatrix into single 'Scan' option, storing as 'Barcode' for DB compatibility */}
                             <ModeOption
                                 label="Scan"
@@ -309,20 +302,20 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         </div>
                     </div>
 
-                    <div style={{ gridColumn: '1 / 2' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Batch Date</label>
+                    <div className="col-span-1">
+                        <label className="block mb-2 font-medium text-gray-300">Batch Date</label>
                         <input
                             type="date"
-                            className="input-field"
+                            className="input-field w-full bg-[#111] border border-gray-700 p-2 rounded text-white"
                             value={formData.date}
                             onChange={e => setFormData({ ...formData, date: e.target.value })}
                         />
                     </div>
 
-                    <div style={{ gridColumn: '2 / 3' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Gift Year</label>
+                    <div className="col-span-1">
+                        <label className="block mb-2 font-medium text-gray-300">Default Gift Year</label>
                         <select
-                            className="input-field"
+                            className="input-field w-full bg-[#111] border border-gray-700 p-2 rounded text-white"
                             value={formData.defaultGiftYear}
                             onChange={e => setFormData({ ...formData, defaultGiftYear: parseInt(e.target.value) })}
                         >
@@ -332,10 +325,10 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         </select>
                     </div>
 
-                    <div style={{ gridColumn: '3 / 4' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Default Quarter</label>
+                    <div className="col-span-1">
+                        <label className="block mb-2 font-medium text-gray-300">Default Quarter</label>
                         <select
-                            className="input-field"
+                            className="input-field w-full bg-[#111] border border-gray-700 p-2 rounded text-white"
                             value={formData.defaultGiftQuarter}
                             onChange={e => setFormData({ ...formData, defaultGiftQuarter: e.target.value })}
                         >
@@ -373,13 +366,13 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
                         />
                     </div>
 
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border-subtle)' }}>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button className="btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading}>
+                    <div className="col-span-3 mt-4 pt-4 border-t border-gray-800">
+                        <div className="flex gap-4">
+                            <button className="btn-primary flex-1 py-2" onClick={handleSubmit} disabled={loading}>
                                 {loading ? 'Creating...' : 'Create Batch'}
                             </button>
                             <button
-                                style={{ flex: 1, background: 'transparent', border: '1px solid var(--color-border)', color: 'white', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                                className="flex-1 py-2 border border-gray-700 text-gray-300 rounded hover:bg-white/5 transition-colors"
                                 onClick={onClose}
                             >
                                 Cancel
@@ -394,11 +387,11 @@ function CreateBatchModal({ clients, onClose }: { clients: Client[], onClose: ()
 
 function StatCard({ label, value, icon }: { label: string, value: string, icon: string }) {
     return (
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ fontSize: '2rem' }}>{icon}</div>
+        <div className="glass-panel p-6 flex items-center gap-4 bg-[#1a1a1a]">
+            <div className="text-3xl">{icon}</div>
             <div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{value}</div>
-                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>{label}</div>
+                <div className="text-2xl font-bold text-white">{value}</div>
+                <div className="text-sm text-gray-500">{label}</div>
             </div>
         </div>
     );
@@ -406,41 +399,30 @@ function StatCard({ label, value, icon }: { label: string, value: string, icon: 
 
 function BatchRow({ batch }: { batch: Batch }) {
     return (
-        <tr>
-            <td style={{ fontWeight: 600 }}>{batch.BatchCode}</td>
-            <td>{batch.ClientCode}</td>
-            <td style={{ color: 'var(--color-text-muted)' }}>{new Date(batch.Date).toLocaleDateString()}</td>
-            <td>
-                <span style={{
-                    padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
-                    background: batch.Status === 'Open' ? 'rgba(74, 222, 128, 0.2)' :
-                        batch.Status === 'Closed' ? 'rgba(251, 146, 60, 0.2)' :
-                            batch.Status === 'Reconciled' ? 'rgba(192, 132, 252, 0.2)' :
-                                'rgba(148, 163, 184, 0.2)',
-                    color: batch.Status === 'Open' ? '#4ade80' :
-                        batch.Status === 'Closed' ? '#fb923c' :
-                            batch.Status === 'Reconciled' ? '#c084fc' :
-                                'var(--color-text-muted)',
-                    border: `1px solid ${batch.Status === 'Open' ? '#4ade80' :
-                        batch.Status === 'Closed' ? '#fb923c' :
-                            batch.Status === 'Reconciled' ? '#c084fc' :
-                                'var(--color-border)'
-                        }`
-                }}>
+        <tr className="hover:bg-white/5 transition-colors group">
+            <td className="p-4 font-mono font-semibold text-white">{batch.BatchCode}</td>
+            <td className="p-4 text-gray-300">{batch.ClientCode}</td>
+            <td className="p-4 text-gray-500">{new Date(batch.Date).toLocaleDateString()}</td>
+            <td className="p-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${batch.Status === 'Open' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                    batch.Status === 'Closed' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                        batch.Status === 'Reconciled' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                            'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                    }`}>
                     {batch.Status}
                 </span>
             </td>
-            <td>{batch.EntryMode}</td>
-            <td>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <Link href={`/batches/${batch.BatchID}/enter`} style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
+            <td className="p-4 text-gray-400">{batch.EntryMode}</td>
+            <td className="p-4">
+                <div className="flex gap-4 items-center">
+                    <Link href={`/batches/${batch.BatchID}/enter`} className="text-[var(--color-primary)] hover:text-white font-medium transition-colors">
                         Open &rarr;
                     </Link>
                     {(batch as any).ImportSessionID && (
                         <a
                             href={`/api/batches/download/${batch.BatchID}`}
                             title="Download Original CSV"
-                            style={{ fontSize: '1.2rem', textDecoration: 'none' }}
+                            className="text-lg hover:scale-110 transition-transform"
                         >
                             📥
                         </a>
@@ -458,10 +440,10 @@ function CreatableSelect({ label, value, options, onChange }: { label: string, v
 
     return (
         <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>
+            <label className="block mb-2 font-medium text-gray-300">{label}</label>
             {mode === 'select' ? (
                 <select
-                    className="input-field"
+                    className="input-field w-full bg-[#111] border border-gray-700 p-2 rounded text-white"
                     value={value}
                     onChange={(e) => {
                         if (e.target.value === '__NEW__') {
@@ -473,12 +455,12 @@ function CreatableSelect({ label, value, options, onChange }: { label: string, v
                     }}
                 >
                     {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    <option style={{ fontWeight: 600, color: 'var(--color-primary)' }} value="__NEW__">+ Add New...</option>
+                    <option className="font-bold text-[var(--color-primary)]" value="__NEW__">+ Add New...</option>
                 </select>
             ) : (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="flex gap-2">
                     <input
-                        className="input-field"
+                        className="input-field flex-1 bg-[#111] border border-gray-700 p-2 rounded text-white"
                         value={value}
                         onChange={e => onChange(e.target.value)}
                         placeholder={`Enter new ${label.toLowerCase()}...`}
@@ -486,7 +468,7 @@ function CreatableSelect({ label, value, options, onChange }: { label: string, v
                     />
                     <button
                         onClick={() => setMode('select')}
-                        style={{ padding: '0 1rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                        className="px-4 py-2 bg-gray-800 border border-gray-600 rounded hover:bg-gray-700 text-white transition-colors"
                         title="Cancel custom entry"
                     >
                         ✕
@@ -501,15 +483,11 @@ function ModeOption({ label, selected, onClick }: { label: string, selected?: bo
     return (
         <button
             onClick={onClick}
-            style={{
-                padding: '0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                border: `1px solid ${selected ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                backgroundColor: selected ? 'color-mix(in srgb, var(--color-primary) 10%, transparent)' : 'transparent',
-                color: selected ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                cursor: 'pointer',
-                fontWeight: 500
-            }}>
+            className={`p-3 rounded-md border font-medium transition-all ${selected
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    : 'border-gray-700 hover:border-gray-500 text-gray-400'
+                }`}
+        >
             {label}
         </button>
     );

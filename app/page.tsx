@@ -96,24 +96,23 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <header className="mb-8">
+        <h1 className="text-3xl font-display text-white mb-2">
           Dashboard
         </h1>
-        <p style={{ color: 'var(--color-text-muted)' }}>Real-time donation insights and performance metrics</p>
+        <p className="text-gray-400">Real-time donation insights and performance metrics</p>
       </header>
 
       {/* Filter Bar */}
-      <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.2rem' }}>🔍</span>
-          <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Filters:</span>
+      <div className="glass-panel p-4 mb-8 flex flex-wrap gap-4 items-center bg-[#1a1a1a]">
+        <div className="flex items-center gap-2 text-gray-400">
+          <span className="text-xl">🔍</span>
+          <span className="font-semibold text-sm uppercase tracking-wide">Filters:</span>
         </div>
 
         <select
-          className="input-field"
-          style={{ width: 'auto', minWidth: '200px' }}
+          className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none min-w-[200px]"
           value={filters.clientId}
           onChange={(e) => setFilters(prev => ({ ...prev, clientId: e.target.value }))}
         >
@@ -123,12 +122,11 @@ export default function Home() {
           ))}
         </select>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>From</span>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 text-xs uppercase font-bold">From</span>
           <input
             type="date"
-            className="input-field"
-            style={{ width: 'auto' }}
+            className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none"
             value={filters.startDate}
             onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
             onMouseOver={(e) => {
@@ -141,12 +139,11 @@ export default function Home() {
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>To</span>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 text-xs uppercase font-bold">To</span>
           <input
             type="date"
-            className="input-field"
-            style={{ width: 'auto' }}
+            className="bg-[#111] border border-gray-700 text-white rounded px-3 py-2 text-sm focus:border-[var(--color-accent)] outline-none"
             value={filters.endDate}
             onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
             onMouseOver={(e) => {
@@ -160,7 +157,7 @@ export default function Home() {
         {(filters.clientId || filters.startDate || filters.endDate) && (
           <button
             onClick={() => setFilters({ clientId: '', startDate: '', endDate: '' })}
-            style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}
+            className="text-red-400 text-sm hover:text-red-300 transition-colors ml-auto"
           >
             Clear Filters
           </button>
@@ -168,16 +165,16 @@ export default function Home() {
       </div>
 
       {loading && !stats ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-          <div style={{ color: 'var(--color-text-muted)' }}>Loading Data...</div>
+        <div className="h-64 flex items-center justify-center text-gray-500 animate-pulse">
+          Loading Data...
         </div>
       ) : (stats as any).error ? (
-        <div style={{ padding: '2rem', color: 'var(--color-error)', textAlign: 'center' }}>
+        <div className="p-8 text-red-500 text-center border border-red-900 bg-red-900/10 rounded">
           Error loading dashboard: {(stats as any).error}
         </div>
       ) : !stats ? null : (
         <>
-          <div className="stats-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <DashboardCard
               title="Total Revenue"
               value={formatCurrency(stats.totalRevenue)}
@@ -202,37 +199,38 @@ export default function Home() {
           </div>
 
           {/* Charts Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
             {/* Revenue by Client */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h3 style={{ marginBottom: '1.5rem' }}>Revenue by Client</h3>
-              <div style={{ height: '500px' }}>
+            <div className="glass-panel p-6 bg-[#1a1a1a]">
+              <h3 className="text-lg font-display text-white mb-6">Revenue by Client</h3>
+              <div className="h-96">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.byClient} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
-                    <XAxis type="number" stroke="var(--color-text-muted)" tickFormatter={(val) => `$${val}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
+                    <XAxis type="number" stroke="#666" tickFormatter={(val) => `$${val}`} />
                     <YAxis
                       dataKey="ClientName"
                       type="category"
-                      stroke="var(--color-text-muted)"
-                      width={220}
-                      tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
+                      stroke="#999"
+                      width={150}
+                      tick={{ fontSize: 12, fill: '#999' }}
                     />
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }}
+                      contentStyle={{ backgroundColor: '#111', border: '1px solid #333', color: '#fff' }}
                       formatter={(value: number | undefined) => formatCurrency(value || 0)}
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                     />
-                    <Bar dataKey="total" fill="var(--color-active)" radius={[0, 4, 4, 0]} barSize={20} />
+                    <Bar dataKey="total" fill="var(--color-accent)" radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Payment Methods */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h3 style={{ marginBottom: '1.5rem' }}>Payment Methods</h3>
-              <div style={{ height: '300px' }}>
+            <div className="glass-panel p-6 bg-[#1a1a1a]">
+              <h3 className="text-lg font-display text-white mb-6">Payment Methods</h3>
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -246,10 +244,10 @@ export default function Home() {
                       nameKey="GiftMethod"
                     >
                       {stats.byMethod?.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333', color: '#fff' }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -257,16 +255,16 @@ export default function Home() {
             </div>
 
             {/* Platforms */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h3 style={{ marginBottom: '1.5rem' }}>Platform Distribution</h3>
-              <div style={{ height: '300px' }}>
+            <div className="glass-panel p-6 bg-[#1a1a1a] lg:col-span-2">
+              <h3 className="text-lg font-display text-white mb-6">Platform Distribution</h3>
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.byPlatform} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                    <XAxis type="number" stroke="var(--color-text-muted)" />
-                    <YAxis dataKey="GiftPlatform" type="category" stroke="var(--color-text-muted)" width={100} />
-                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-main)' }} />
-                    <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis type="number" stroke="#666" />
+                    <YAxis dataKey="GiftPlatform" type="category" stroke="#999" width={150} tick={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333', color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                    <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -275,14 +273,14 @@ export default function Home() {
           </div>
 
           {/* Quick Actions */}
-          <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-            <Link href="/batches" className="glass-panel" style={{ padding: '1.5rem', flex: 1, textDecoration: 'none', color: 'inherit', border: '1px solid var(--color-border)' }}>
-              <h3 style={{ color: 'var(--color-active)', marginBottom: '0.5rem' }}>Go to Batches &rarr;</h3>
-              <p style={{ color: 'var(--color-text-muted)' }}>Manage checking and donation batches</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link href="/batches" className="glass-panel p-6 border border-gray-800 hover:border-[var(--color-accent)] transition-colors group bg-[#1a1a1a]">
+              <h3 className="text-[var(--color-accent)] font-bold mb-2 group-hover:translate-x-1 transition-transform inline-block">Go to Batches &rarr;</h3>
+              <p className="text-gray-400 text-sm">Manage checking and donation batches</p>
             </Link>
-            <Link href="/search" className="glass-panel" style={{ padding: '1.5rem', flex: 1, textDecoration: 'none', color: 'inherit', border: '1px solid var(--color-border)' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}>Export Reports</h3>
-              <p style={{ color: 'var(--color-text-muted)' }}>Generate CSV exports via Search</p>
+            <Link href="/search" className="glass-panel p-6 border border-gray-800 hover:border-[var(--color-accent)] transition-colors group bg-[#1a1a1a]">
+              <h3 className="text-white font-bold mb-2 group-hover:translate-x-1 transition-transform inline-block">Export Reports &rarr;</h3>
+              <p className="text-gray-400 text-sm">Generate CSV exports via Search</p>
             </Link>
           </div>
         </>
@@ -293,16 +291,16 @@ export default function Home() {
 
 function DashboardCard({ title, value, icon, trend }: { title: string, value: string, icon: string, trend?: string }) {
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-        <div style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>{title}</div>
-        <div style={{ fontSize: '1.5rem' }}>{icon}</div>
+    <div className="glass-panel p-6 bg-[#1a1a1a]">
+      <div className="flex justify-between items-start mb-2">
+        <div className="text-gray-400 font-medium text-sm">{title}</div>
+        <div className="text-2xl opacity-50">{icon}</div>
       </div>
-      <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: trend ? '0.5rem' : 0 }}>
+      <div className="text-3xl font-display text-white font-bold mb-1">
         {value}
       </div>
       {trend && (
-        <div style={{ color: 'var(--color-active)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+        <div className="text-[var(--color-accent)] text-xs flex items-center gap-1 font-bold">
           <span>↗</span> {trend}
         </div>
       )}

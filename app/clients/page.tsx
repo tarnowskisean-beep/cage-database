@@ -103,66 +103,49 @@ export default function ClientsPage() {
 
     return (
         <div>
-            <header className="page-header">
+            <header className="page-header mb-8">
                 <div>
-                    <h1>Client Directory</h1>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Manage and view all registered clients</p>
+                    <h1 className="text-3xl font-display text-white mb-2">Client Directory</h1>
+                    <p className="text-gray-400">Manage and view all registered clients</p>
                 </div>
                 <button
                     onClick={openCreate}
-                    className="btn-primary"
-                    style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    className="btn-primary flex items-center gap-2 px-6 py-3"
                 >
                     <span>+</span> New Client
                 </button>
             </header>
 
-            <div className="glass-panel" style={{ padding: '0' }}>
+            <div className="glass-panel p-0 bg-[#1a1a1a] overflow-hidden">
                 {loading ? (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading Clients...</div>
+                    <div className="p-8 text-center text-gray-500">Loading Clients...</div>
                 ) : (
-                    <table className="data-table">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Actions</th>
+                            <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+                                <th className="p-4 font-semibold">Code</th>
+                                <th className="p-4 font-semibold">Name</th>
+                                <th className="p-4 font-semibold">Type</th>
+                                <th className="p-4 font-semibold">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-800">
                             {clients.map(client => (
-                                <tr key={client.ClientID}>
-                                    <td style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-active)' }}>{client.ClientCode}</td>
-                                    <td style={{ fontWeight: 500 }}>{client.ClientName}</td>
-                                    <td style={{ color: 'var(--color-text-muted)' }}>{client.ClientType || '-'}</td>
-                                    <td style={{ display: 'flex', gap: '0.5rem' }}>
+                                <tr key={client.ClientID} className="hover:bg-white/5 transition-colors group">
+                                    <td className="p-4 font-mono font-semibold text-[var(--color-accent)]">{client.ClientCode}</td>
+                                    <td className="p-4 font-medium text-white">{client.ClientName}</td>
+                                    <td className="p-4 text-gray-500">{client.ClientType || '-'}</td>
+                                    <td className="p-4 flex gap-2">
                                         <button
                                             onClick={() => openEdit(client)}
-                                            style={{
-                                                background: 'transparent',
-                                                border: '1px solid var(--color-border)',
-                                                color: 'var(--color-text-main)',
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.8rem'
-                                            }}
+                                            className="px-3 py-1 text-sm border border-gray-700 rounded hover:border-gray-500 hover:text-white transition-colors"
                                         >
                                             ✏️ Edit
                                         </button>
                                         <button
                                             title="Upload Finder File CSV (CagingID, Name, Address...)"
                                             onClick={() => setImportClient(client)}
-                                            style={{
-                                                background: 'transparent',
-                                                border: '1px solid var(--color-primary)',
-                                                color: 'var(--color-primary)',
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.8rem'
-                                            }}
+                                            className="px-3 py-1 text-sm border border-[var(--color-primary)] text-[var(--color-primary)] rounded hover:bg-[var(--color-primary)] hover:text-white transition-colors"
                                         >
                                             📤 Import File
                                         </button>
@@ -171,7 +154,7 @@ export default function ClientsPage() {
                             ))}
                             {clients.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                    <td colSpan={4} className="p-8 text-center text-gray-500">
                                         No clients found.
                                     </td>
                                 </tr>
@@ -326,20 +309,17 @@ function ImportFinderFileModal({ client, onClose }: { client: Client, onClose: (
     const url = URL.createObjectURL(blob);
 
     return (
-        <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-            <div className="glass-panel" style={{ width: '500px', padding: '2rem', backgroundColor: 'hsl(var(--color-bg-surface))' }}>
-                <h3 style={{ marginBottom: '1rem' }}>Import Finder File</h3>
-                <p style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>
-                    Upload a CSV for <strong>{client.ClientCode}</strong>.
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
+            <div className="glass-panel w-[500px] p-8 bg-[#1a1a1a]">
+                <h3 className="text-xl font-bold text-white mb-4">Import Finder File</h3>
+                <p className="mb-2 text-sm text-gray-400">
+                    Upload a CSV for <strong className="text-white">{client.ClientCode}</strong>.
                 </p>
 
                 <a
                     href={url}
                     download="finder_template.csv"
-                    style={{ display: 'inline-block', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#4ade80', textDecoration: 'underline' }}
+                    className="inline-block mb-6 text-xs text-[var(--color-success)] underline hover:text-green-300"
                 >
                     ⬇ Download CSV Template
                 </a>
@@ -347,17 +327,16 @@ function ImportFinderFileModal({ client, onClose }: { client: Client, onClose: (
                 <input
                     type="file"
                     accept=".csv"
-                    className="input-field"
-                    style={{ marginBottom: '1.5rem' }}
+                    className="input-field w-full mb-6 bg-[#111] border border-gray-700 p-2 rounded text-sm text-gray-300"
                     onChange={e => setFile(e.target.files?.[0] || null)}
                 />
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button className="btn-primary" style={{ flex: 1 }} onClick={handleUpload} disabled={uploading || !file}>
+                <div className="flex gap-4">
+                    <button className="btn-primary flex-1 py-2" onClick={handleUpload} disabled={uploading || !file}>
                         {uploading ? 'Importing...' : 'Upload CSV'}
                     </button>
                     <button
-                        style={{ flex: 1, background: 'transparent', border: '1px solid hsl(var(--color-border))', color: 'white', borderRadius: '6px', cursor: 'pointer' }}
+                        className="flex-1 py-2 border border-gray-700 text-gray-300 rounded hover:bg-white/5 transition-colors"
                         onClick={onClose}
                     >
                         Cancel
