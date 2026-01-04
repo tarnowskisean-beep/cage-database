@@ -49,7 +49,6 @@ export default function ClientsPage() {
             let headers: any = {};
 
             if (editingClient) {
-                // Use FormData for updates (supports file upload)
                 const formData = new FormData();
                 formData.append('id', String(editingClient.ClientID));
                 formData.append('name', newClient.name);
@@ -58,9 +57,7 @@ export default function ClientsPage() {
                     formData.append('logo', logoFile);
                 }
                 body = formData;
-                // No Content-Type header needed for FormData, browser sets it with boundary
             } else {
-                // Use JSON for creation (simple)
                 body = JSON.stringify(newClient);
                 headers = { 'Content-Type': 'application/json' };
             }
@@ -72,7 +69,7 @@ export default function ClientsPage() {
                 setLogoFile(null);
                 setEditingClient(null);
                 setIsModalOpen(false);
-                fetchClients(); // Refresh list
+                fetchClients();
             } else {
                 alert('Failed to save client');
             }
@@ -102,59 +99,62 @@ export default function ClientsPage() {
     };
 
     return (
-        <div>
-            <header className="page-header mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <header className="page-header mb-8 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-display text-white mb-2">Client Directory</h1>
-                    <p className="text-gray-400">Manage and view all registered clients</p>
+                    <h1 className="text-4xl font-display font-bold text-white mb-2 drop-shadow-md">Client Directory</h1>
+                    <p className="text-gray-400 font-light">Manage and view all registered clients</p>
                 </div>
                 <button
                     onClick={openCreate}
-                    className="btn-primary flex items-center gap-2 px-6 py-3"
+                    className="btn-primary flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl transition-all"
                 >
-                    <span>+</span> New Client
+                    <span className="text-xl leading-none">+</span> New Client
                 </button>
             </header>
 
-            <div className="glass-panel p-0 bg-[#1a1a1a] overflow-hidden">
+            <div className="glass-panel p-0 overflow-hidden">
                 {loading ? (
-                    <div className="p-8 text-center text-gray-500">Loading Clients...</div>
+                    <div className="p-12 text-center text-gray-500 animate-pulse">
+                        <div className="inline-block w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                        <div>Loading Clients...</div>
+                    </div>
                 ) : (
-                    <table className="w-full text-left border-collapse">
+                    <table className="data-table">
                         <thead>
-                            <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
-                                <th className="p-4 font-semibold">Code</th>
-                                <th className="p-4 font-semibold">Name</th>
-                                <th className="p-4 font-semibold">Type</th>
-                                <th className="p-4 font-semibold">Actions</th>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800">
+                        <tbody>
                             {clients.map(client => (
-                                <tr key={client.ClientID} className="hover:bg-white/5 transition-colors group">
-                                    <td className="p-4 font-mono font-semibold text-[var(--color-accent)]">{client.ClientCode}</td>
-                                    <td className="p-4 font-medium text-white">{client.ClientName}</td>
-                                    <td className="p-4 text-gray-500">{client.ClientType || '-'}</td>
-                                    <td className="p-4 flex gap-2">
+                                <tr key={client.ClientID} className="group transition-colors">
+                                    <td className="font-mono font-semibold text-blue-300 group-hover:text-blue-200">{client.ClientCode}</td>
+                                    <td className="font-medium text-white">{client.ClientName}</td>
+                                    <td className="text-gray-400">{client.ClientType || '-'}</td>
+                                    <td className="flex gap-2">
                                         <button
                                             onClick={() => openEdit(client)}
-                                            className="px-3 py-1 text-sm border border-gray-700 rounded hover:border-gray-500 hover:text-white transition-colors"
+                                            className="px-3 py-1.5 text-xs font-medium border border-gray-600 rounded-md hover:border-white/50 hover:text-white text-gray-400 transition-colors"
                                         >
                                             ✏️ Edit
                                         </button>
                                         <button
-                                            title="Upload Finder File CSV (CagingID, Name, Address...)"
+                                            title="Upload Finder File CSV"
                                             onClick={() => setImportClient(client)}
-                                            className="px-3 py-1 text-sm border border-[var(--color-primary)] text-[var(--color-primary)] rounded hover:bg-[var(--color-primary)] hover:text-white transition-colors"
+                                            className="px-3 py-1.5 text-xs font-medium border border-blue-500/50 text-blue-400 rounded-md hover:bg-blue-500 hover:text-white transition-colors flex items-center gap-1"
                                         >
-                                            📤 Import File
+                                            <span>📤</span> Import File
                                         </button>
                                     </td>
                                 </tr>
                             ))}
                             {clients.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="p-8 text-center text-gray-500">
+                                    <td colSpan={4} className="p-12 text-center text-gray-500 italic">
                                         No clients found.
                                     </td>
                                 </tr>
@@ -165,47 +165,50 @@ export default function ClientsPage() {
             </div>
 
             {/* Modal */}
-            {
-                isModalOpen && (
-                    <div style={{
-                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-                        display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50
-                    }}>
-                        <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-                            <h2 style={{ marginBottom: '1.5rem' }}>{editingClient ? 'Edit Client' : 'Add New Client'}</h2>
-                            <form onSubmit={handleSave}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Client Code</label>
-                                    <input
-                                        className="input-field"
-                                        placeholder="e.g. ABC"
-                                        value={newClient.code}
-                                        onChange={e => setNewClient({ ...newClient, code: e.target.value.toUpperCase() })}
-                                        required
-                                        maxLength={10}
-                                        disabled={!!editingClient} // Code is immutable
-                                        style={{ opacity: editingClient ? 0.7 : 1 }}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Client Name</label>
-                                    <input
-                                        className="input-field"
-                                        placeholder="e.g. American Bird Conservancy"
-                                        value={newClient.name}
-                                        onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Client Type</label>
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[1000] p-4">
+                    <div className="glass-panel w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
+                        <h2 className="text-2xl font-bold font-display text-white mb-6">
+                            {editingClient ? 'Edit Client' : 'Add New Client'}
+                        </h2>
+
+                        <form onSubmit={handleSave} className="space-y-6">
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-400 text-xs uppercase tracking-wide">Client Code</label>
+                                <input
+                                    className="input-field"
+                                    placeholder="e.g. ABC"
+                                    value={newClient.code}
+                                    onChange={e => setNewClient({ ...newClient, code: e.target.value.toUpperCase() })}
+                                    required
+                                    maxLength={10}
+                                    disabled={!!editingClient}
+                                    style={{ opacity: editingClient ? 0.7 : 1 }}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-400 text-xs uppercase tracking-wide">Client Name</label>
+                                <input
+                                    className="input-field"
+                                    placeholder="e.g. American Bird Conservancy"
+                                    value={newClient.name}
+                                    onChange={e => setNewClient({ ...newClient, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-400 text-xs uppercase tracking-wide">Client Type</label>
+                                <div className="space-y-2">
                                     <select
                                         className="input-field"
-                                        value={newClient.clientType} // Simple select for now, can make creatable if needed or add 'Other'
+                                        value={['501c3', '501c4', '527'].includes(newClient.clientType) ? newClient.clientType : '__OTHER__'}
                                         onChange={e => {
-                                            setNewClient({ ...newClient, clientType: e.target.value });
+                                            const val = e.target.value;
+                                            if (val !== '__OTHER__') setNewClient({ ...newClient, clientType: val });
+                                            else setNewClient({ ...newClient, clientType: '' });
                                         }}
-                                        style={{ marginBottom: '0.5rem' }}
                                     >
                                         <option value="">Select Type...</option>
                                         <option value="501c3">501c3</option>
@@ -213,64 +216,68 @@ export default function ClientsPage() {
                                         <option value="527">527</option>
                                         <option value="__OTHER__">Other (Enter below)</option>
                                     </select>
-                                    {/* Simplified custom entry: always show input if value is not in standard list or if user types */}
-                                    <input
-                                        className="input-field"
-                                        placeholder="Or type custom..."
-                                        value={newClient.clientType}
-                                        onChange={e => setNewClient({ ...newClient, clientType: e.target.value })}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Organization Logo</label>
-                                    {editingClient ? (
-                                        <>
-                                            {newClient.logoUrl && !logoFile && (
-                                                <div style={{ marginBottom: '0.5rem' }}>
-                                                    <img src={newClient.logoUrl} alt="Current Logo" style={{ height: '50px', objectFit: 'contain' }} />
-                                                </div>
-                                            )}
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="input-field"
-                                                onChange={e => setLogoFile(e.target.files?.[0] || null)}
-                                            />
-                                            <p style={{ fontSize: '0.8em', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                                                Upload an image to replace the current logo.
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-                                            Save the client first, then edit to upload a logo.
-                                        </p>
+
+                                    {!['501c3', '501c4', '527'].includes(newClient.clientType) && (
+                                        <input
+                                            className="input-field"
+                                            placeholder="Type custom client type..."
+                                            value={newClient.clientType}
+                                            onChange={e => setNewClient({ ...newClient, clientType: e.target.value })}
+                                            autoFocus
+                                        />
                                     )}
                                 </div>
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        style={{ background: 'transparent', border: '1px solid var(--color-border)', padding: '0.5rem 1rem', borderRadius: '0.375rem', color: 'white', cursor: 'pointer' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="btn-primary"
-                                        style={{ padding: '0.5rem 1.5rem' }}
-                                    >
-                                        {submitting ? 'Saving...' : (editingClient ? 'Update' : 'Create')}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-400 text-xs uppercase tracking-wide">Organization Logo</label>
+                                {editingClient ? (
+                                    <div className="bg-black/20 p-4 rounded-lg border border-[var(--glass-border)]">
+                                        {newClient.logoUrl && !logoFile && (
+                                            <div className="mb-4 flex justify-center bg-white/5 p-4 rounded">
+                                                <img src={newClient.logoUrl} alt="Current Logo" className="h-12 object-contain" />
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20"
+                                            onChange={e => setLogoFile(e.target.files?.[0] || null)}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2 italic">
+                                            Upload an image to replace the current logo.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500 italic bg-black/20 p-3 rounded border border-dashed border-gray-700">
+                                        Save the client first, then edit to upload a logo.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex gap-4 pt-4 border-t border-[var(--glass-border)]">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="flex-1 py-3 border border-gray-600 rounded-lg text-gray-300 hover:bg-white/5 transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="btn-primary flex-1 py-3 text-lg shadow-lg hover:shadow-blue-500/20"
+                                >
+                                    {submitting ? 'Saving...' : (editingClient ? 'Update Client' : 'Create Client')}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {importClient && <ImportFinderFileModal client={importClient} onClose={() => setImportClient(null)} />}
-        </div >
+        </div>
     );
 }
 
@@ -309,34 +316,42 @@ function ImportFinderFileModal({ client, onClose }: { client: Client, onClose: (
     const url = URL.createObjectURL(blob);
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
-            <div className="glass-panel w-[500px] p-8 bg-[#1a1a1a]">
-                <h3 className="text-xl font-bold text-white mb-4">Import Finder File</h3>
-                <p className="mb-2 text-sm text-gray-400">
-                    Upload a CSV for <strong className="text-white">{client.ClientCode}</strong>.
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[1000] p-4">
+            <div className="glass-panel w-full max-w-lg p-8">
+                <h3 className="text-xl font-bold font-display text-white mb-2">Import Finder File</h3>
+                <p className="mb-6 text-sm text-gray-400">
+                    Upload a CSV for <strong className="text-white bg-blue-500/20 px-2 py-0.5 rounded text-blue-300">{client.ClientCode}</strong>
                 </p>
 
-                <a
-                    href={url}
-                    download="finder_template.csv"
-                    className="inline-block mb-6 text-xs text-[var(--color-success)] underline hover:text-green-300"
-                >
-                    ⬇ Download CSV Template
-                </a>
+                <div className="bg-black/20 p-6 rounded-lg border border-[var(--glass-border)] mb-6 text-center">
+                    <a
+                        href={url}
+                        download="finder_template.csv"
+                        className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium mb-4"
+                    >
+                        <span>⬇</span> Download CSV Template
+                    </a>
 
-                <input
-                    type="file"
-                    accept=".csv"
-                    className="input-field w-full mb-6 bg-[#111] border border-gray-700 p-2 rounded text-sm text-gray-300"
-                    onChange={e => setFile(e.target.files?.[0] || null)}
-                />
+                    <input
+                        type="file"
+                        accept=".csv"
+                        className="block w-full text-sm text-gray-400
+                        file:mr-4 file:py-2.5 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-emerald-500/10 file:text-emerald-400
+                        hover:file:bg-emerald-500/20
+                        cursor-pointer"
+                        onChange={e => setFile(e.target.files?.[0] || null)}
+                    />
+                </div>
 
                 <div className="flex gap-4">
-                    <button className="btn-primary flex-1 py-2" onClick={handleUpload} disabled={uploading || !file}>
+                    <button className="btn-primary flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500" onClick={handleUpload} disabled={uploading || !file}>
                         {uploading ? 'Importing...' : 'Upload CSV'}
                     </button>
                     <button
-                        className="flex-1 py-2 border border-gray-700 text-gray-300 rounded hover:bg-white/5 transition-colors"
+                        className="flex-1 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-white/5 transition-colors"
                         onClick={onClose}
                     >
                         Cancel
