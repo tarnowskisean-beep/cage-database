@@ -6,14 +6,42 @@ import { useRouter } from 'next/navigation';
 
 function DashboardContent() {
   const [stats, setStats] = useState<any>(null);
+  const [error, setError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     fetch('/api/stats')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('API Failed');
+        return res.json();
+      })
       .then(data => setStats(data))
-      .catch(console.error);
+      .catch(err => {
+        console.error(err);
+        setError(true);
+      });
   }, []);
+
+  if (error) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center h-96 text-center">
+        <div className="text-red-400 mb-2">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <h3 className="text-lg font-medium text-white">Dashboard Unavailable</h3>
+          <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+            Unable to load analytics at this time. The server might be busy or unreachable.
+          </p>
+        </div>
+        <button onClick={() => window.location.reload()} className="mt-6 btn-primary">
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
 
   if (!stats) {
     return (

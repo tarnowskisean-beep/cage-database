@@ -31,35 +31,39 @@ export async function GET(request: Request) {
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-        // 1. Total Revenue
-        const revenueRes = await query(`SELECT SUM(d."GiftAmount") as total FROM "Donations" d ${whereClause}`, params);
+        // Execute all aggregations in parallel to reduce wait time
+        const [revenueRes, clientRes, methodRes, platformRes] = await Promise.all([
+            // 1. Total Revenue
+            query(`SELECT SUM(d."GiftAmount") as total FROM "Donations" d ${whereClause}`, params),
+
+            // 2. Revenue by Client
+            query(`
+                SELECT c."ClientName", SUM(d."GiftAmount") as total 
+                FROM "Donations" d 
+                JOIN "Clients" c ON d."ClientID" = c."ClientID" 
+                ${whereClause}
+                GROUP BY c."ClientName"
+                ORDER BY total DESC
+            `, params),
+
+            // 3. Donations by Payment Method
+            query(`
+                SELECT d."GiftMethod", COUNT(*) as count, SUM(d."GiftAmount") as total 
+                FROM "Donations" d
+                ${whereClause}
+                GROUP BY d."GiftMethod"
+            `, params),
+
+            // 4. Donations by Platform
+            query(`
+                SELECT d."GiftPlatform", COUNT(*) as count, SUM(d."GiftAmount") as total 
+                FROM "Donations" d
+                ${whereClause}
+                GROUP BY d."GiftPlatform"
+            `, params)
+        ]);
+
         const totalRevenue = revenueRes.rows[0]?.total || 0;
-
-        // 2. Revenue by Client
-        const clientRes = await query(`
-            SELECT c."ClientName", SUM(d."GiftAmount") as total 
-            FROM "Donations" d 
-            JOIN "Clients" c ON d."ClientID" = c."ClientID" 
-            ${whereClause}
-            GROUP BY c."ClientName"
-            ORDER BY total DESC
-        `, params);
-
-        // 3. Donations by Payment Method
-        const methodRes = await query(`
-            SELECT d."GiftMethod", COUNT(*) as count, SUM(d."GiftAmount") as total 
-            FROM "Donations" d
-            ${whereClause}
-            GROUP BY d."GiftMethod"
-        `, params);
-
-        // 4. Donations by Platform
-        const platformRes = await query(`
-            SELECT d."GiftPlatform", COUNT(*) as count, SUM(d."GiftAmount") as total 
-            FROM "Donations" d
-            ${whereClause}
-            GROUP BY d."GiftPlatform"
-        `, params);
 
         return NextResponse.json({
             totalRevenue: parseFloat(totalRevenue.toString()),
