@@ -1,3 +1,4 @@
+
 import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,27 @@ export default async function FixSchemaPage() {
             log('Checked Users Columns (IsActive, Initials)');
         } catch (e: any) {
             log(`⚠️ Error on Users: ${e.message}`);
+        }
+
+        // 4. Add Clients Columns
+        try {
+            await query(`ALTER TABLE "Clients" ADD COLUMN IF NOT EXISTS "Status" TEXT DEFAULT 'Active'`);
+            await query(`ALTER TABLE "Clients" ADD COLUMN IF NOT EXISTS "ClientType" TEXT`);
+            await query(`ALTER TABLE "Clients" ADD COLUMN IF NOT EXISTS "LogoURL" TEXT`);
+
+            // Check for LogoData bytea specifically
+            const hasLogoData = await query(`SELECT column_name FROM information_schema.columns WHERE table_name='Clients' AND column_name='LogoData'`);
+            if (hasLogoData.rows.length === 0) {
+                await query(`ALTER TABLE "Clients" ADD COLUMN "LogoData" BYTEA`);
+                await query(`ALTER TABLE "Clients" ADD COLUMN "MimeType" TEXT`);
+                log('Added LogoData/MimeType columns');
+            } else {
+                log('Checked LogoData column');
+            }
+
+            log('Checked Clients Status, ClientType, LogoURL');
+        } catch (e: any) {
+            log(`⚠️ Error on Clients: ${e.message}`);
         }
 
         log('✅ Schema Fix Sequence Completed.');
