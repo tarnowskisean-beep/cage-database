@@ -1,250 +1,125 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Old+Standard+TT:wght@400;700&family=Cinzel:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700&display=swap');
 
 :root {
-  /* Compass Professional Design Tokens */
+  /* Premium Dark Theme Tokens */
+  --bg-gradient-start: #0f172a;
+  --bg-gradient-end: #1e293b;
+  
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  --primary-glow: rgba(56, 189, 248, 0.5); /* Sky blue glow */
+  --accent-glow: rgba(168, 85, 247, 0.5);  /* Purple glow */
 
-  /* Colors */
-  --color-bg-base: #2A2829;
-  /* Dark Charcoal - Main background */
-  --color-bg-surface: #1a1a1a;
-  /* Slightly darker/lighter for contrast if needed, keeping close to base */
-  --color-bg-elevated: #333333;
-  /* For hover states or cards */
-  --color-bg-sidebar: #2A2829;
-
-  --color-brand-blue: #0047AB;
-  /* Royal Blue/Navy glow */
-
-  --color-text-main: #FFFFFF;
-  /* Pure White */
-  --color-text-muted: #CCCCCC;
-  /* Light Grey for secondary text */
-
-  --color-primary: #FFFFFF;
-  /* White as primary action color (buttons) */
-  --color-primary-text: #000000;
-  /* Black text on primary buttons */
-
-  --color-accent: #e2e2da;
-  /* Warm Light Gray/Off-white from analysis */
-
-  --color-border: #444444;
-  /* Subtle border for dark theme */
-  --color-border-subtle: #333333;
-
-  /* Semantic Colors */
-  --color-active: #FFFFFF;
-  --color-error: #ff4d4f;
-
-  /* Typography */
-  --font-display: 'Old Standard TT', serif;
-  --font-body: 'Inter Tight', sans-serif;
-  --font-logo: 'Cinzel', serif;
-
-  /* Spacing & Layout */
-  --radius-none: 0px;
-  /* Sharp corners */
-
-  --sidebar-width: 280px;
-
-  /* Effects */
-  --shadow-sm: none;
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-  border-color: var(--color-border);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
 }
 
 body {
-  font-family: var(--font-body);
-  background-color: #111111;
-  /* Solid Dark */
-  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  background: radial-gradient(circle at top left, var(--bg-gradient-start), var(--bg-gradient-end));
+  background-attachment: fixed;
+  color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ... typography ... */
+/* Premium Components */
 
 .glass-panel {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 4px;
-  /* Slight radius for modern feel but not round */
-  color: var(--color-text-main);
-  box-shadow: none;
-  /* Remove glow */
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s ease;
 }
 
-.brand-header {
-  padding: 1.5rem;
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
-.nav-menu {
-  flex: 1;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-none);
-  color: var(--color-text-muted);
-  text-decoration: none;
-  font-weight: 400;
-  transition: all 0.2s ease;
-  font-family: var(--font-body);
-}
-
-.nav-link:hover {
-  background-color: var(--color-bg-elevated);
-  color: var(--color-text-main);
-  transform: translateX(4px);
-}
-
-.nav-link.active {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--color-primary);
-  border-left: 3px solid var(--color-primary);
-}
-
-.user-profile {
-  padding: 1rem;
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  /* Keep avatar round or make square? Compass seems to like sharp, but avatars are usually round. Keeping round for now. */
-  background-color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: var(--color-primary-text);
-}
-
-.user-info .name {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.user-info .role {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-/* Button & Inputs */
 .btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+  color: white;
   border: none;
-  padding: 1rem 2rem;
-  /* Spacious padding per compass.cpa */
-  border-radius: var(--radius-none);
-  font-family: var(--font-body);
-  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-family: var(--font-display);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.9rem;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: #f2f2f2;
-  /* Slight tint on hover */
   transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
+  filter: brightness(1.1);
 }
 
 .input-field {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-main);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--glass-border);
+  color: white;
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-none);
+  border-radius: 8px;
   width: 100%;
-  font-family: var(--font-body);
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .input-field:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
-/* Stats Grid - Responsive 4-column layout */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+/* Typography Overrides */
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
 }
 
-@media (max-width: 1500px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Standard Page Components */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.page-header h1 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  color: var(--color-text-main);
-}
-
-/* Standard Data Table */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
+/* Table Styles */
 .data-table th {
   padding: 1rem;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
+  font-family: var(--font-display);
 }
 
 .data-table td {
   padding: 1rem;
-  border-bottom: 1px solid var(--color-border-subtle);
-  color: var(--color-text-main);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
 }
 
-.data-table tr:last-child td {
-  border-bottom: none;
+.data-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
