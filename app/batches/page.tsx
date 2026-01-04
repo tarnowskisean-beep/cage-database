@@ -189,6 +189,7 @@ function BatchesContent() {
                                 <tr>
                                     <th>Batch ID</th>
                                     <th>Client</th>
+                                    <th>Mode</th>
                                     <th className="text-center">Status</th>
                                     <th className="text-right">Count</th>
                                     <th className="text-right">Total</th>
@@ -204,6 +205,7 @@ function BatchesContent() {
                                             </span>
                                         </td>
                                         <td className="font-medium text-white">{batch.ClientCode}</td>
+                                        <td className="text-gray-400 text-xs uppercase tracking-wide">{batch.EntryMode}</td>
                                         <td className="text-center">
                                             <span className={`
                                                 inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border
