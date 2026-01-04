@@ -13,8 +13,27 @@ function DashboardContent() {
   // Filters
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+
+  // Default to current week (Saturday to Friday)
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
+    const day = today.getDay(); // 0=Sun, 6=Sat
+    const diff = (day + 1) % 7; // Days since last Saturday
+    const lastSaturday = new Date(today);
+    lastSaturday.setDate(today.getDate() - diff);
+    return lastSaturday.toISOString().split('T')[0];
+  });
+
+  const [endDate, setEndDate] = useState(() => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = (day + 1) % 7;
+    const lastSaturday = new Date(today);
+    lastSaturday.setDate(today.getDate() - diff);
+    const nextFriday = new Date(lastSaturday);
+    nextFriday.setDate(lastSaturday.getDate() + 6);
+    return nextFriday.toISOString().split('T')[0];
+  });
 
   // Fetch Clients
   useEffect(() => {
@@ -97,15 +116,19 @@ function DashboardContent() {
         {/* FILTERS */}
         <div className="flex flex-wrap items-center gap-3">
           <select
-            className="input-field"
-            style={{ width: '180px', padding: '0.4rem' }}
+            className="input-field bg-zinc-900 text-white border-zinc-700 focus:ring-0 focus:border-white/50"
+            style={{ width: '200px', padding: '0.4rem' }}
             value={selectedClient}
             onChange={e => setSelectedClient(e.target.value)}
           >
             <option value="">All Clients</option>
-            {clients.map(c => (
-              <option key={c.ClientID} value={c.ClientID}>{c.ClientName} ({c.ClientCode})</option>
-            ))}
+            {clients.length > 0 ? (
+              clients.map(c => (
+                <option key={c.ClientID} value={c.ClientID}>{c.ClientName} ({c.ClientCode})</option>
+              ))
+            ) : (
+              <option disabled>No Clients Found</option>
+            )}
           </select>
 
           <input
