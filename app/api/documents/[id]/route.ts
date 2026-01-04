@@ -64,16 +64,8 @@ export async function GET(
             return NextResponse.redirect(doc.BlobUrl);
         }
 
-        // Database Fallback (Legacy)
-        const headers = new Headers();
-        headers.set('Content-Type', 'application/pdf');
-        if (doc.DocumentType === 'CheckImages') headers.set('Content-Type', 'image/png');
-        headers.set('Content-Disposition', `inline; filename="${doc.FileName}"`);
-
-        return new NextResponse(doc.FileContent, {
-            status: 200,
-            headers
-        });
+        // Database Fallback (Legacy - FileContent removed)
+        return NextResponse.json({ error: 'Document content not found (Legacy storage deprecated)' }, { status: 404 });
 
     } catch (e) {
         console.error(e);
