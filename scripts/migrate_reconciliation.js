@@ -24,6 +24,8 @@ async function run() {
                 "ScheduledTransferDate" DATE NOT NULL,
                 "Status" TEXT NOT NULL CHECK ("Status" IN ('Open', 'Pending Reconciliation', 'Reconciled', 'Scheduled', 'Transferred', 'Exception')) DEFAULT 'Open',
                 "TotalPeriodAmount" DECIMAL(18, 2) DEFAULT 0,
+                "StatementEndingBalance" DECIMAL(18, 2) DEFAULT 0,
+                "StatementLink" TEXT,
                 "Notes" TEXT,
                 "BankBalanceVerified" BOOLEAN DEFAULT FALSE,
                 "BankStatementDate" DATE,
@@ -133,6 +135,21 @@ async function run() {
             );
         `);
         console.log("✅ Table Created: ClientBankAccounts");
+
+        // 6. Alter Table for Redesign (Idempotent)
+        await client.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='ReconciliationPeriods' AND column_name='StatementEndingBalance') THEN
+                    ALTER TABLE "ReconciliationPeriods" ADD COLUMN "StatementEndingBalance" DECIMAL(18, 2) DEFAULT 0;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='ReconciliationPeriods' AND column_name='StatementLink') THEN
+                    ALTER TABLE "ReconciliationPeriods" ADD COLUMN "StatementLink" TEXT;
+                END IF;
+            END
+            $$;
+        `);
+        console.log("✅ Schema Updated: Added Redesign Columns");
 
         console.log("✨ RECONCILIATION SCHEMA APPLIED SUCCESSFULLY.");
 
