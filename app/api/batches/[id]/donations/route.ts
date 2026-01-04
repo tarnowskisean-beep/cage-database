@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await params;
+        const { id } = await params; // Await params before destructuring
         const result = await query(`
         SELECT "DonationID", "GiftAmount", "CheckNumber", "SecondaryID", "ScanString", "CreatedAt", "GiftMethod",
                "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix", 
@@ -61,7 +61,7 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
             postMarkYear, postMarkQuarter, isInactive, comment,
             mailCode
         } = body;
-        const { id: batchId } = await params;
+        const { id: batchId } = await params; // Await params before destructuring
 
         if (!amount) {
             return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
