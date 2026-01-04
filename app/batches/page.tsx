@@ -17,8 +17,14 @@ function BatchesContent() {
 
     // Fetch batches and clients
     useEffect(() => {
-        const fetchBatches = fetch('/api/batches').then(res => res.json());
-        const fetchClients = fetch('/api/clients').then(res => res.json());
+        const fetchBatches = fetch('/api/batches', { cache: 'no-store' }).then(res => {
+            if (!res.ok) throw new Error(`Batches API failed: ${res.status}`);
+            return res.json();
+        });
+        const fetchClients = fetch('/api/clients', { cache: 'no-store' }).then(res => {
+            if (!res.ok) throw new Error(`Clients API failed: ${res.status}`);
+            return res.json();
+        });
 
         Promise.all([fetchBatches, fetchClients])
             .then(([batchData, clientData]) => {
