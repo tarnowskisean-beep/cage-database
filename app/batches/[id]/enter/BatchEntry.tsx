@@ -111,9 +111,9 @@ export default function BatchEntry({ id }: { id: string }) {
 
             await Promise.all(promises);
             window.location.reload();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("Bulk add failed");
+            alert(`Bulk add failed: ${e.message}`);
         }
     };
 

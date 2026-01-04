@@ -397,11 +397,13 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     scanRef.current?.focus();
                 }
             } else {
-                alert('Failed to save');
+                const data = await res.json();
+                console.error('Save failed:', data);
+                alert(`Failed to save: ${data.error} \n\nDetails: ${data.details || ''}`);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert('Error saving');
+            alert(`Error saving: ${e.message}`);
         } finally {
             setSaving(false);
         }

@@ -31,6 +31,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const body = await request.json();
+        console.log('POST /api/batches/[id]/donations Body:', JSON.stringify(body, null, 2));
 
         // Clean & Standardize Inputs
         const donorFirstName = formatName(body.donorFirstName);
