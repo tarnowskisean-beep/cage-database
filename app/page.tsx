@@ -20,7 +20,7 @@ function DashboardContent() {
   useEffect(() => {
     fetch('/api/clients')
       .then(res => res.json())
-      .then(data => setClients(data || []))
+      .then(data => setClients(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);
 
