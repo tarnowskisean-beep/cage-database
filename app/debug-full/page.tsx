@@ -11,7 +11,7 @@ export default async function DebugFull() {
     const log = (msg: string) => logs.push(`[${new Date().toISOString().split('T')[1]}] ${msg}`);
 
     try {
-        log('--- START DIAGNOSTIC ---');
+        log('--- START DIAGNOSTIC (API MATCH V2) ---');
 
         // 1. Dump Users
         try {
@@ -37,28 +37,57 @@ export default async function DebugFull() {
             log(`❌ Error fetching schema: ${e.message}`);
         }
 
-        // 3. Simulate Donation Insert (Test Save)
+        // 3. Simulate Donation Insert (Test Save) - MATCHING API EXACTLY
         try {
-            log('Attempting Simulated Donation Insert...');
-            // Minimal payload mimicking the frontend
+            log('Attempting Simulated Donation Insert (Exact API Match)...');
             await query('BEGIN');
             const resInsert = await query(`
-            INSERT INTO "Donations" (
-                "GiftAmount", "GiftDate", "BatchID", "CreatedBy", "CreatedAt", "UpdatedAt", 
-                "GiftType", "GiftMethod", "GiftPlatform", "TransactionType", "ClientID"
-            ) VALUES (
-                1.00, NOW(), NULL, 1, NOW(), NOW(), 
-                'Individual', 'Check', 'Cage', 'Donation', 1
-            ) RETURNING "DonationID"
-        `);
+            INSERT INTO "Donations" 
+            ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", 
+             "TransactionType", "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate",
+             "GiftType", "GiftYear", "GiftQuarter", 
+             "DonorEmail", "DonorPhone", "OrganizationName",
+             "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix",
+             "DonorAddress", "DonorCity", "DonorState", "DonorZip",
+             "DonorEmployer", "DonorOccupation",
+             "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
+             "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment",
+             "MailCode"
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
+            RETURNING "DonationID"`,
+                [
+                    1, // ClientID (Mock)
+                    null, // BatchID
+                    1.00, // GiftAmount
+                    'TEST', // SecondaryID
+                    '123', // CheckNumber
+                    'SCAN123', // ScanString
+                    'Check', // GiftMethod
+                    'Cage', // GiftPlatform
+                    new Date(), // BatchDate
+                    'Individual', // GiftType
+                    2024, // GiftYear
+                    'Q1', // GiftQuarter
+                    'test@example.com', // DonorEmail
+                    '555-5555', // DonorPhone
+                    'Test Org', // OP rgName
+                    'Mr', 'John', 'D', 'Doe', 'Jr', // Prefix/Name...
+                    '123 Main St', 'New York', 'NY', '10001', // Address...
+                    'Acme Inc', 'Developer', // Employer/Occ
+                    0, 0, 'Cust', 'Cond', // Pledge/Fee...
+                    2024, 'Q1', false, 'Test Comment', // Postmark/Inactive...
+                    'MAIL123' // MailCode
+                ]
+            );
             log(`✅ Insert Success! ID: ${resInsert.rows[0].DonationID}`);
-            await query('ROLLBACK'); // Always rollback the test
+            await query('ROLLBACK');
             log('Rolled back test insert.');
         } catch (e: any) {
             insertError = e;
-            log(`❌ INSERT FAILED: ${e.message}`);
+            log(`❌ INSERT FAILED (API MATCH): ${e.message}`);
             if (e.detail) log(`   Detail: ${e.detail}`);
-            if (e.code) log(`   Code: ${e.code}`);
+            if (e.hint) log(`   Hint: ${e.hint}`);
             try { await query('ROLLBACK'); } catch { }
         }
 
