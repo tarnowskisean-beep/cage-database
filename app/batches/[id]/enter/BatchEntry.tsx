@@ -216,6 +216,16 @@ export default function BatchEntry({ id }: { id: string }) {
                         ⚡ Fill Fake Form
                     </button>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginRight: '1rem' }}>Total: {records.length}</span>
+                    <span style={{
+                        fontSize: '0.8rem', marginRight: '1rem', fontWeight: 600,
+                        color: (records.length > 0) ? (
+                            (records.filter(r => r.ScanDocumentID).length === records.length) ? '#10b981' : // 100% Green
+                                (records.filter(r => r.ScanDocumentID).length > 0) ? '#f59e0b' : // Partial Orange
+                                    'var(--color-text-muted)' // Zero Grey
+                        ) : 'var(--color-text-muted)'
+                    }}>
+                        Linked: {records.length > 0 ? Math.round((records.filter(r => r.ScanDocumentID).length / records.length) * 100) : 0}%
+                    </span>
                     <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-active)' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
                 </div>
             </div>
