@@ -112,7 +112,16 @@ export default function BatchAttachments({ batchId, paymentCategory }: { batchId
                                     />
                                     <button
                                         disabled={uploading}
-                                        style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'var(--color-primary)', color: 'white', borderRadius: '4px' }}
+                                        style={{
+                                            fontSize: '0.75rem',
+                                            padding: '0.25rem 0.75rem',
+                                            background: '#3b82f6', // Hardcoded Blue for visibility
+                                            color: 'white',
+                                            borderRadius: '4px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: 600
+                                        }}
                                         onClick={(e) => {
                                             const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                                             handleLinkSubmit(req.type, input.value);
