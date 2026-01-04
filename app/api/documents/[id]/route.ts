@@ -67,8 +67,12 @@ export async function GET(
         // Database Fallback (Legacy - FileContent removed)
         return NextResponse.json({ error: 'Document content not found (Legacy storage deprecated)' }, { status: 404 });
 
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        return NextResponse.json({ error: 'Download failed' }, { status: 500 });
+        return NextResponse.json({
+            error: 'Download failed',
+            details: e.message,
+            stack: process.env.NODE_ENV === 'development' ? e.stack : undefined
+        }, { status: 500 });
     }
 }
