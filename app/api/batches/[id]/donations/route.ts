@@ -121,3 +121,14 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
         }, { status: 500 });
     }
 }
+
+export async function OPTIONS(request: Request) {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
+}
