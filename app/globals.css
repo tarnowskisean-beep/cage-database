@@ -135,6 +135,18 @@ body {
   color: var(--color-text-muted);
 }
 
+/* Date Picker Fix for Dark Mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 /* Tables - Terminal / Financial Style */
 .data-table {
   @apply w-full text-left text-sm border-collapse;
@@ -181,13 +193,20 @@ h6 {
 .page-header p {
   @apply text-gray-400 font-light text-lg;
 }
+
 /* Print Optimization */
 @media print {
-  aside, .sidebar, header, .no-print {
+
+  aside,
+  .sidebar,
+  header,
+  .no-print {
     display: none !important;
   }
-  
-  body, main, .main-content {
+
+  body,
+  main,
+  .main-content {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
