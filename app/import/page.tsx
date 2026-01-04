@@ -233,40 +233,32 @@ export default function ImportPage() {
             <h1 style={{ marginBottom: '2rem' }}>Import Wizard</h1>
 
             {/* Top Navigation */}
-            <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', background: 'var(--color-bg-elevated)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
+            <div className="flex gap-4 mb-8 bg-zinc-900/50 p-2 rounded-lg border border-white/5 backdrop-blur-sm">
                 <button
                     onClick={() => setActiveTab('wizard')}
-                    style={{
-                        flex: 1,
-                        padding: '1rem',
-                        border: 'none',
-                        background: activeTab === 'wizard' ? 'var(--color-primary)' : 'transparent',
-                        color: activeTab === 'wizard' ? '#000' : 'var(--color-text)',
-                        fontWeight: 600,
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                    }}
+                    className={`
+                        flex-1 py-4 px-6 rounded-md font-medium transition-all flex items-center justify-center gap-2
+                        ${activeTab === 'wizard'
+                            ? 'bg-white text-black shadow-lg shadow-white/10'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        }
+                    `}
                 >
-                    <span>🧙</span> Import Wizard
+                    <span className="text-lg">🧙</span>
+                    <span className="uppercase tracking-widest text-sm font-bold">Import Wizard</span>
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
-                    style={{
-                        flex: 1,
-                        padding: '1rem',
-                        border: 'none',
-                        background: activeTab === 'history' ? 'var(--color-primary)' : 'transparent',
-                        color: activeTab === 'history' ? '#000' : 'var(--color-text)',
-                        fontWeight: 600,
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                    }}
+                    className={`
+                        flex-1 py-4 px-6 rounded-md font-medium transition-all flex items-center justify-center gap-2
+                        ${activeTab === 'history'
+                            ? 'bg-white text-black shadow-lg shadow-white/10'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        }
+                    `}
                 >
-                    <span>📜</span> History & Revert
+                    <span className="text-lg">📜</span>
+                    <span className="uppercase tracking-widest text-sm font-bold">History & Revert</span>
                 </button>
             </div>
 
@@ -593,15 +585,14 @@ function CreatableSelect({ label, value, options, onChange, placeholder = "Selec
 
 function StepBadge({ num, active, label }: { num: number, active: boolean, label: string }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: active ? 1 : 0.5 }}>
-            <div style={{
-                width: '30px', height: '30px', borderRadius: '50%',
-                background: active ? 'var(--color-primary)' : 'var(--color-bg-elevated)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
-            }}>
+        <div className={`flex items-center gap-3 transition-opacity duration-300 ${active ? 'opacity-100 text-white' : 'opacity-40 text-gray-500'}`}>
+            <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                ${active ? 'bg-white text-black' : 'bg-zinc-800 text-gray-400 border border-zinc-700'}
+            `}>
                 {num}
             </div>
-            <span style={{ fontWeight: 500 }}>{label}</span>
+            <span className="font-medium tracking-wide uppercase text-xs">{label}</span>
         </div>
     );
 }
