@@ -28,24 +28,61 @@ export async function POST(request: Request) {
         let fileBuffer: Buffer | null = null;
         let mimeType = 'application/pdf'; // Assuming PDF for scans
 
+        import { google } from 'googleapis';
+
         // 2. Download File
         if (StorageKey.startsWith('link:')) {
             let url = StorageKey.replace('link:', '');
+            let fileBuffer: Buffer | null = null;
+            let driveFileId = '';
 
             // INTELLIGENT G-DRIVE HANDLER
             // Convert /file/d/XXX/view  ->  /uc?export=download&id=XXX
             if (url.includes('drive.google.com') && url.includes('/file/d/')) {
                 const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
                 if (match && match[1]) {
-                    console.log('Converting Google Drive Viewer Link to Direct Download:', match[1]);
-                    url = `https://drive.google.com/uc?export=download&id=${match[1]}`;
+                    driveFileId = match[1];
                 }
             }
 
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Failed to fetch file from link: ${res.statusText}`);
-            const arrayBuffer = await res.arrayBuffer();
-            fileBuffer = Buffer.from(arrayBuffer);
+            if (driveFileId && process.env.GDRIVE_CREDENTIALS) {
+                // Authenticated Google Drive Access
+                try {
+                    console.log('Attempting Authenticated G-Drive Download:', driveFileId);
+                    const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
+                    const auth = google.auth.fromJSON(credentials);
+                    // Scope for read-only drive access
+                    (auth as any).scopes = ['https://www.googleapis.com/auth/drive.readonly'];
+
+                    const drive = google.drive({ version: 'v3', auth });
+
+                    // Get file as stream/buffer
+                    const response = await drive.files.get({
+                        fileId: driveFileId,
+                        alt: 'media'
+                    }, { responseType: 'arraybuffer' });
+
+                    fileBuffer = Buffer.from(response.data as ArrayBuffer);
+                    console.log('Successfully downloaded via Drive API');
+
+                } catch (authErr: any) {
+                    console.warn('Authenticated Drive download failed, falling back to public fetch:', authErr.message);
+                }
+            }
+
+            if (!fileBuffer) {
+                // Fallback or Public Link
+                let fetchUrl = url;
+                if (driveFileId) {
+                    console.log('Converting Google Drive Viewer Link to Direct Download:', driveFileId);
+                    fetchUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+                }
+
+                const res = await fetch(fetchUrl);
+                if (!res.ok) throw new Error(`Failed to fetch file from link: ${res.statusText}`);
+                const arrayBuffer = await res.arrayBuffer();
+                fileBuffer = Buffer.from(arrayBuffer);
+            }
         } else if (StorageKey.startsWith('gcs:')) {
             // ... GCS implementation if needed ...
             const bucketName = process.env.GCS_BUCKET_NAME!;
