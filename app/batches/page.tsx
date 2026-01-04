@@ -222,7 +222,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                     <div>
                         <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Client</label>
                         <select
-                            className="input-field"
+                            className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                             value={formData.clientId}
                             onChange={e => setFormData({ ...formData, clientId: e.target.value })}
                             required
@@ -235,7 +235,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Description</label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Usage / Notes"
@@ -245,7 +245,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Date</label>
                         <input
                             type="date"
-                            className="input-field"
+                            className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                             value={formData.date}
                             onChange={e => setFormData({ ...formData, date: e.target.value })}
                             required
@@ -256,7 +256,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         <div>
                             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Entry Mode</label>
                             <select
-                                className="input-field"
+                                className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                 value={formData.entryMode}
                                 onChange={e => setFormData({ ...formData, entryMode: e.target.value })}
                             >
@@ -269,7 +269,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         <div>
                             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Payment Category</label>
                             <select
-                                className="input-field"
+                                className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                 value={formData.paymentCategory}
                                 onChange={e => setFormData({ ...formData, paymentCategory: e.target.value })}
                             >
@@ -293,24 +293,17 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                             <div>
                                 <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Platform</label>
                                 <select
-                                    className="input-field"
+                                    className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                     value={formData.defaultGiftPlatform}
                                     onChange={e => setFormData({ ...formData, defaultGiftPlatform: e.target.value })}
                                 >
-                                    <option value="Chainbridge">Chainbridge</option>
-                                    <option value="Stripe">Stripe</option>
-                                    <option value="Anedot">Anedot</option>
-                                    <option value="Winred">Winred</option>
-                                    <option value="City National">City National</option>
-                                    <option value="National Capital">National Capital</option>
-                                    <option value="Propay">Propay</option>
-                                    <option value="Cage">Cage</option>
+                                    {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Transaction Type</label>
                                 <select
-                                    className="input-field"
+                                    className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                     value={formData.defaultTransactionType}
                                     onChange={e => setFormData({ ...formData, defaultTransactionType: e.target.value })}
                                 >
@@ -322,7 +315,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         <div className="mb-4">
                             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Default Entity Type</label>
                             <select
-                                className="input-field"
+                                className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                 value={formData.defaultGiftType}
                                 onChange={e => setFormData({ ...formData, defaultGiftType: e.target.value })}
                             >
@@ -336,7 +329,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Gift Year</label>
                                 <input
                                     type="number"
-                                    className="input-field"
+                                    className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                     value={formData.defaultGiftYear}
                                     onChange={e => setFormData({ ...formData, defaultGiftYear: e.target.value })}
                                 />
@@ -344,7 +337,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                             <div>
                                 <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Quarter</label>
                                 <select
-                                    className="input-field"
+                                    className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
                                     value={formData.defaultGiftQuarter}
                                     onChange={e => setFormData({ ...formData, defaultGiftQuarter: e.target.value })}
                                 >
@@ -358,9 +351,20 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-4 border-t border-white/10 mt-6">
-                        <button type="button" onClick={onClose} className="flex-1 btn-secondary">Cancel</button>
-                        <button type="submit" className="flex-1 btn-primary">Create Batch</button>
+                    <div className="flex gap-4 pt-6 border-t border-white/10 mt-6">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-4 py-3 rounded bg-transparent border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors text-xs font-bold uppercase tracking-widest"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 btn-primary"
+                        >
+                            Create Batch
+                        </button>
                     </div>
                 </form>
             </div >
