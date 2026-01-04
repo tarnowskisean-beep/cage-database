@@ -113,6 +113,8 @@ export default function Sidebar() {
                         <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
                     )}
 
+                    <NavItem href="/journal" icon="📒" label="Journal Entries" active={pathname.startsWith('/journal')} collapsed={isCollapsed} />
+
                     <NavItem href="/people" icon="👥" label="People" active={pathname.startsWith('/people')} collapsed={isCollapsed} />
                 </ul>
             </nav>
