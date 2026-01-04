@@ -43,159 +43,94 @@ export default function LoginPage() {
     };
 
     return (
-        <div style={{
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            // Background is handled by body but we ensure transparency here if needed or overlay
-            position: 'relative',
-            zIndex: 1
-        }}>
-            <form onSubmit={handleSubmit} style={{
-                background: 'transparent',
-                padding: '4rem 2rem',
-                width: '100%',
-                maxWidth: '440px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-            }}>
-                <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-                    {/* Replaced logo SVG with a simple typographic treatment or keeping abstract if preferred. 
-                        Compass uses a specific circular logo but we'll stick to the text for brand match */ }
-                    <div style={{ fontSize: '3rem', marginBottom: '1.5rem', color: 'var(--color-text-main)' }}>
-                        <svg width="60" height="60" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            {/* Simplified geometric logo */}
-                            <circle cx="24" cy="24" r="23" stroke="currentColor" strokeWidth="1" />
-                            <path d="M24 10L26 22L38 24L26 26L24 38L22 26L10 24L22 22L24 10Z" fill="currentColor" />
+        <div className="min-h-screen flex items-center justify-center bg-[#09090b] relative overflow-hidden">
+            {/* Subtle Texture/Gradient for background interest without color */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03),transparent)] pointer-events-none" />
+
+            <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-md p-8 flex flex-col items-center">
+                <div className="text-center mb-12">
+                    {/* Compass Logo - White */}
+                    <div className="inline-flex items-center justify-center w-20 h-20 mb-6 text-white">
+                        <svg width="100%" height="100%" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                            />
+                            <path
+                                d="M24 10L27 21L38 24L27 27L24 38L21 27L10 24L21 21L24 10Z"
+                                fill="currentColor"
+                            />
                         </svg>
                     </div>
-                    <h1 style={{
-                        fontSize: '2.5rem',
-                        fontWeight: 400,
-                        fontFamily: 'var(--font-display)',
-                        letterSpacing: '0.02em',
-                        marginBottom: '0.5rem',
-                        color: 'var(--color-text-main)'
-                    }}>
+
+                    <h1 className="text-4xl font-display font-light tracking-wide text-white mb-2">
                         COMPASS
                     </h1>
-                    <p style={{
-                        fontSize: '0.8rem',
-                        letterSpacing: '0.25em',
-                        color: 'var(--color-text-muted)',
-                        textTransform: 'uppercase',
-                        fontFamily: 'var(--font-body)',
-                        fontWeight: 300
-                    }}>
-                        PROFESSIONAL
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-medium">
+                        Professional
                     </p>
                 </div>
 
                 {error && (
-                    <div style={{
-                        width: '100%',
-                        background: 'rgba(255, 77, 79, 0.1)',
-                        color: 'var(--color-error)',
-                        padding: '1rem',
-                        marginBottom: '2rem',
-                        fontSize: '0.9rem',
-                        textAlign: 'center',
-                        border: '1px solid var(--color-error)'
-                    }}>
+                    <div className="w-full bg-red-500/10 border border-red-500/20 text-red-500 p-4 mb-6 text-sm text-center">
                         {error}
                     </div>
                 )}
 
-                <div style={{ marginBottom: '1.5rem', width: '100%' }}>
-                    <label style={{
-                        display: 'block', fontSize: '0.75rem', marginBottom: '0.75rem',
-                        color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
-                        fontFamily: 'var(--font-body)'
-                    }}>Username</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        className="input-field"
-                        style={{
-                            background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '0',
-                            padding: '1rem', fontSize: '1rem', color: 'var(--color-text-main)', width: '100%',
-                            outline: 'none', fontFamily: 'var(--font-body)'
-                        }}
-                        autoFocus
-                        disabled={show2FA}
-                    />
-                </div>
-
-                <div style={{ marginBottom: show2FA ? '1.5rem' : '3rem', width: '100%' }}>
-                    <label style={{
-                        display: 'block', fontSize: '0.75rem', marginBottom: '0.75rem',
-                        color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
-                        fontFamily: 'var(--font-body)'
-                    }}>Password</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        className="input-field"
-                        style={{
-                            background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '0',
-                            padding: '1rem', fontSize: '1rem', color: 'var(--color-text-main)', width: '100%',
-                            outline: 'none', fontFamily: 'var(--font-body)'
-                        }}
-                        disabled={show2FA}
-                    />
-                </div>
-
-                {show2FA && (
-                    <div style={{ marginBottom: '3rem', width: '100%' }}>
-                        <label style={{
-                            display: 'block', fontSize: '0.75rem', marginBottom: '0.75rem',
-                            color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
-                            fontFamily: 'var(--font-body)'
-                        }}>Authentication Code</label>
+                <div className="w-full space-y-6">
+                    <div>
+                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-medium">Username</label>
                         <input
                             type="text"
-                            value={totp}
-                            onChange={e => setTotp(e.target.value)}
-                            placeholder="6-digit code"
-                            className="input-field"
-                            style={{
-                                background: 'transparent', border: '1px solid var(--color-primary)', borderRadius: '0',
-                                padding: '1rem', fontSize: '1.2rem', color: 'var(--color-text-main)', width: '100%',
-                                outline: 'none', fontFamily: 'var(--font-body)', textAlign: 'center', letterSpacing: '0.2em'
-                            }}
+                            value={username}
+                            onChange={e => setUsername(e.target.value)}
+                            className="w-full bg-[#18181b] border border-[#27272a] text-white px-4 py-3 rounded-sm outline-none focus:border-white focus:bg-[#27272a] transition-all placeholder-gray-700"
+                            placeholder="Enter your username"
                             autoFocus
+                            disabled={show2FA}
                         />
                     </div>
-                )}
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-primary"
-                    style={{
-                        width: '100%',
-                        background: 'var(--color-primary)',
-                        color: 'var(--color-primary-text)',
-                        border: 'none',
-                        padding: '1.25rem',
-                        fontFamily: 'var(--font-body)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
-                        fontSize: '0.9rem',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        opacity: loading ? 0.7 : 1,
-                        transition: 'opacity 0.2s ease'
-                    }}
-                >
-                    {loading ? 'AUTHENTICATING...' : (show2FA ? 'VERIFY' : 'ENTER')}
-                </button>
+                    <div className={show2FA ? 'hidden' : 'block'}>
+                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-medium">Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            className="w-full bg-[#18181b] border border-[#27272a] text-white px-4 py-3 rounded-sm outline-none focus:border-white focus:bg-[#27272a] transition-all placeholder-gray-700"
+                            placeholder="• • • • • • • •"
+                            disabled={show2FA}
+                        />
+                    </div>
 
-                {/* Temporary Troubleshoot Button Removed */}
+                    {show2FA && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2">
+                            <label className="block text-xs uppercase tracking-widest text-[#10b981] mb-2 font-medium">Authentication Code</label>
+                            <input
+                                type="text"
+                                value={totp}
+                                onChange={e => setTotp(e.target.value)}
+                                placeholder="000 000"
+                                className="w-full bg-[#18181b] border border-[#10b981] text-white px-4 py-3 rounded-sm outline-none text-center text-xl tracking-[0.2em]"
+                                autoFocus
+                            />
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-white text-black font-display font-medium uppercase tracking-widest py-4 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                    >
+                        {loading ? 'Authenticating...' : (show2FA ? 'Verify Access' : 'Sign In')}
+                    </button>
+                    {!show2FA && (
+                        <div className="w-full text-center mt-2">
+                            <span className="text-xs text-gray-500">Secure System Access &bull; Authorized Personnel Only</span>
+                        </div>
+                    )}
+                </div>
             </form>
         </div>
     );

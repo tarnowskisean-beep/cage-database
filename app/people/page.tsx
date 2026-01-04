@@ -46,14 +46,14 @@ function PeopleContent() {
     };
 
     return (
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-[1600px] mx-auto px-6 py-8">
 
             {/* Header Section */}
-            <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <header className="page-header flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div>
-                    <h2 className="text-sm font-medium tracking-wide text-blue-400 uppercase mb-2">CRM</h2>
-                    <h1 className="text-5xl font-display text-white tracking-tight font-bold drop-shadow-md">Donor Directory</h1>
-                    <p className="text-gray-400 mt-2 max-w-xl text-lg font-light">Manage your donor relationships and view lifetime value analytics across all clients.</p>
+                    <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">CRM</h2>
+                    <h1 className="text-4xl text-white font-display">Donor Directory</h1>
+                    <p className="text-gray-500 font-light text-base mt-2">Manage your donor relationships and view analytics.</p>
                 </div>
 
                 <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end">
@@ -76,21 +76,21 @@ function PeopleContent() {
                     </div>
 
                     <div className="relative group flex-1 md:flex-none">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg className="h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                             </svg>
                         </div>
                         <input
                             type="text"
-                            className="input-field pl-12 pr-4 w-full md:w-80"
+                            className="input-field pl-10 w-full md:w-80"
                             placeholder="Search donors..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
 
-                    <button type="submit" className="btn-primary shadow-lg hover:shadow-blue-500/20">
+                    <button type="submit" className="btn-primary">
                         Search
                     </button>
                 </form>
@@ -99,13 +99,11 @@ function PeopleContent() {
             {/* Content Area */}
             {loading ? (
                 <div className="w-full h-64 animate-pulse glass-panel flex items-center justify-center">
-                    <div className="text-gray-500 font-medium">Loading network...</div>
+                    <div className="text-gray-500 font-medium text-xs uppercase tracking-widest">Loading network...</div>
                 </div>
             ) : donors.length === 0 ? (
-                <div className="py-32 text-center border border-dashed border-gray-700 rounded-xl bg-white/5">
-                    <div className="text-4xl mb-4">👥</div>
-                    <p className="text-gray-400 text-lg">No Donors Found</p>
-                    <p className="text-sm text-gray-600">Try adjusting your filters</p>
+                <div className="py-24 text-center border-2 border-dashed border-zinc-900 rounded bg-white/5">
+                    <p className="text-gray-500">No Donors Found</p>
                 </div>
             ) : (
                 <div className="glass-panel p-0 overflow-hidden">
@@ -126,31 +124,31 @@ function PeopleContent() {
                                 <tr key={d.DonorID} className="group transition-colors">
                                     <td>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/10 shadow-inner">
+                                            <div className="w-8 h-8 rounded-full bg-zinc-800 text-gray-400 flex items-center justify-center font-bold text-xs border border-zinc-700">
                                                 {d.FirstName?.[0]}{d.LastName?.[0]}
                                             </div>
-                                            <span className="font-semibold text-white group-hover:text-blue-300 transition-colors">{d.FirstName} {d.LastName}</span>
+                                            <span className="font-semibold text-white group-hover:text-white transition-colors">{d.FirstName} {d.LastName}</span>
                                         </div>
                                     </td>
-                                    <td className="text-gray-400 text-xs">
+                                    <td className="text-gray-500 text-xs">
                                         <div className="mb-0.5">{d.Email || '-'}</div>
                                         <div>{d.Phone}</div>
                                     </td>
-                                    <td className="text-gray-400">
+                                    <td className="text-gray-500">
                                         {d.City ? `${d.City}, ${d.State}` : '-'}
                                     </td>
-                                    <td className="text-center text-blue-300 font-mono font-medium bg-blue-500/5 py-1 rounded">
+                                    <td className="text-center text-gray-300 font-mono font-medium">
                                         {d.TotalGifts}
                                     </td>
-                                    <td className="text-right font-mono text-emerald-400 font-medium">
+                                    <td className="text-right font-mono text-emerald-500 font-medium">
                                         ${Number(d.LifetimeValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                     </td>
                                     <td className="text-right text-gray-500 text-xs font-mono">
                                         {d.LastGiftDate ? new Date(d.LastGiftDate).toLocaleDateString() : '-'}
                                     </td>
                                     <td>
-                                        <Link href={`/people/${d.DonorID}`} className="text-blue-400 hover:text-white text-xs font-bold uppercase tracking-wide hover:underline decoration-blue-500 decoration-2 underline-offset-4">
-                                            View Profile &rarr;
+                                        <Link href={`/people/${d.DonorID}`} className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wide">
+                                            View &rarr;
                                         </Link>
                                     </td>
                                 </tr>
@@ -165,7 +163,7 @@ function PeopleContent() {
 
 export default function PeopleDirectory() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-blue-400 animate-pulse">Loading directory...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500 animate-pulse">Loading directory...</div>}>
             <PeopleContent />
         </Suspense>
     );

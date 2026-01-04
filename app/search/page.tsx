@@ -222,7 +222,7 @@ export default function SearchPage() {
 
             <button
                 onClick={() => setUiQuery(prev => removeNode(prev, rule.id))}
-                className="text-red-400 hover:text-red-300 text-xl font-bold px-2"
+                className="text-gray-500 hover:text-red-400 text-xl font-bold px-2"
                 title="Remove Rule"
             >
                 &times;
@@ -233,9 +233,9 @@ export default function SearchPage() {
     const renderGroup = (group: UISearchGroup, isRoot = false) => (
         <div key={group.id} className={`p-4 rounded-lg mb-4 ${isRoot ? '' : 'bg-white/5 border border-white/10'}`}>
             <div className="flex gap-4 mb-2 items-center">
-                <span className="font-semibold text-gray-400 text-sm">{isRoot ? 'Main Logic' : 'Sub-Group'}:</span>
+                <span className="font-semibold text-gray-500 text-xs uppercase tracking-widest">{isRoot ? 'LOGIC ROOT' : 'GROUP'}:</span>
                 <select
-                    className="input-field w-24 font-bold text-blue-400"
+                    className="input-field w-24 font-bold text-white bg-zinc-800"
                     value={group.combinator}
                     onChange={e => setUiQuery(prev => updateUIGroup(prev, group.id, g => ({ ...g, combinator: e.target.value as Operator })))}
                 >
@@ -247,13 +247,13 @@ export default function SearchPage() {
 
                 <button
                     onClick={() => setUiQuery(prev => addRuleToGroup(prev, group.id))}
-                    className="text-xs px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white transition-colors"
+                    className="text-xs px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white transition-colors uppercase tracking-wider font-bold"
                 >
-                    + Rule
+                    + Add Rule
                 </button>
             </div>
 
-            <div className={`pl-4 ${isRoot ? '' : 'border-l-2 border-white/5'}`}>
+            <div className={`pl-4 ${isRoot ? '' : 'border-l border-white/10'}`}>
                 {group.rules.map(item => {
                     if ('combinator' in item) return renderGroup(item as UISearchGroup);
                     // @ts-ignore
@@ -508,105 +508,106 @@ export default function SearchPage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-[1600px] mx-auto px-6 py-8">
             <header className="page-header mb-8 flex items-end justify-between">
                 <div>
-                    <h1 className="text-4xl font-display font-bold text-white mb-2 drop-shadow-md">Global Search</h1>
-                    <p className="text-gray-400 font-light">Advanced donation querying and reporting</p>
+                    <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Data Intelligence</h2>
+                    <h1 className="text-4xl text-white font-display">Global Search</h1>
                 </div>
-                <Link href="/" className="text-blue-400 hover:text-white transition-colors text-sm font-medium">Back to All Batches &rarr;</Link>
+                <Link href="/" className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide">Back to Dashboard &rarr;</Link>
             </header>
 
-            {/* Simple Search Form matching Dashboard Style */}
-            <div className="glass-panel p-4 mb-6 flex flex-wrap gap-4 items-center">
-                <div className="flex items-center gap-2 text-blue-400">
-                    <span className="text-xl">🔍</span>
-                    <span className="font-semibold text-xs uppercase tracking-wider">Filters</span>
-                </div>
+            {/* Filtering */}
+            <div className="glass-panel p-6 mb-8">
+                <div className="flex flex-wrap gap-4 items-center">
+                    <div className="flex items-center gap-2 text-white">
+                        <span className="text-xl">🔍</span>
+                        <span className="font-semibold text-xs uppercase tracking-wider">Parameters</span>
+                    </div>
 
-                {/* Client */}
-                <select
-                    className="input-field min-w-[200px]"
-                    value={clientCode}
-                    onChange={e => setClientCode(e.target.value)}
-                >
-                    <option value="">All Clients</option>
-                    {clients.map(c => (
-                        <option key={c.ClientID} value={c.ClientCode}>{c.ClientCode} - {c.ClientName}</option>
-                    ))}
-                </select>
+                    {/* Client */}
+                    <select
+                        className="input-field min-w-[200px]"
+                        value={clientCode}
+                        onChange={e => setClientCode(e.target.value)}
+                    >
+                        <option value="">All Clients</option>
+                        {clients.map(c => (
+                            <option key={c.ClientID} value={c.ClientCode}>{c.ClientCode} - {c.ClientName}</option>
+                        ))}
+                    </select>
 
-                {/* Date Range */}
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">From</span>
-                    <input
-                        type="date"
-                        className="input-field"
-                        value={startDate}
-                        onChange={e => setStartDate(e.target.value)}
-                        onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
-                    />
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">To</span>
-                    <input
-                        type="date"
-                        className="input-field"
-                        value={endDate}
-                        onChange={e => setEndDate(e.target.value)}
-                        onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
-                    />
-                </div>
+                    {/* Date Range */}
+                    <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded border border-white/5">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest px-2">From</span>
+                        <input
+                            type="date"
+                            className="bg-transparent text-white text-xs outline-none uppercase font-mono"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                            onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                        />
+                        <span className="text-gray-700">|</span>
+                        <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest px-2">To</span>
+                        <input
+                            type="date"
+                            className="bg-transparent text-white text-xs outline-none uppercase font-mono"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                            onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                        />
+                    </div>
 
-                <div className="flex-1"></div>
+                    <div className="flex-1"></div>
 
-                <div className="flex gap-2">
-                    <button className="btn-primary" onClick={handleSearch} disabled={loading}>
-                        {loading ? 'Searching...' : 'Run Search'}
-                    </button>
-                    {(
-                        <button
-                            onClick={() => {
-                                setClientCode('');
-                                setStartDate(''); // Should reset to default really, but empty is fine to clear
-                                setEndDate('');
-                                setCheckNumber('');
-                                setDonorName('');
-                                setAmountMin('');
-                                setAmountMax('');
-                                setUiQuery({ id: 'root', combinator: 'AND', rules: [] }); // Clear advanced rules
-                            }}
-                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg text-sm font-bold uppercase transition-colors"
-                        >
-                            Reset
+                    <div className="flex gap-2">
+                        <button className="btn-primary" onClick={handleSearch} disabled={loading}>
+                            {loading ? 'Searching...' : 'Run Search'}
                         </button>
+                        {(
+                            <button
+                                onClick={() => {
+                                    setClientCode('');
+                                    setStartDate('');
+                                    setEndDate('');
+                                    setCheckNumber('');
+                                    setDonorName('');
+                                    setAmountMin('');
+                                    setAmountMax('');
+                                    setUiQuery({ id: 'root', combinator: 'AND', rules: [] });
+                                }}
+                                className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Advanced Filters Toggle */}
+                <div className="mt-6 border-t border-[var(--glass-border)] pt-4">
+                    <button
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide"
+                    >
+                        {showAdvanced ? '▼ Hide Advanced Rules' : '▶ Advanced Logic'}
+                    </button>
+
+                    {showAdvanced && (
+                        <div className="mt-4 animate-in fade-in slide-in-from-top-1">
+                            {renderGroup(uiQuery, true)}
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* Advanced Filters Toggle */}
-            <div className="mb-8">
-                <button
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center gap-2 text-blue-400 hover:text-white transition-colors text-sm font-medium"
-                >
-                    {showAdvanced ? '▼ Hide Advanced Rules' : '▶ Show Advanced Rules'}
-                </button>
-
-                {showAdvanced && (
-                    <div className="mt-4 animate-in slide-in-from-top-2">
-                        {renderGroup(uiQuery, true)}
-                    </div>
-                )}
-            </div>
-
             {/* Action Buttons Row (Only if results exist) */}
             {results.length > 0 && (
-                <div className="flex justify-end gap-4 mb-4">
-                    <button className="px-4 py-2 border border-blue-500 text-blue-400 rounded hover:bg-blue-500 hover:text-white transition-colors flex items-center gap-2" onClick={handleExportCSV}>
-                        <span>⬇</span> Export CSV
+                <div className="flex justify-end gap-3 mb-4">
+                    <button className="btn-secondary" onClick={handleExportCSV}>
+                        <span>⬇</span> CSV
                     </button>
-                    <button className="px-4 py-2 border border-gray-600 text-gray-300 rounded hover:bg-white/10 transition-colors flex items-center gap-2" onClick={handleGenerateReport}>
+                    <button className="btn-secondary" onClick={handleGenerateReport}>
                         <span>📄</span> PDF Report
                     </button>
                 </div>
@@ -614,15 +615,16 @@ export default function SearchPage() {
 
             {/* Results Table */}
             {searched && (
-                <div className="glass-panel p-0 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-white/5">
-                        <h3 className="text-white font-bold">Results ({results.length}{results.length >= 100 ? '+' : ''})</h3>
+                <div className="glass-panel text-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-white/5 flex justify-between">
+                        <h3 className="text-white font-medium">Search Results</h3>
+                        <span className="text-gray-500 text-xs font-mono">{results.length} matches</span>
                     </div>
                     {results.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500 italic">No matches found.</div>
+                        <div className="p-12 text-center text-gray-500">No matches found.</div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="data-table min-w-full">
+                            <table className="data-table">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
@@ -637,19 +639,19 @@ export default function SearchPage() {
                                 <tbody>
                                     {results.map(r => (
                                         <tr key={r.DonationID} className="group hover:bg-white/5 transition-colors">
-                                            <td className="text-gray-300">{new Date(r.GiftDate).toLocaleDateString()}</td>
+                                            <td className="text-gray-400 font-mono text-xs">{new Date(r.GiftDate).toLocaleDateString()}</td>
                                             <td>
                                                 <div className="font-medium text-white">{r.DonorFirstName} {r.DonorLastName}</div>
                                                 <div className="text-xs text-gray-500">{r.DonorCity}, {r.DonorState}</div>
                                             </td>
-                                            <td className="font-mono text-emerald-400 font-medium">
+                                            <td className="font-mono text-white font-medium">
                                                 ${Number(r.GiftAmount).toFixed(2)}
                                             </td>
                                             <td className="text-gray-400">{r.GiftMethod}</td>
-                                            <td className="text-white">{r.ClientCode}</td>
+                                            <td className="text-white font-mono text-xs">{r.ClientCode}</td>
                                             <td className="font-mono text-xs text-gray-500">{r.BatchCode}</td>
                                             <td>
-                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-400 hover:text-white text-xs font-bold uppercase tracking-wide hover:underline">
+                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-wide">
                                                     View &rarr;
                                                 </Link>
                                             </td>
