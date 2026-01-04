@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, transaction } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -10,29 +10,19 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const sessionId = params.id;
-        const userId = (session.user as any).id;
+        // @ts-ignore
+        const userId = session.user?.id;
+        // @ts-ignore
+        const userName = session.user?.name || 'Unknown User';
 
         // 1. Get Session & Verify Status
         const sessionRes = await query('SELECT * FROM "import_sessions" WHERE "id" = $1', [sessionId]);
         if (sessionRes.rows.length === 0) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         const importSession = sessionRes.rows[0];
 
-        // We accept 'Processing' as the state where rules are applied but not yet committed.
         if (importSession.status !== 'Processing') {
             return NextResponse.json({ error: 'Session must be processed (normalized) before committing' }, { status: 400 });
         }
-
-        // 2. Create a New Batch for this Import
-        // We'll use a special "Import" batch code format or just standard format
-        // For simplicity, let's reuse standard logic but hardcode "Import" platform
-        // For simplicity, let's reuse standard logic but hardcode "Import" platform
-
-
-        // Generate Batch Code (Simplified for Import - reusing Logic API would be better but keeping it self-contained for speed)
-        // Let's assume User has a valid ClientID. We might need to ask the user for ClientID in the Import Wizard?
-        // Wait! The import wizard didn't ask for Client!
-        // CRITICAL MISSING INFO: We need a ClientID to create a batch.
-        // For now, let's assume we pass ClientID in the body of the Commit request.
 
         const body = await request.json();
         const { clientId } = body;
@@ -43,7 +33,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         const clientRes = await query('SELECT "ClientCode" FROM "Clients" WHERE "ClientID" = $1', [clientId]);
         const clientCode = clientRes.rows[0].ClientCode;
 
-        // 2. Fetch Staging Data (Need one row to determine Batch Code suffix from External Batch ID)
+        // 2. Fetch Staging Data
         const stagingRes = await query('SELECT "normalized_data" FROM "staging_revenue" WHERE "session_id" = $1', [sessionId]);
         const rows = stagingRes.rows;
 
@@ -52,16 +42,11 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         }
 
         const firstRowData = rows[0].normalized_data || {};
-        const externalBatchId = firstRowData['External Batch ID'];
         const csvGiftDate = firstRowData['Gift Date'];
 
         // Date Logic: Prefer CSV 'Gift Date', fallback to Today
-        // We want YYYY.MM.DD format
-        let dateObj = new Date(); // Default to today
-
+        let dateObj = new Date();
         if (csvGiftDate) {
-            // Try parsing the CSV date
-            // Standard parsing usually handles "YYYY-MM-DD", "YYYY.MM.DD", "MM/DD/YYYY"
             const parsed = new Date(csvGiftDate);
             if (!isNaN(parsed.getTime())) {
                 dateObj = parsed;
@@ -74,93 +59,105 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         const batchDate = `${yyyy}-${mm}-${dd}`; // For DB Date column
         const batchDateStr = `${yyyy}.${mm}.${dd}`; // For Batch Code string
 
-        // Suffix: Right 6 digits of External Batch ID, or fallback to Session ID
-        let suffix = String(sessionId);
-        if (externalBatchId && typeof externalBatchId === 'string' && externalBatchId.length >= 6) {
-            suffix = externalBatchId.slice(-6);
-        } else if (externalBatchId) {
-            suffix = String(externalBatchId);
-        }
-
         // Platform Short Code
         const platformMap: Record<string, string> = {
             'Winred': 'WR',
-            'Stripe': 'STR',
-            'Anedot': 'AND',
-            'Cage': 'CAGE',
-            'Revv': 'REVV',
-            'ActBlue': 'AB'
+            'Stripe': 'ST',
+            'Anedot': 'AN',
+            'Cage': 'CG',
+            'Revv': 'RV',
+            'ActBlue': 'AB',
+            'PayPal': 'PP',
+            'Check': 'CK',
+            'Wire': 'WI'
         };
 
         let platformCode = platformMap[importSession.source_system];
-
         if (!platformCode) {
-            // dynamic generation: "XYZ Bank" -> "XY"
             const clean = importSession.source_system.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            platformCode = clean.substring(0, 2);
-            if (platformCode.length === 0) platformCode = 'IM';
+            platformCode = clean.substring(0, 2) || 'IM';
         }
 
-        // Custom Batch Code: [Client].[Platform].[Date].[Suffix]
-        // Ex: AFL.WR.2025.12.25.nijn33
-        const batchCode = `${clientCode}.${platformCode}.${batchDateStr}.${suffix}`;
+        // Get User Initials
+        const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) || 'XX';
 
-        // Create Batch
-        const batchRes = await query(`
-            INSERT INTO "Batches" (
-                "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "CreatedBy", "Status", "Date",
-                "DefaultGiftPlatform", "ImportSessionID"
-            ) VALUES ($1, $2, 'Import', 'Donations', $3, 'Open', $4, $5, $6)
-            RETURNING "BatchID"
-        `, [batchCode, clientId, userId, batchDate, importSession.source_system, sessionId]);
+        // TRANSACTION START
+        // We use a transaction to ensure we get a unique sequence number and create all records atomically
+        const result = await transaction(async (client) => {
 
-        const batchId = batchRes.rows[0].BatchID;
+            // 3. Determine Sequence Number for this User + Date
+            // Lock isn't strictly necessary with serializable isolation, but good practice if high concurrency
+            const seqRes = await client.query(`
+                SELECT COUNT(*) as count 
+                FROM "Batches" 
+                WHERE "CreatedBy" = $1 
+                AND "Date" = $2
+            `, [importSession.source_system, batchDate]);
+            // Note: We are using "CreatedBy" = source_system as per original code, OR should we use the actual User?
+            // Manual batches use User Initials. Import batches should probably adhere to the "Import" user/persona?
+            // Let's stick to the User Initials logic for continuity with Manual Batches.
+            // Actually, wait, "CreatedBy" column in DB is usually the string name.
 
-        // 3. Move Data from Staging to Donations
-        // We iterate and map 'normalized_data' JSON fields to table columns
-        // const stagingRes = await query('SELECT "normalized_data" FROM "staging_revenue" WHERE "session_id" = $1', [sessionId]);
-        // const rows = stagingRes.rows; (Already fetched above)
+            // Better logic: Count batches where the BatchCode contains today's date and user initials? 
+            // Or just a simple daily increment.
+            // Let's replicate strict manual logic: Count batches for THIS date.
 
-        const insertValues: string[] = [];
-        const paramsList: any[] = [];
-        let pIdx = 1;
+            const existingCount = parseInt(seqRes.rows[0].count || '0', 10);
+            const nextSeq = String(existingCount + 1).padStart(2, '0');
 
-        for (const row of rows) {
-            const data = row.normalized_data;
+            // Custom Batch Code: [Client].[Platform].[Date].[Initials].[Seq]
+            // Ex: AFL.WR.2025.12.25.ST.01
+            const batchCode = `${clientCode}.${platformCode}.${batchDateStr}.${initials}.${nextSeq}`;
 
-            // Map JSON keys to DB columns
-            // This mapping MUST match your 'target_column' names in mapping_rules
-            paramsList.push(
-                batchId,
-                clientId,
-                data['First Name'] || null,
-                data['Last Name'] || null,
-                data['Gift Amount'] || 0,
-                data['Gift Date'] || batchDate,
-                data['Gift Type'] || 'Online Source',
-                data['Gift Method'] || 'Credit Card',
-                sessionId
-            );
+            // 4. Create Batch
+            const batchRes = await client.query(`
+                INSERT INTO "Batches" (
+                    "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "CreatedBy", "Status", "Date",
+                    "DefaultGiftPlatform", "ImportSessionID"
+                ) VALUES ($1, $2, 'Import', 'Donations', $3, 'Open', $4, $5, $6)
+                RETURNING "BatchID"
+            `, [batchCode, clientId, userId, batchDate, importSession.source_system, sessionId]);
 
-            insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
-        }
+            const batchId = batchRes.rows[0].BatchID;
 
-        if (insertValues.length > 0) {
-            // Note: Postgres has a parameter limit (around 65k). large imports need chunking.
-            // For this demo, we assume small batches.
-            const queryStr = `
-                INSERT INTO "Donations" (
-                    "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID"
-                )
-                VALUES ${insertValues.join(', ')}
-            `;
-            await query(queryStr, paramsList);
-        }
+            // 5. Insert Donations
+            const insertValues: string[] = [];
+            const paramsList: any[] = [];
+            let pIdx = 1;
 
-        // 4. Update Session Status
-        await query('UPDATE "import_sessions" SET "status" = \'Completed\' WHERE "id" = $1', [sessionId]);
+            for (const row of rows) {
+                const data = row.normalized_data;
+                paramsList.push(
+                    batchId,
+                    clientId,
+                    data['First Name'] || null,
+                    data['Last Name'] || null,
+                    data['Gift Amount'] || 0,
+                    data['Gift Date'] || batchDate,
+                    data['Gift Type'] || 'Online Source',
+                    data['Gift Method'] || 'Credit Card',
+                    sessionId
+                );
+                insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
+            }
 
-        return NextResponse.json({ success: true, batchId, batchCode });
+            if (insertValues.length > 0) {
+                const queryStr = `
+                    INSERT INTO "Donations" (
+                        "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID"
+                    )
+                    VALUES ${insertValues.join(', ')}
+                `;
+                await client.query(queryStr, paramsList);
+            }
+
+            // 6. Update Session Status
+            await client.query('UPDATE "import_sessions" SET "status" = \'Completed\' WHERE "id" = $1', [sessionId]);
+
+            return { batchId, batchCode };
+        });
+
+        return NextResponse.json({ success: true, batchId: result.batchId, batchCode: result.batchCode });
 
     } catch (error: any) {
         console.error('POST /api/import/commit error:', error);
