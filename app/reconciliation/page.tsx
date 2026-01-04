@@ -192,7 +192,7 @@ export default function ReconciliationDashboard() {
                                     boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                                 }}
                                 itemStyle={{ color: '#fff', fontFamily: 'var(--font-body)', fontSize: '13px' }}
-                                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Volume']}
+                                formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Volume']}
                             />
                             <Bar dataKey="amount" radius={[2, 2, 0, 0]}>
                                 {chartData.map((entry, index) => (
