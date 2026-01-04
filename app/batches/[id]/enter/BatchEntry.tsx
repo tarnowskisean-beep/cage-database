@@ -452,7 +452,7 @@ export default function BatchEntry({ id }: { id: string }) {
                     {/* ATTACHMENTS */}
                     {batch && <BatchAttachments batchId={id} paymentCategory={batch.PaymentCategory} />}
 
-                    <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem', background: 'var(--color-bg-surface)' }}>RECENT SCANS</div>
+                    <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem' }}>RECENT SCANS</div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {records.map(r => (
                             <div
@@ -463,33 +463,17 @@ export default function BatchEntry({ id }: { id: string }) {
                                     borderBottom: '1px solid var(--color-border)',
                                     background: r.DonationID === editingId ? 'rgba(59, 130, 246, 0.15)' : (r.DonationID === lastSavedId ? 'rgba(51, 204, 102, 0.1)' : 'transparent'),
                                     cursor: 'pointer',
-                                    borderLeft: r.ScanDocumentID ? '4px solid #10b981' : (r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent'),
-                                    position: 'relative'
+                                    borderLeft: r.ScanDocumentID ? '4px solid #10b981' : (r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent')
                                 }}
                             >
-                                {/* LINKED BADGE - Floating indicator for quick scanning */}
-                                {r.ScanDocumentID && (
-                                    <div style={{
-                                        position: 'absolute', top: '0.2rem', right: '0.2rem',
-                                        fontSize: '0.6rem', background: '#d1fae5', color: '#065f46',
-                                        padding: '0 0.2rem', borderRadius: '2px', border: '1px solid #10b981'
-                                    }}>
-                                        LINKED
-                                    </div>
-                                )}
-
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>${Number(r.GiftAmount).toFixed(2)}</span>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                                        {r.DonorFirstName} {r.DonorLastName}
-                                    </div>
-
-                                    {/* ACTION BAR */}
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>{r.DonorFirstName} {r.DonorLastName}</span>
                                     {r.ScanDocumentID && (
-                                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -497,39 +481,53 @@ export default function BatchEntry({ id }: { id: string }) {
                                                 }}
                                                 title={`View Scan on Page ${r.ScanPageNumber}`}
                                                 style={{
-                                                    flex: 1,
-                                                    background: '#10b981',
-                                                    color: 'white',
-                                                    border: 'none',
+                                                    background: '#d1fae5',
+                                                    color: '#065f46',
+                                                    border: '1px solid #10b981',
                                                     borderRadius: '4px',
                                                     cursor: 'pointer',
                                                     fontSize: '0.75rem',
-                                                    padding: '0.2rem',
-                                                    textAlign: 'center'
+                                                    padding: '0.1rem 0.4rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.2rem'
                                                 }}
                                             >
-                                                📄 Page {r.ScanPageNumber}
+                                                📎 {r.ScanPageNumber}
                                             </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    const reason = prompt("Report Linking Error:\nWhat is wrong? (e.g. Wrong Page)");
-                                                    if (reason) alert("Feedback logged.");
+                                                    const reason = prompt("Report AI Error:\nWhat is wrong with this link? (e.g. Wrong Page, Wrong Donor)");
+                                                    if (reason) {
+                                                        alert("Feedback received. We will use this to train future models.");
+                                                    }
                                                 }}
-                                                title="Report Error"
+                                                title="Report Bad Link"
                                                 style={{
                                                     background: 'transparent',
-                                                    border: '1px solid #fee2e2',
-                                                    color: '#ef4444',
-                                                    borderRadius: '4px',
+                                                    border: 'none',
                                                     cursor: 'pointer',
-                                                    padding: '0 0.4rem',
-                                                    fontSize: '0.8rem'
+                                                    fontSize: '0.8rem',
+                                                    color: '#ef4444'
                                                 }}
                                             >
                                                 ⚠️
                                             </button>
                                         </div>
+                                    )}
+                                    {!r.ScanDocumentID && (
+                                        <span
+                                            title="No Scan Linked"
+                                            style={{
+                                                marginLeft: '0.5rem',
+                                                fontSize: '0.9rem',
+                                                opacity: 0.3,
+                                                cursor: 'help'
+                                            }}
+                                        >
+                                            ❌
+                                        </span>
                                     )}
                                 </div>
                             </div>
