@@ -30,14 +30,18 @@ export async function POST(request: Request) {
 
         // 2. Download File
         if (StorageKey.startsWith('link:')) {
-            const url = StorageKey.replace('link:', '');
-            // Attempt to fetch if it's a direct link (Note: Google Drive links might need handling)
-            // For MVP, we might optimistically try fetch, or if it fails, error out.
-            // Google Drive Viewer links aren't direct download links, dealing with that is complex.
-            // Assuming for this "Feature" user provides accessible URL or we enable file upload again.
-            // If the user uses "Paste Google Drive Link", this FETCH will likely fail if it's not a direct download link.
-            // However, Gemini SDK *might* accept a URL if we used the File API, but here we are sending bytes.
-            // Let's try to fetch.
+            let url = StorageKey.replace('link:', '');
+
+            // INTELLIGENT G-DRIVE HANDLER
+            // Convert /file/d/XXX/view  ->  /uc?export=download&id=XXX
+            if (url.includes('drive.google.com') && url.includes('/file/d/')) {
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    console.log('Converting Google Drive Viewer Link to Direct Download:', match[1]);
+                    url = `https://drive.google.com/uc?export=download&id=${match[1]}`;
+                }
+            }
+
             const res = await fetch(url);
             if (!res.ok) throw new Error(`Failed to fetch file from link: ${res.statusText}`);
             const arrayBuffer = await res.arrayBuffer();
