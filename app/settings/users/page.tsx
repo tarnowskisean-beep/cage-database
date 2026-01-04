@@ -25,10 +25,16 @@ export default function UsersPage() {
             const res = await fetch('/api/users');
             if (res.ok) {
                 setUsers(await res.json());
+                setLoading(false);
+            } else {
+                if (res.status === 401 || res.status === 403) {
+                    setUsers([]); // Clear users
+                    alert('Access Denied: You do not have permission to view users. (Admin Role Required)');
+                }
+                setLoading(false);
             }
         } catch (err) {
             console.error(err);
-        } finally {
             setLoading(false);
         }
     };
