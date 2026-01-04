@@ -181,3 +181,24 @@ h6 {
 .page-header p {
   @apply text-gray-400 font-light text-lg;
 }
+/* Print Optimization */
+@media print {
+  aside, .sidebar, header, .no-print {
+    display: none !important;
+  }
+  
+  body, main, .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Force background graphics to print if user ignores setting, but clean up shadows */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}

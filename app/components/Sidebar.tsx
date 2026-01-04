@@ -10,6 +10,9 @@ export default function Sidebar() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { data: session } = useSession();
 
+    // Hide sidebar on login page OR report page
+    if (pathname === '/login' || pathname === '/search/report') return null;
+
     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
         <li>
             <Link
