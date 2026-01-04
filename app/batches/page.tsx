@@ -88,6 +88,9 @@ function BatchesContent() {
         return matchesStatus && matchesClient && matchesDate;
     });
 
+    const totalCount = filteredBatches.length;
+    const totalSum = filteredBatches.reduce((sum, b) => sum + (Number(b.TotalAmount) || 0), 0);
+
     return (
         <div className="max-w-[1600px] mx-auto px-6 py-8">
             <header className="page-header flex justify-between items-end mb-8">
@@ -105,15 +108,17 @@ function BatchesContent() {
 
             {/* Filter Bar & Stats */}
             <div className="flex flex-col xl:flex-row gap-6 mb-8">
-                {/* Stats Group */}
+                {/* Stats Group - Dynamic based on filter */}
                 <div className="flex gap-4">
                     <div className="glass-panel px-6 py-4 flex flex-col justify-center min-w-[140px]">
-                        <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Open</span>
-                        <span className="text-2xl text-white font-display mt-1">{stats.open}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">{statusFilter === 'All' ? 'Total' : statusFilter} Count</span>
+                        <span className="text-2xl text-white font-display mt-1">{totalCount}</span>
                     </div>
                     <div className="glass-panel px-6 py-4 flex flex-col justify-center min-w-[140px]">
-                        <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Closed</span>
-                        <span className="text-2xl text-white font-display mt-1">{stats.closed}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Total Value</span>
+                        <span className="text-2xl text-white font-display mt-1">
+                            ${totalSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
                     </div>
                 </div>
 
