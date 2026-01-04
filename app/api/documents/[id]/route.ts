@@ -15,7 +15,7 @@ export async function GET(
         // For now, we assume authenticated users can view.
 
         const result = await query(
-            `SELECT "FileName", "DocumentType", "StorageKey", "BlobUrl" 
+            `SELECT "FileName", "DocumentType", "StorageKey" 
              FROM "BatchDocuments" 
              WHERE "BatchDocumentID" = $1`,
             [id]
@@ -57,11 +57,6 @@ export async function GET(
                 });
 
             return NextResponse.redirect(url);
-        }
-
-        // Legacy Vercel Blob Redirect
-        if (doc.BlobUrl) {
-            return NextResponse.redirect(doc.BlobUrl);
         }
 
         // Database Fallback (Legacy - FileContent removed)
