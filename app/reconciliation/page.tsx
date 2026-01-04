@@ -35,15 +35,18 @@ export default function ReconciliationDashboard() {
         const end = prompt("Enter Period End Date (Friday):", new Date().toISOString().slice(0, 10));
         if (!end) return;
 
-        // Auto-calculate start (Monday)
+        // Auto-calculate start (Monday of that week)
         const d = new Date(end);
-        const day = d.getDay(); // 5 = Friday
-        if (day !== 5) {
-            if (!confirm("Warning: Period End Date is not a Friday. Continue?")) return;
-        }
+        const day = d.getDay(); // 0-6 (Sun-Sat)
+
+        // Calculate days to subtract to get to Monday (1)
+        // If day is 4 (Thu), subtract 3. If 5 (Fri), subtract 4.
+        // Formula: day - 1
+        // Handle Sunday(0) -> -6 (last Monday)
+        const daysToMonday = day === 0 ? 6 : day - 1;
 
         const start = new Date(d);
-        start.setDate(d.getDate() - 4); // Monday
+        start.setDate(d.getDate() - daysToMonday);
         const startStr = start.toISOString().slice(0, 10);
 
         try {
