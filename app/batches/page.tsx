@@ -310,7 +310,10 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                 body: JSON.stringify(formData)
             });
 
-            if (!res.ok) throw new Error('Failed to create batch');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || errData.details || 'Failed to create batch');
+            }
 
             const newBatch = await res.json();
 
@@ -320,9 +323,9 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                 refresh();
                 onClose();
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert('Failed to create batch');
+            alert(err.message || 'Failed to create batch');
         }
     };
 
