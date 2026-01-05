@@ -58,43 +58,59 @@ function PeopleContent() {
                     <p className="text-gray-500 font-light text-base mt-2">Manage your donor relationships and view analytics.</p>
                 </div>
 
-                <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end">
-                    {/* Filters */}
-                    <div className="flex gap-2">
-                        <input
-                            type="number"
-                            placeholder="Min Giving ($)"
-                            className="input-field w-32"
-                            value={minAmount}
-                            onChange={e => setMinAmount(e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="City"
-                            className="input-field w-32"
-                            value={city}
-                            onChange={e => setCity(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="relative group flex-1 md:flex-none">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                            </svg>
+                <form onSubmit={handleSearch} className="glass-panel p-2 flex flex-col md:flex-row gap-2 items-center w-full md:w-auto">
+                    {/* Main Search */}
+                    <div className="relative group w-full md:w-80">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         </div>
                         <input
                             type="text"
-                            className="input-field pl-10 w-full md:w-80"
-                            placeholder="Search donors..."
+                            className="w-full bg-transparent border-none text-sm text-white placeholder-gray-500 focus:ring-0 pl-9 py-2"
+                            placeholder="Search by name, email, or phone..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
 
-                    <button type="submit" className="btn-primary">
-                        Search
-                    </button>
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-6 bg-white/10 mx-2"></div>
+
+                    {/* Filters Row */}
+                    <div className="flex w-full md:w-auto gap-2">
+                        {/* City Filter */}
+                        <div className="relative flex-1 md:w-40 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="City"
+                                className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 pl-9 py-2"
+                                value={city}
+                                onChange={e => setCity(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Min Amount Filter */}
+                        <div className="relative flex-1 md:w-32 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 text-xs font-bold">
+                                $
+                            </div>
+                            <input
+                                type="number"
+                                placeholder="Min Giving"
+                                className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 pl-7 py-2"
+                                value={minAmount}
+                                onChange={e => setMinAmount(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Submit Button (Icon) */}
+                        <button type="submit" className="px-4 bg-white text-black rounded hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                        </button>
+                    </div>
                 </form>
             </header>
 
