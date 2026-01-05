@@ -11,14 +11,22 @@ function PeopleContent() {
     const q = searchParams.get('q') || '';
     const initialMin = searchParams.get('min') || '';
     const initialCity = searchParams.get('city') || '';
+    const initialClientId = searchParams.get('clientId') || '';
 
     // Local state for input to avoid re-fetching on every keystroke
     const [searchTerm, setSearchTerm] = useState(q);
     const [minAmount, setMinAmount] = useState(initialMin);
     const [city, setCity] = useState(initialCity);
+    const [clientId, setClientId] = useState(initialClientId);
 
     const [donors, setDonors] = useState<any[]>([]);
+    const [clients, setClients] = useState<any[]>([]); // New Clients State
     const [loading, setLoading] = useState(true);
+
+    // Fetch Clients on Mount
+    useEffect(() => {
+        fetch('/api/clients').then(res => res.json()).then(data => setClients(Array.isArray(data) ? data : [])).catch(() => { });
+    }, []);
 
     useEffect(() => {
         setLoading(true);
@@ -26,6 +34,7 @@ function PeopleContent() {
         if (q) params.set('q', q);
         if (initialMin) params.set('min', initialMin);
         if (initialCity) params.set('city', initialCity);
+        if (initialClientId) params.set('clientId', initialClientId);
 
         fetch(`/api/people?${params.toString()}`)
             .then(res => res.json())
@@ -36,7 +45,7 @@ function PeopleContent() {
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [q, initialMin, initialCity]);
+    }, [q, initialMin, initialCity, initialClientId]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,6 +53,7 @@ function PeopleContent() {
         if (searchTerm) params.set('q', searchTerm);
         if (minAmount) params.set('min', minAmount);
         if (city) params.set('city', city);
+        if (clientId) params.set('clientId', clientId);
 
         router.push(`/people?${params.toString()}`);
     };
@@ -79,6 +89,25 @@ function PeopleContent() {
 
                     {/* Filters Row */}
                     <div className="flex w-full md:w-auto gap-2">
+                        {/* Client Filter */}
+                        <div className="relative flex-1 md:w-40 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                            <select
+                                className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 pl-3 py-2 appearance-none cursor-pointer"
+                                value={clientId}
+                                onChange={e => setClientId(e.target.value)}
+                            >
+                                <option value="" className="bg-[#09090b]">All Clients</option>
+                                {clients.map(c => (
+                                    <option key={c.ClientID} value={c.ClientID} className="bg-[#09090b]">
+                                        {c.ClientCode}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                        </div>
+
                         {/* City Filter */}
                         <div className="relative flex-1 md:w-40 bg-white/5 rounded hover:bg-white/10 transition-colors">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">

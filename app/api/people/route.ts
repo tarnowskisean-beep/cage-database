@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const q = searchParams.get('q') || '';
     const minParam = searchParams.get('min');
     const cityParam = searchParams.get('city');
+    const clientIdParam = searchParams.get('clientId');
 
     const page = parseInt(searchParams.get('page') || '1');
     const limit = 20;
@@ -32,6 +33,40 @@ export async function GET(req: NextRequest) {
         `;
         const params: any[] = [];
         let paramIdx = 1;
+
+        // --- Security & Filtering ---
+        if ((session.user as any).role === 'ClientUser') {
+            const allowedIds: number[] = (session.user as any).allowedClientIds || [];
+
+            if (allowedIds.length === 0) {
+                return NextResponse.json({ data: [], page, hasMore: false }); // No access
+            }
+
+            if (clientIdParam) {
+                // User wants a specific client, verify access
+                const requestedId = parseInt(clientIdParam);
+                if (!allowedIds.includes(requestedId)) {
+                    return NextResponse.json({ error: 'Unauthorized access to client' }, { status: 403 });
+                }
+                params.push(requestedId);
+                sql += ` AND don."ClientID" = $${paramIdx}`;
+                paramIdx++;
+            } else {
+                // User wants all "their" clients
+                // We must filter donations to ONLY their allowed clients
+                params.push(allowedIds);
+                sql += ` AND don."ClientID" = ANY($${paramIdx})`;
+                paramIdx++;
+            }
+        } else {
+            // Admin/Clerk
+            if (clientIdParam) {
+                params.push(parseInt(clientIdParam));
+                sql += ` AND don."ClientID" = $${paramIdx}`;
+                paramIdx++;
+            }
+        }
+        // -----------------------------
 
         if (q) {
             params.push(`%${q}%`);
