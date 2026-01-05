@@ -92,7 +92,7 @@ export default function ClientsPage() {
                                                 {client.LogoURL ? (
                                                     <img src={client.LogoURL} alt={client.ClientCode} className="w-full h-full object-contain" />
                                                 ) : (
-                                                    <span className="text-black font-bold text-xs">{client.ClientCode?.substring(0, 2)}</span>
+                                                    <span className="text-black font-bold text-[10px] tracking-tighter">{client.ClientCode?.substring(0, 3)}</span>
                                                 )}
                                             </div>
                                         </td>
