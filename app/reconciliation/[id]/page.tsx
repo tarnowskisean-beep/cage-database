@@ -105,14 +105,14 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     const [filter, setFilter] = useState<'All' | 'Payments' | 'Deposits'>('All');
 
     // Calculations
-    const totalPayments = moneyOut.reduce((acc, i) => acc + Number(i.AmountOut), 0);
-    const totalDeposits = moneyIn.reduce((acc, i) => acc + Number(i.AmountDonorNet), 0);
+    const totalPayments = moneyOut.reduce((acc, i) => acc + Math.abs(Number(i.amount)), 0);
+    const totalDeposits = moneyIn.reduce((acc, i) => acc + Number(i.amount), 0);
 
-    const clearedPaymentsCount = moneyOut.filter(i => clearedItems.has(i.BankTransactionID)).length;
-    const clearedDepositsCount = moneyIn.filter(i => clearedItems.has(i.BatchID)).length;
+    const clearedPaymentsCount = moneyOut.filter(i => clearedItems.has(i.id)).length;
+    const clearedDepositsCount = moneyIn.filter(i => clearedItems.has(i.id)).length;
 
-    const clearedPaymentsSum = moneyOut.filter(i => clearedItems.has(i.BankTransactionID)).reduce((acc, i) => acc + Number(i.AmountOut), 0);
-    const clearedDepositsSum = moneyIn.filter(i => clearedItems.has(i.BatchID)).reduce((acc, i) => acc + Number(i.AmountDonorNet), 0);
+    const clearedPaymentsSum = moneyOut.filter(i => clearedItems.has(i.id)).reduce((acc, i) => acc + Math.abs(Number(i.amount)), 0);
+    const clearedDepositsSum = moneyIn.filter(i => clearedItems.has(i.id)).reduce((acc, i) => acc + Number(i.amount), 0);
 
     // Header Metrics
     const beginBalance = 100.00; // Hardcoded for demo/screenshot matching
@@ -124,23 +124,23 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     // Unified List
     const allItems = [
         ...moneyOut.map(i => ({
-            id: i.BankTransactionID,
+            id: i.id,
             type: 'Payment' as const,
-            date: i.TransactionDate,
+            date: i.date,
             ref: 'EXP',
-            payee: i.Description,
+            payee: i.desc || 'Expense',
             memo: 'Expense',
-            amount: Number(i.AmountOut),
+            amount: Math.abs(Number(i.amount)),
             isPayment: true
         })),
         ...moneyIn.map(i => ({
-            id: i.BatchID,
+            id: i.id,
             type: 'Deposit' as const,
-            date: i.DepositDate,
+            date: i.date,
             ref: 'DEP',
-            payee: 'Deposit', // Could be client name or "Batch"
-            memo: `Batch #${i.BatchID}`,
-            amount: Number(i.AmountDonorNet),
+            payee: 'Deposit',
+            memo: i.desc || `Batch #${i.id}`,
+            amount: Number(i.amount),
             isPayment: false
         }))
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
