@@ -60,7 +60,7 @@ export async function GET(request: Request) {
     const result = await query(`
       SELECT
         b."BatchID", b."BatchCode", b."EntryMode", b."PaymentCategory", b."Status", b."Date", b."CreatedAt",
-        b."ImportSessionID",
+        b."ImportSessionID", b."Description",
         c."ClientCode", c."ClientName",
         u."Username" as "CreatedBy",
         COUNT(d."DonationID")::int as "ItemCount",
@@ -153,9 +153,9 @@ export async function POST(request: Request) {
             INSERT INTO "Batches"(
                 "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date",
                 "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter",
-                "DefaultGiftType"
+                "DefaultGiftType", "Description"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13)
+            VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING "BatchID", "BatchCode"
         `, [
         batchCode,
@@ -170,7 +170,8 @@ export async function POST(request: Request) {
         data.defaultTransactionType,
         data.defaultGiftYear || new Date().getFullYear(),
         data.defaultGiftQuarter || 'Q1',
-        data.defaultGiftType || 'Individual/Trust/IRA'
+        data.defaultGiftType || 'Individual/Trust/IRA',
+        data.description || null
       ]);
 
       return insertRes.rows[0];

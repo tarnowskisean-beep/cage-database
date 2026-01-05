@@ -5,6 +5,7 @@ export const CreateBatchSchema = z.object({
     entryMode: z.enum(['Scan/Barcode', 'Barcode/Datamatrix', 'Manual', 'Zeros', 'Import', 'Data Entry', 'Barcode', 'Datamatrix', 'ZerosOCR']),
     paymentCategory: z.string(),
     zerosType: z.string().optional(),
+    description: z.string().optional(),
 
     // Defaults
     date: z.string().optional(), // YYYY-MM-DD
