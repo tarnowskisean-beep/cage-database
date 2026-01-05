@@ -188,20 +188,17 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         <p className="text-xs text-gray-400 mt-1">Statement ending date: <strong className="text-gray-200">{new Date(period.PeriodEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="px-4 py-2 border border-[var(--glass-border)] text-gray-300 font-medium rounded hover:bg-white/5 hover:text-white text-sm transition-colors">Edit info</button>
-                        <button className="px-4 py-2 border border-[var(--glass-border)] text-gray-300 font-medium rounded hover:bg-white/5 hover:text-white text-sm transition-colors">Save for later</button>
                         <div className="flex rounded-md shadow-sm">
                             <button
                                 onClick={handleFinish}
                                 disabled={!isBalanced}
                                 className={`
-                                    px-6 py-2 bg-emerald-600 text-white font-bold rounded-l hover:bg-emerald-500 transition-colors text-sm
+                                    px-6 py-2 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-500 transition-colors text-sm
                                     disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-zinc-700
                                 `}
                             >
-                                Finish now
+                                Finish Reconcile
                             </button>
-                            <button className="px-3 bg-emerald-600 border-l border-emerald-700 text-white rounded-r hover:bg-emerald-500 transition-colors">▼</button>
                         </div>
                     </div>
                 </div>
@@ -266,15 +263,6 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                             {f}
                         </button>
                     ))}
-                </div>
-                <div className="flex gap-3">
-                    <button className="px-4 py-2 bg-transparent border border-white/10 text-gray-400 hover:text-white hover:border-white/20 rounded text-xs font-bold uppercase tracking-wide transition-colors">
-                        View statements
-                    </button>
-                    <div className="flex gap-1 border border-white/10 rounded bg-zinc-900/50 p-1">
-                        <button className="p-1 hover:bg-white/10 rounded text-gray-500 hover:text-white transition-colors"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2.4-9a3.5 3.5 0 0110.5 0" /></svg></button>
-                        <button className="p-1 hover:bg-white/10 rounded text-gray-500 hover:text-white transition-colors"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
-                    </div>
                 </div>
             </div>
 

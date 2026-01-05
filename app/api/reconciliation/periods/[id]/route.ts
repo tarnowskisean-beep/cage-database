@@ -62,24 +62,53 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             });
         }
 
-        // 3. Fetch Money Out (Fees, Transfers)
-        // Fees are tricky. They are attached to donations.
-        // Transfers are in ReconciliationBankTransactions (TransactionType='Transfer Out', etc.)
-        const txnsRes = await query(`
-            SELECT "TransactionID", "TransactionDate", "Description", "AmountOut", "AmountIn", "Cleared"
-            FROM "ReconciliationBankTransactions"
-            WHERE "ReconciliationPeriodID" = $1
-            ORDER BY "TransactionDate" ASC
-        `, [id]);
+        // 3. Fetch Money Out (Fees, Refunds, Chargebacks)
+        // REPLACED: Fetching from Donations table instead of ReconciliationBankTransactions
 
-        const payments = txnsRes.rows.map(t => ({
-            id: t.TransactionID,
-            type: t.AmountOut > 0 ? 'Payment' : 'Deposit',
-            desc: t.Description,
-            amount: t.AmountOut > 0 ? -parseFloat(t.AmountOut) : parseFloat(t.AmountIn),
-            date: t.TransactionDate,
-            cleared: t.Cleared || false
-        }));
+        // A. Refunds & Chargebacks
+        const refundsRes = await query(`
+            SELECT "DonationID", "GiftDate", "GiftAmount", "TransactionType", "DonorID", "BatchID"
+            FROM "Donations"
+            WHERE "ClientID" = $1
+            AND "GiftDate" >= $2 AND "GiftDate" <= $3
+            AND "TransactionType" IN ('Refund', 'Chargeback', 'Void')
+        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
+
+        // B. Fees (Associated with Donations in this period)
+        // Note: Fees usually happen same day as gift.
+        const feesRes = await query(`
+            SELECT "DonationID", "GiftDate", "GiftFee", "TransactionType"
+            FROM "Donations"
+            WHERE "ClientID" = $1
+            AND "GiftDate" >= $2 AND "GiftDate" <= $3
+            AND "GiftFee" > 0
+        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
+
+        const payments = [];
+
+        // Add Refunds/Chargebacks
+        for (const r of refundsRes.rows) {
+            payments.push({
+                id: `REF-${r.DonationID}`, // Virtual ID to distinguish
+                type: 'Payment',
+                desc: `${r.TransactionType} #${r.DonationID}`,
+                amount: Math.abs(parseFloat(r.GiftAmount)), // Amount is negative in DB usually? Or positive? Assuming we need positive for "Money Out" display logic which flips it.
+                date: r.GiftDate,
+                cleared: false // TODO: Persist cleared status for these virtual items? Currently transient.
+            });
+        }
+
+        // Add Fees
+        for (const f of feesRes.rows) {
+            payments.push({
+                id: `FEE-${f.DonationID}`, // Virtual ID
+                type: 'Payment',
+                desc: `Processing Fee (Tx #${f.DonationID})`,
+                amount: parseFloat(f.GiftFee),
+                date: f.GiftDate,
+                cleared: false
+            });
+        }
 
         const result = {
             ...period,
