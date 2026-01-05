@@ -64,9 +64,9 @@ function BatchesContent() {
                 setBatches(safeBatches);
                 setClients(safeClients);
 
-                // Calculate quick stats
+                // Calculate quick stats (Treat Submitted as Closed)
                 const open = safeBatches.filter((b: any) => b.Status === 'Open').length;
-                const closed = safeBatches.filter((b: any) => b.Status === 'Closed').length;
+                const closed = safeBatches.filter((b: any) => ['Closed', 'Submitted'].includes(b.Status)).length;
                 setStats({ open, closed, total: safeBatches.length });
                 setLoading(false);
             })
@@ -79,9 +79,25 @@ function BatchesContent() {
     }, []);
 
     const filteredBatches = batches.filter(b => {
-        const matchesStatus = statusFilter === 'All' || b.Status === statusFilter;
+        // Status Filter (Group Submitted under Closed)
+        const matchesStatus = statusFilter === 'All' ||
+            (statusFilter === 'Open' && b.Status === 'Open') ||
+            (statusFilter === 'Closed' && ['Closed', 'Submitted'].includes(b.Status));
+
         const matchesClient = clientFilter === 'All' || b.ClientCode === clientFilter;
-        const matchesMode = modeFilter === 'All' || (b.EntryMode && b.EntryMode.toUpperCase() === modeFilter.toUpperCase());
+
+        // Mode Filter Logic
+        let matchesMode = modeFilter === 'All';
+        if (!matchesMode && b.EntryMode) {
+            const m = b.EntryMode.toUpperCase(); // DB Value
+            const f = modeFilter.toUpperCase();  // Filter Value
+
+            if (f === 'BARCODE/DATAMATRIX') {
+                matchesMode = ['DATAMATRIX', 'BARCODE', 'SCAN/BARCODE', 'BARCODE/DATAMATRIX'].includes(m);
+            } else {
+                matchesMode = m === f;
+            }
+        }
 
         // Date Range Check
         const batchDate = b.Date ? b.Date.substring(0, 10) : '';
@@ -166,11 +182,9 @@ function BatchesContent() {
                         onChange={(e) => setModeFilter(e.target.value)}
                     >
                         <option value="All">All Modes</option>
-                        <option value="DATAMATRIX">DataMatrix</option>
-                        <option value="BARCODE">Barcode</option>
-                        <option value="MANUAL">Manual</option>
-                        <option value="SCAN/BARCODE">Scan/Barcode</option>
-                        <option value="ZEROS">Zeros</option>
+                        <option value="Barcode/Datamatrix">Barcode/Datamatrix</option>
+                        <option value="Manual">Manual</option>
+                        <option value="Zeros">Zeros</option>
                     </select>
 
                     {/* Status Tabs */}
@@ -215,37 +229,42 @@ function BatchesContent() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredBatches.map(batch => (
-                                    <tr key={batch.BatchID} onClick={() => router.push(`/batches/${batch.BatchID}/enter`)} className="cursor-pointer group">
-                                        <td>
-                                            <span className="font-mono text-gray-300 text-xs group-hover:text-white transition-colors">
-                                                {batch.BatchCode}
-                                            </span>
-                                        </td>
-                                        <td className="font-medium text-white">{batch.ClientCode}</td>
-                                        <td className="text-gray-400 text-xs uppercase tracking-wide">{batch.EntryMode}</td>
-                                        <td className="text-center">
-                                            <span className={`
-                                                inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border
-                                                ${batch.Status === 'Open'
-                                                    ? 'bg-white/10 text-white border-white/20'
-                                                    : 'bg-zinc-800 text-gray-500 border-zinc-700'
-                                                }
-                                            `}>
-                                                {batch.Status}
-                                            </span>
-                                        </td>
-                                        <td className="text-right text-gray-400 font-mono">{batch.ItemCount}</td>
-                                        <td className="text-right font-medium text-white font-mono">
-                                            ${Number(batch.TotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td className="text-right">
-                                            <span className="text-gray-500 group-hover:text-white transition-colors text-xs uppercase font-bold tracking-wide">
-                                                Manage &rarr;
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {filteredBatches.map(batch => {
+                                    // Normalize Status Display
+                                    const displayStatus = ['Closed', 'Submitted'].includes(batch.Status) ? 'Closed' : batch.Status;
+
+                                    return (
+                                        <tr key={batch.BatchID} onClick={() => router.push(`/batches/${batch.BatchID}/enter`)} className="cursor-pointer group">
+                                            <td>
+                                                <span className="font-mono text-gray-300 text-xs group-hover:text-white transition-colors">
+                                                    {batch.BatchCode}
+                                                </span>
+                                            </td>
+                                            <td className="font-medium text-white">{batch.ClientCode}</td>
+                                            <td className="text-gray-400 text-xs uppercase tracking-wide">{batch.EntryMode}</td>
+                                            <td className="text-center">
+                                                <span className={`
+                                                    inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border
+                                                    ${displayStatus === 'Open'
+                                                        ? 'bg-white/10 text-white border-white/20'
+                                                        : 'bg-zinc-800 text-gray-500 border-zinc-700'
+                                                    }
+                                                `}>
+                                                    {displayStatus}
+                                                </span>
+                                            </td>
+                                            <td className="text-right text-gray-400 font-mono">{batch.ItemCount}</td>
+                                            <td className="text-right font-medium text-white font-mono">
+                                                ${Number(batch.TotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="text-right">
+                                                <span className="text-gray-500 group-hover:text-white transition-colors text-xs uppercase font-bold tracking-wide">
+                                                    Manage &rarr;
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -257,7 +276,6 @@ function BatchesContent() {
     );
 }
 
-// Keep CreateBatchModal as is...
 function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: () => void }) {
     const router = useRouter();
     const [clients, setClients] = useState<any[]>([]);
@@ -270,7 +288,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
             const adjusted = new Date(d.getTime() - (offset * 60 * 1000));
             return adjusted.toISOString().split('T')[0];
         })(),
-        entryMode: 'Scan/Barcode', // User Preference Default
+        entryMode: 'Barcode/Datamatrix', // Updated default
         paymentCategory: 'Check',
         defaultGiftPlatform: 'Chainbridge',
         defaultTransactionType: 'Contribution',
@@ -297,10 +315,8 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
             const newBatch = await res.json();
 
             if (newBatch && newBatch.BatchID) {
-                // Navigate to the Data Entry view for the new batch
                 router.push(`/batches/${newBatch.BatchID}/enter`);
             } else {
-                // Fallback if ID missing (shouldn't happen)
                 refresh();
                 onClose();
             }
@@ -356,7 +372,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 value={formData.entryMode}
                                 onChange={e => setFormData({ ...formData, entryMode: e.target.value })}
                             >
-                                <option value="Scan/Barcode">Scan/Barcode</option>
+                                <option value="Barcode/Datamatrix">Barcode/Datamatrix</option>
                                 <option value="Manual">Manual</option>
                                 <option value="Zeros">Zeros</option>
                             </select>
@@ -395,7 +411,6 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                     {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </select>
                             </div>
-                            {/* Transaction Type removed per user request (defaults to Contribution) */}
                             <div>
                                 <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Entity Type</label>
                                 <select
