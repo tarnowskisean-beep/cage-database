@@ -303,11 +303,18 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Fix: Convert string inputs to correct types for Zod schema
+        const payload = {
+            ...formData,
+            defaultGiftYear: parseInt(formData.defaultGiftYear.toString()) || new Date().getFullYear()
+        };
+
         try {
             const res = await fetch('/api/batches', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) {
