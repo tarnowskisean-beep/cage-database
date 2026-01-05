@@ -80,7 +80,17 @@ CREATE TABLE IF NOT EXISTS "Donations" (
     "CreatedBy" INT REFERENCES "Users"("UserID"),
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW(),
     "CheckNumber" TEXT, -- Added explicitly for PG schema
-    "ScanString" TEXT   -- Added explicitly for PG schema
+    "ScanString" TEXT,   -- Added explicitly for PG schema
+    "MailCode" TEXT     -- Campaigns
+);
+
+-- Pledges Table
+CREATE TABLE IF NOT EXISTS "Pledges" (
+    "PledgeID" SERIAL PRIMARY KEY,
+    "DonorID" INT NOT NULL, -- Logical FK to Donors (which effectively is People/Clients in this context, or a separate table if it exists)
+    "MailCode" TEXT NOT NULL,
+    "Amount" DECIMAL(18, 2) NOT NULL,
+    "CreatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- BankDeposits Table

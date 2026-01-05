@@ -11,6 +11,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     const [donor, setDonor] = useState<any>(null);
     const [stats, setStats] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
+    const [pledges, setPledges] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Filters
@@ -18,10 +19,12 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     const [endDate, setEndDate] = useState('');
     const [clientFilter, setClientFilter] = useState('All');
     const [methodFilter, setMethodFilter] = useState('All');
+    const [mailCodeFilter, setMailCodeFilter] = useState('All');
 
     // Derived Lists for Dropdowns
     const uniqueClients = Array.from(new Set(history.map(h => h.ClientCode).filter(Boolean))).sort();
     const uniqueMethods = Array.from(new Set(history.map(h => h.GiftMethod || 'Check').filter(Boolean))).sort();
+    const uniqueMailCodes = Array.from(new Set(history.map(h => h.MailCode).filter(Boolean))).sort();
 
     // Filter Logic
     const filteredHistory = history.filter(h => {
@@ -29,7 +32,8 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
         const matchDate = (!startDate || d >= startDate) && (!endDate || d <= endDate);
         const matchClient = clientFilter === 'All' || h.ClientCode === clientFilter;
         const matchMethod = methodFilter === 'All' || (h.GiftMethod || 'Check') === methodFilter;
-        return matchDate && matchClient && matchMethod;
+        const matchMailCode = mailCodeFilter === 'All' || h.MailCode === mailCodeFilter;
+        return matchDate && matchClient && matchMethod && matchMailCode;
     });
 
     useEffect(() => {
@@ -41,6 +45,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                 setDonor(data.profile || data.donor);
                 setStats(data.stats);
                 setHistory(data.history || []);
+                setPledges(data.pledges || []);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -171,6 +176,39 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                 </div>
             </div>
 
+            {/* Pledge Tracking Section */}
+            {pledges.length > 0 && (
+                <div className="glass-panel p-6 mb-8">
+                    <h3 className="text-lg font-display text-white mb-4">Pledge Tracking</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pledges.map((pledge: any) => (
+                            <div key={pledge.PledgeID} className="bg-white/5 p-4 rounded border border-white/5">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p className="text-sm font-medium text-white">{pledge.MailCode}</p>
+                                        <p className="text-xs text-gray-500 uppercase tracking-widest">Campaign</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-mono text-white">${Number(pledge.donated).toLocaleString()} / ${Number(pledge.Amount).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-zinc-700 h-2 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-emerald-500 transition-all duration-500"
+                                        style={{ width: `${Math.min(pledge.progress, 100)}%` }}
+                                    />
+                                </div>
+                                <div className="mt-2 text-right">
+                                    <span className={`text-xs font-bold ${pledge.progress >= 100 ? 'text-emerald-400' : 'text-gray-400'}`}>
+                                        {pledge.progress.toFixed(1)}% Fulfilled
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* CRM Notes Section */}
             <div className="glass-panel p-6 mb-8">
                 <h3 className="text-lg font-display text-white mb-4">Notes & Activity</h3>
@@ -218,6 +256,14 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                             <option value="All">All Methods</option>
                             {uniqueMethods.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
+                        <select
+                            className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+                            value={mailCodeFilter}
+                            onChange={e => setMailCodeFilter(e.target.value)}
+                        >
+                            <option value="All">All Campaigns</option>
+                            {uniqueMailCodes.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
                     </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -227,6 +273,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 <th className="px-8 py-4">Date</th>
                                 <th className="px-6 py-4">Client</th>
                                 <th className="px-6 py-4">Method</th>
+                                <th className="px-6 py-4">Campaign</th>
                                 <th className="px-6 py-4 text-center">Batch</th>
                                 <th className="px-6 py-4 text-right">Amount</th>
                             </tr>
@@ -234,7 +281,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         <tbody>
                             {filteredHistory.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-12 text-center text-gray-500 italic">No donation history matches filters.</td>
+                                    <td colSpan={6} className="px-8 py-12 text-center text-gray-500 italic">No donation history matches filters.</td>
                                 </tr>
                             ) : (
                                 filteredHistory.map((h: any) => (
@@ -247,6 +294,9 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                         </td>
                                         <td className="px-6 py-4 text-gray-400">
                                             {h.GiftMethod || 'Check'}
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-400">
+                                            {h.MailCode || '-'}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">

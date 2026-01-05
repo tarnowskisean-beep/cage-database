@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const historyRes = await query(`
             SELECT 
                 "DonationID", "GiftDate", "GiftAmount", "GiftMethod", "GiftPlatform", 
-                "BatchID", "CheckNumber",
+                "BatchID", "CheckNumber", "MailCode",
                 c."ClientName", c."ClientCode"
             FROM "Donations" d
             LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
@@ -30,9 +30,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             ORDER BY "GiftDate" DESC
         `, [id]);
 
-        // 3. Calculate Stats
-        const totalGiven = historyRes.rows.reduce((acc, row) => acc + parseFloat(row.GiftAmount || 0), 0);
-        const giftCount = historyRes.rows.length;
+        const history = historyRes.rows;
+
+        // 3. Get Pledges & Calculate Progress
+        const pledgesRes = await query(`
+            SELECT * FROM "Pledges" WHERE "DonorID" = $1 ORDER BY "CreatedAt" DESC
+        `, [id]);
+
+        const pledges = pledgesRes.rows.map(pledge => {
+            const donated = history
+                .filter(h => h.MailCode === pledge.MailCode)
+                .reduce((sum, h) => sum + Number(h.GiftAmount), 0);
+            return {
+                ...pledge,
+                donated,
+                progress: pledge.Amount > 0 ? (donated / pledge.Amount) * 100 : 0
+            };
+        });
+
+        // 4. Calculate Stats
+        const totalGiven = history.reduce((acc, row) => acc + parseFloat(row.GiftAmount || 0), 0);
+        const giftCount = history.length;
         const avgGift = giftCount > 0 ? totalGiven / giftCount : 0;
 
         return NextResponse.json({
@@ -42,7 +60,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 giftCount,
                 avgGift
             },
-            history: historyRes.rows
+            history: history,
+            pledges: pledges
         });
 
     } catch (e: any) {
