@@ -127,21 +127,25 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
             id: i.id,
             type: 'Payment' as const,
             date: i.date,
-            ref: 'EXP',
-            payee: i.desc || 'Expense',
-            memo: 'Expense',
-            amount: Math.abs(Number(i.amount)),
-            isPayment: true
+            clearedDate: i.clearedDate,
+            ref: i.ref,
+            payee: i.payee,
+            memo: i.memo,
+            amount: Number(i.amount),
+            isPayment: true,
+            cleared: i.cleared
         })),
         ...moneyIn.map(i => ({
             id: i.id,
             type: 'Deposit' as const,
             date: i.date,
-            ref: 'DEP',
-            payee: 'Deposit',
-            memo: i.desc || `Batch #${i.id}`,
+            clearedDate: i.clearedDate,
+            ref: i.ref,
+            payee: i.payee,
+            memo: i.memo,
             amount: Number(i.amount),
-            isPayment: false
+            isPayment: false,
+            cleared: i.cleared
         }))
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -267,83 +271,83 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
             </div>
 
             {/* Main Table */}
-            <div className="flex-1 overflow-auto px-6 pb-12">
-                <div className="glass-panel overflow-hidden">
-                    <table className="w-full text-left text-xs text-gray-300">
-                        <thead className="bg-white/5 border-b border-white/5 font-bold text-gray-500 uppercase tracking-widest">
-                            <tr>
-                                <th className="p-4">Date</th>
-                                <th className="p-4">Cleared Date</th>
-                                <th className="p-4">Type</th>
-                                <th className="p-4">Ref No.</th>
-                                <th className="p-4">Account</th>
-                                <th className="p-4">Payee</th>
-                                <th className="p-4">Memo</th>
-                                <th className="p-4 text-right">Payment</th>
-                                <th className="p-4 text-right">Deposit</th>
-                                <th className="p-4 text-center w-16">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {filteredItems.map(item => (
-                                <tr
-                                    key={item.id}
-                                    className={`
-                                        group transition-colors cursor-pointer
-                                        ${clearedItems.has(item.id)
-                                            ? 'bg-emerald-900/10 hover:bg-emerald-900/20'
-                                            : 'hover:bg-white/5'
-                                        }
-                                    `}
-                                    onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')}
-                                >
-                                    <td className="p-4 font-medium text-white group-hover:text-emerald-200 transition-colors">{new Date(item.date).toLocaleDateString()}</td>
-                                    <td className="p-4 text-gray-500">{new Date(item.date).toLocaleDateString()}</td>
-                                    <td className="p-4">
-                                        <span className={`
-                                            px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border
-                                            ${item.type === 'Payment' ? 'border-orange-500/20 text-orange-400 bg-orange-500/5' : 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5'}
-                                        `}>
-                                            {item.type}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-gray-500 font-mono text-[10px]">{item.ref}</td>
-                                    <td className="p-4 text-gray-600 italic">- Split -</td>
-                                    <td className="p-4 text-gray-300">{item.payee}</td>
-                                    <td className="p-4 text-gray-500 truncate max-w-[200px]">{item.memo}</td>
-                                    <td className="p-4 text-right font-medium text-white">
-                                        {item.isPayment && item.amount.toFixed(2)}
-                                    </td>
-                                    <td className="p-4 text-right font-medium text-white">
-                                        {!item.isPayment && item.amount.toFixed(2)}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div
-                                            className={`
-                                                w-5 h-5 mx-auto rounded-full flex items-center justify-center transition-all duration-200
-                                                ${clearedItems.has(item.id)
-                                                    ? 'bg-emerald-500 text-black scale-110 shadow-[0_0_10px_rgba(16,185,129,0.4)]'
-                                                    : 'bg-transparent border border-zinc-700 text-transparent hover:border-zinc-500'
+            <div className="bg-zinc-900 border-t border-b border-white/5">
+                <table className="w-full text-left text-xs uppercase tracking-wide">
+                    <thead className="text-gray-500 border-b border-white/5 bg-zinc-900 sticky top-0 z-10">
+                        <tr>
+                            <th className="py-4 px-6 font-semibold w-32">Date</th>
+                            <th className="py-4 px-6 font-semibold w-32">Cleared Date</th>
+                            <th className="py-4 px-6 font-semibold">Type</th>
+                            <th className="py-4 px-6 font-semibold">Ref No</th>
+                            <th className="py-4 px-6 font-semibold">Payee</th>
+                            <th className="py-4 px-6 font-semibold w-1/3">Memo</th>
+                            <th className="py-4 px-6 font-semibold text-right">Payment</th>
+                            <th className="py-4 px-6 font-semibold text-right">Deposit</th>
+                            <th className="py-4 px-6 font-semibold text-center w-24">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {loading ? (
+                            <tr><td colSpan={9} className="py-8 text-center text-gray-500">Loading period data...</td></tr>
+                        ) : allItems.length === 0 ? (
+                            <tr><td colSpan={9} className="py-8 text-center text-gray-500">No transactions found for this period</td></tr>
+                        ) : (
+                            filteredItems.map(item => { // Changed from allItems.map to filteredItems.map
+                                const isCleared = clearedItems.has(item.id); // Use state for cleared status
+                                // For alternating row colors or hover effects if needed
+                                return (
+                                    <tr
+                                        key={`${item.type}-${item.id}`}
+                                        className={`
+                                            group transition-colors
+                                            ${isCleared ? 'bg-emerald-900/10' : 'hover:bg-white/5'}
+                                        `}
+                                        onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')} // Use toggleClear
+                                    >
+                                        <td className="py-4 px-6 font-mono text-gray-300">
+                                            {new Date(item.date).toLocaleDateString()}
+                                        </td>
+                                        <td className="py-4 px-6 font-mono text-gray-400">
+                                            {item.clearedDate ? new Date(item.clearedDate).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold border ${item.type === 'Deposit'
+                                                ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50'
+                                                : 'bg-rose-900/30 text-rose-400 border-rose-900/50'
+                                                }`}>
+                                                {item.type}
+                                            </span>
+                                        </td>
+                                        <td className="py-4 px-6 text-gray-300">{item.ref}</td>
+                                        <td className="py-4 px-6 text-white font-medium">{item.payee}</td>
+                                        <td className="py-4 px-6 text-gray-400 truncate max-w-xs" title={item.memo}>{item.memo}</td>
+                                        <td className="py-4 px-6 text-right font-mono text-gray-300">
+                                            {item.isPayment ? item.amount.toFixed(2) : ''}
+                                        </td>
+                                        <td className="py-4 px-6 text-right font-mono text-white">
+                                            {!item.isPayment ? item.amount.toFixed(2) : ''}
+                                        </td>
+                                        <td className="py-4 px-6 text-center">
+                                            <div className={`
+                                                w-5 h-5 mx-auto rounded-full border flex items-center justify-center transition-all
+                                                ${isCleared
+                                                    ? 'bg-emerald-500 border-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                                                    : 'border-white/20 group-hover:border-white/50'
                                                 }
-                                            `}
-                                        >
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {filteredItems.length === 0 && (
-                        <div className="p-16 text-center">
-                            <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
-                                <span className="text-2xl opacity-50">🔍</span>
-                            </div>
-                            <h3 className="text-white font-medium mb-1">No items found</h3>
-                            <p className="text-gray-500 text-sm">Try adjusting your filters or date range.</p>
-                        </div>
-                    )}
-                </div>
+                                            `}>
+                                                {isCleared && (
+                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

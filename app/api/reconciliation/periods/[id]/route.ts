@@ -38,36 +38,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Let's query Batches by Date Range + Status=Closed.
 
 
-        const batchesRes = await query(`
-            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared"
-            FROM "Batches"
-            WHERE "ClientID" = $1 
-            AND "Date" >= $2 AND "Date" <= $3
-            AND "Status" = 'Closed'
-            ORDER BY "Date" ASC
-        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
-
-        // Calculate Batch Totals dynamically for display
-        // (In production, cache this or store link)
-        const batches = [];
-        for (const b of batchesRes.rows) {
-            const sum = await query('SELECT SUM("GiftAmount") as total FROM "Donations" WHERE "BatchID"=$1', [b.BatchID]);
-            batches.push({
-                id: b.BatchID,
-                type: 'Batch',
-                desc: `${b.BatchCode} (${b.PaymentCategory})`,
-                amount: parseFloat(sum.rows[0].total || 0),
-                date: b.Date,
-                cleared: b.Cleared || false
-            });
-        }
 
         // 3. Fetch Money Out (Fees, Refunds, Chargebacks)
         // REPLACED: Fetching from Donations table instead of ReconciliationBankTransactions
 
         // A. Refunds & Chargebacks
         const refundsRes = await query(`
-            SELECT "DonationID", "GiftDate", "GiftAmount", "TransactionType", "DonorID", "BatchID"
+            SELECT "DonationID", "GiftDate", "GiftAmount", "TransactionType", "DonorID", "BatchID", "GiftPlatform"
             FROM "Donations"
             WHERE "ClientID" = $1
             AND "GiftDate" >= $2 AND "GiftDate" <= $3
@@ -77,7 +54,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // B. Fees (Associated with Donations in this period)
         // Note: Fees usually happen same day as gift.
         const feesRes = await query(`
-            SELECT "DonationID", "GiftDate", "GiftFee", "TransactionType"
+            SELECT "DonationID", "GiftDate", "GiftFee", "TransactionType", "GiftPlatform"
             FROM "Donations"
             WHERE "ClientID" = $1
             AND "GiftDate" >= $2 AND "GiftDate" <= $3
@@ -89,24 +66,55 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Add Refunds/Chargebacks
         for (const r of refundsRes.rows) {
             payments.push({
-                id: `REF-${r.DonationID}`, // Virtual ID to distinguish
+                id: `REF-${r.DonationID}`,
                 type: 'Payment',
-                desc: `${r.TransactionType} #${r.DonationID}`,
-                amount: Math.abs(parseFloat(r.GiftAmount)), // Amount is negative in DB usually? Or positive? Assuming we need positive for "Money Out" display logic which flips it.
                 date: r.GiftDate,
-                cleared: false // TODO: Persist cleared status for these virtual items? Currently transient.
+                clearedDate: null, // TODO: Link to bank transaction date when available
+                ref: `REF-${r.DonationID}`,
+                payee: r.GiftPlatform || 'System',
+                memo: r.TransactionType, // e.g. "Refund", "Chargeback"
+                amount: Math.abs(parseFloat(r.GiftAmount)),
+                cleared: false
             });
         }
 
         // Add Fees
         for (const f of feesRes.rows) {
             payments.push({
-                id: `FEE-${f.DonationID}`, // Virtual ID
+                id: `FEE-${f.DonationID}`,
                 type: 'Payment',
-                desc: `Processing Fee (Tx #${f.DonationID})`,
-                amount: parseFloat(f.GiftFee),
                 date: f.GiftDate,
+                clearedDate: null,
+                ref: `FEE-${f.DonationID}`,
+                payee: f.GiftPlatform || 'System',
+                memo: `Processing Fee (Tx #${f.DonationID})`,
+                amount: parseFloat(f.GiftFee),
                 cleared: false
+            });
+        }
+
+        const batchesRes = await query(`
+            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared", "EntryMode", "TotalAmount"
+            FROM "Batches"
+            WHERE "ClientID" = $1 
+            AND "Date" >= $2 AND "Date" <= $3
+            AND "Status" IN ('Closed', 'Submitted')
+            ORDER BY "Date" ASC
+        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
+
+        const batches = [];
+        for (const b of batchesRes.rows) {
+            // Recalculate total from Donations if needed, but Batch.TotalAmount should be accurate if closed
+            batches.push({
+                id: b.BatchID,
+                type: 'Deposit',
+                date: b.Date,
+                clearedDate: b.Cleared ? b.Date : null, // Placeholder: If cleared, assume it matched on batch date for now unless we have bank date
+                ref: b.BatchCode,
+                payee: b.PaymentCategory, // e.g. "Check", "EFT"
+                memo: b.BatchCode, // Using BatchCode as memo for now as requested by user fallback
+                amount: parseFloat(b.TotalAmount),
+                cleared: b.Cleared || false
             });
         }
 
