@@ -177,89 +177,89 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     if (!period) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-red-500">Period Not Found</div>;
 
     return (
-        <div className="min-h-screen bg-[#f4f5f8] text-[#393a3d]">
-            {/* QB-style Header */}
-            <header className="bg-white border-b border-[#dcdedf] px-6 py-4 sticky top-0 z-20 shadow-sm">
+        <div className="min-h-screen bg-[var(--color-bg-main)] text-white font-body">
+            {/* QB-style Header - Dark */}
+            <header className="bg-[var(--color-bg-elevated)] border-b border-[var(--glass-border)] px-6 py-4 sticky top-0 z-20 shadow-md">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
-                            {period.ClientCode || 'Account'} <span className="text-gray-300 font-light mx-2">|</span> Reconcile
+                        <h1 className="text-2xl font-bold text-white font-display flex items-center gap-3">
+                            {period.ClientCode || 'Account'} <span className="text-gray-600 font-light text-xl">|</span> Reconcile
                         </h1>
-                        <p className="text-xs text-gray-500 mt-1">Statement ending date: <strong>{new Date(period.PeriodEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
+                        <p className="text-xs text-gray-400 mt-1">Statement ending date: <strong className="text-gray-200">{new Date(period.PeriodEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="px-4 py-2 border border-[#dcdedf] text-[#393a3d] font-semibold rounded hover:bg-gray-50 text-sm transition-colors">Edit info</button>
-                        <button className="px-4 py-2 border border-[#dcdedf] text-[#393a3d] font-semibold rounded hover:bg-gray-50 text-sm transition-colors">Save for later</button>
+                        <button className="px-4 py-2 border border-[var(--glass-border)] text-gray-300 font-medium rounded hover:bg-white/5 hover:text-white text-sm transition-colors">Edit info</button>
+                        <button className="px-4 py-2 border border-[var(--glass-border)] text-gray-300 font-medium rounded hover:bg-white/5 hover:text-white text-sm transition-colors">Save for later</button>
                         <div className="flex rounded-md shadow-sm">
                             <button
                                 onClick={handleFinish}
                                 disabled={!isBalanced}
                                 className={`
-                                    px-6 py-2 bg-[#2ca01c] text-white font-bold rounded-l hover:bg-[#108000] transition-colors text-sm
-                                    disabled:opacity-50 disabled:cursor-not-allowed
+                                    px-6 py-2 bg-emerald-600 text-white font-bold rounded-l hover:bg-emerald-500 transition-colors text-sm
+                                    disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-zinc-700
                                 `}
                             >
                                 Finish now
                             </button>
-                            <button className="px-3 bg-[#2ca01c] border-l border-[#108000] text-white rounded-r hover:bg-[#108000] transition-colors">▼</button>
+                            <button className="px-3 bg-emerald-600 border-l border-emerald-700 text-white rounded-r hover:bg-emerald-500 transition-colors">▼</button>
                         </div>
                     </div>
                 </div>
 
                 {/* The Equation Bar */}
-                <div className="flex flex-col md:flex-row items-center justify-center gap-6 mt-6 pb-2">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-12 mt-8 pb-4">
                     {/* Statement Ending */}
-                    <div className="text-center">
-                        <div className="text-xl font-bold text-[#393a3d]">${statementBalance.toFixed(2)}</div>
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Statement Ending Balance</div>
+                    <div className="text-center group">
+                        <div className="text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors">${statementBalance.toFixed(2)}</div>
+                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-400 transition-colors">Statement Ending Balance</div>
                     </div>
 
-                    <div className="text-gray-400 text-2xl font-light">-</div>
+                    <div className="text-zinc-700 text-3xl font-light">-</div>
 
                     {/* Cleared Balance */}
-                    <div className="text-center">
-                        <div className="text-xl font-bold text-[#393a3d]">${clearedBalance.toFixed(2)}</div>
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Cleared Balance</div>
+                    <div className="text-center group">
+                        <div className="text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors">${clearedBalance.toFixed(2)}</div>
+                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-400 transition-colors">Cleared Balance</div>
 
                         {/* Breakdown Tooltip/Subtext */}
-                        <div className="text-[10px] text-gray-400 mt-1 flex gap-2 justify-center">
+                        <div className="text-[10px] text-zinc-600 mt-2 flex gap-3 justify-center bg-white/5 py-1 px-3 rounded-full">
                             <span>{clearedPaymentsCount} payments</span>
-                            <span>•</span>
+                            <span className="text-zinc-700">•</span>
                             <span>{clearedDepositsCount} deposits</span>
                         </div>
                     </div>
 
-                    <div className="hidden md:block w-px h-10 bg-gray-300 mx-4"></div>
+                    <div className="hidden md:block w-px h-12 bg-zinc-800 mx-4"></div>
 
                     {/* Difference */}
                     <div className="text-center flex flex-col items-center">
                         {isBalanced ? (
-                            <div className="flex items-center gap-2 animate-in zoom-in spin-in-3 duration-500">
-                                <div className="w-8 h-8 bg-[#2ca01c] rounded-full flex items-center justify-center text-white shadow-lg shadow-green-900/20">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                            <div className="flex items-center gap-3 animate-in zoom-in spin-in-3 duration-500">
+                                <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                 </div>
-                                <div className="text-xl font-bold text-[#393a3d]">$0.00</div>
+                                <div className="text-2xl font-bold text-white">$0.00</div>
                             </div>
                         ) : (
-                            <div className="text-xl font-bold text-[#393a3d]">${difference.toFixed(2)}</div>
+                            <div className="text-2xl font-bold text-white">${difference.toFixed(2)}</div>
                         )}
-                        <div className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isBalanced ? 'text-[#2ca01c]' : 'text-gray-400'}`}>Difference</div>
+                        <div className={`text-[10px] font-bold uppercase tracking-widest mt-2 ${isBalanced ? 'text-emerald-400' : 'text-zinc-500'}`}>Difference</div>
                     </div>
                 </div>
             </header>
 
             {/* Filter Toolbar */}
-            <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex bg-white rounded-full p-1 border border-[#dcdedf] shadow-sm">
+            <div className="px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-[var(--color-bg-main)]">
+                <div className="flex bg-zinc-900/50 rounded-full p-1 border border-white/5">
                     {['Payments', 'Deposits', 'All'].map(f => (
                         <button
                             key={f}
                             onClick={() => setFilter(f as any)}
                             className={`
-                                px-6 py-1.5 rounded-full text-sm font-semibold transition-all
+                                px-6 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all
                                 ${filter === f
-                                    ? 'bg-[#393a3d] text-white shadow-md'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                    ? 'bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.1)]'
+                                    : 'text-gray-500 hover:text-white hover:bg-white/5'
                                 }
                             `}
                         >
@@ -268,61 +268,78 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                     ))}
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-4 py-2 bg-white border border-[#dcdedf] text-[#393a3d] rounded text-sm font-semibold hover:bg-gray-50 transition-colors shadow-sm">
+                    <button className="px-4 py-2 bg-transparent border border-white/10 text-gray-400 hover:text-white hover:border-white/20 rounded text-xs font-bold uppercase tracking-wide transition-colors">
                         View statements
                     </button>
-                    <div className="flex gap-1 border border-[#dcdedf] rounded bg-white p-1">
-                        <button className="p-1 hover:bg-gray-100 rounded text-gray-500"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2.4-9a3.5 3.5 0 0110.5 0" /></svg></button>
-                        <button className="p-1 hover:bg-gray-100 rounded text-gray-500"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+                    <div className="flex gap-1 border border-white/10 rounded bg-zinc-900/50 p-1">
+                        <button className="p-1 hover:bg-white/10 rounded text-gray-500 hover:text-white transition-colors"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2.4-9a3.5 3.5 0 0110.5 0" /></svg></button>
+                        <button className="p-1 hover:bg-white/10 rounded text-gray-500 hover:text-white transition-colors"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
                     </div>
                 </div>
             </div>
 
             {/* Main Table */}
             <div className="flex-1 overflow-auto px-6 pb-12">
-                <div className="bg-white border border-[#dcdedf] rounded-sm shadow-sm overflow-hidden">
-                    <table className="w-full text-left text-xs text-[#393a3d]">
-                        <thead className="bg-[#f4f5f8] border-b border-[#dcdedf] font-bold text-gray-600 uppercase tracking-widest">
+                <div className="glass-panel overflow-hidden">
+                    <table className="w-full text-left text-xs text-gray-300">
+                        <thead className="bg-white/5 border-b border-white/5 font-bold text-gray-500 uppercase tracking-widest">
                             <tr>
-                                <th className="p-3">Date</th>
-                                <th className="p-3">Cleared Date</th>
-                                <th className="p-3">Type</th>
-                                <th className="p-3">Ref No.</th>
-                                <th className="p-3">Account</th>
-                                <th className="p-3">Payee</th>
-                                <th className="p-3">Memo</th>
-                                <th className="p-3 text-right">Payment (USD)</th>
-                                <th className="p-3 text-right">Deposit (USD)</th>
-                                <th className="p-3 text-center w-12"></th>
+                                <th className="p-4">Date</th>
+                                <th className="p-4">Cleared Date</th>
+                                <th className="p-4">Type</th>
+                                <th className="p-4">Ref No.</th>
+                                <th className="p-4">Account</th>
+                                <th className="p-4">Payee</th>
+                                <th className="p-4">Memo</th>
+                                <th className="p-4 text-right">Payment</th>
+                                <th className="p-4 text-right">Deposit</th>
+                                <th className="p-4 text-center w-16">Status</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#e4e5e7]">
+                        <tbody className="divide-y divide-white/5">
                             {filteredItems.map(item => (
-                                <tr key={item.id} className={`hover:bg-[#f2f8fc] transition-colors cursor-pointer ${clearedItems.has(item.id) ? 'bg-[#f4fbf0]' : ''}`} onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')}>
-                                    <td className="p-3 font-medium">{new Date(item.date).toLocaleDateString()}</td>
-                                    <td className="p-3 text-gray-500">{new Date(item.date).toLocaleDateString()}</td>
-                                    <td className="p-3">{item.type}</td>
-                                    <td className="p-3 text-gray-500">{item.ref}</td>
-                                    <td className="p-3 text-gray-500">- Split -</td>
-                                    <td className="p-3">{item.payee}</td>
-                                    <td className="p-3 text-gray-500 truncate max-w-[200px]">{item.memo}</td>
-                                    <td className="p-3 text-right font-medium">
+                                <tr
+                                    key={item.id}
+                                    className={`
+                                        group transition-colors cursor-pointer
+                                        ${clearedItems.has(item.id)
+                                            ? 'bg-emerald-900/10 hover:bg-emerald-900/20'
+                                            : 'hover:bg-white/5'
+                                        }
+                                    `}
+                                    onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')}
+                                >
+                                    <td className="p-4 font-medium text-white group-hover:text-emerald-200 transition-colors">{new Date(item.date).toLocaleDateString()}</td>
+                                    <td className="p-4 text-gray-500">{new Date(item.date).toLocaleDateString()}</td>
+                                    <td className="p-4">
+                                        <span className={`
+                                            px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border
+                                            ${item.type === 'Payment' ? 'border-orange-500/20 text-orange-400 bg-orange-500/5' : 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5'}
+                                        `}>
+                                            {item.type}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 text-gray-500 font-mono text-[10px]">{item.ref}</td>
+                                    <td className="p-4 text-gray-600 italic">- Split -</td>
+                                    <td className="p-4 text-gray-300">{item.payee}</td>
+                                    <td className="p-4 text-gray-500 truncate max-w-[200px]">{item.memo}</td>
+                                    <td className="p-4 text-right font-medium text-white">
                                         {item.isPayment && item.amount.toFixed(2)}
                                     </td>
-                                    <td className="p-3 text-right font-medium">
+                                    <td className="p-4 text-right font-medium text-white">
                                         {!item.isPayment && item.amount.toFixed(2)}
                                     </td>
-                                    <td className="p-3 text-center">
+                                    <td className="p-4 text-center">
                                         <div
                                             className={`
-                                                w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 border
+                                                w-5 h-5 mx-auto rounded-full flex items-center justify-center transition-all duration-200
                                                 ${clearedItems.has(item.id)
-                                                    ? 'bg-[#2ca01c] border-[#2ca01c] text-white scale-110 shadow-sm'
-                                                    : 'bg-white border-gray-300 text-transparent hover:border-gray-400'
+                                                    ? 'bg-emerald-500 text-black scale-110 shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+                                                    : 'bg-transparent border border-zinc-700 text-transparent hover:border-zinc-500'
                                                 }
                                             `}
                                         >
-                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>
                                         </div>
                                     </td>
                                 </tr>
@@ -330,8 +347,12 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         </tbody>
                     </table>
                     {filteredItems.length === 0 && (
-                        <div className="p-12 text-center text-gray-500 bg-gray-50">
-                            No transactions found for this filter.
+                        <div className="p-16 text-center">
+                            <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+                                <span className="text-2xl opacity-50">🔍</span>
+                            </div>
+                            <h3 className="text-white font-medium mb-1">No items found</h3>
+                            <p className="text-gray-500 text-sm">Try adjusting your filters or date range.</p>
                         </div>
                     )}
                 </div>

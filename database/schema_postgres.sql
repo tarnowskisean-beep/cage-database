@@ -128,3 +128,9 @@ ON CONFLICT ("ClientCode") DO NOTHING;
 INSERT INTO "Clients" ("ClientCode", "ClientName")
 VALUES ('CAND001', 'Candidate One')
 ON CONFLICT ("ClientCode") DO NOTHING;
+
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS "idx_donations_batchid" ON "Donations" ("BatchID");
+CREATE INDEX IF NOT EXISTS "idx_donations_clientid" ON "Donations" ("ClientID");
+CREATE INDEX IF NOT EXISTS "idx_batches_clientid" ON "Batches" ("ClientID");
+CREATE INDEX IF NOT EXISTS "idx_donations_date" ON "Donations" ("GiftDate");
