@@ -326,17 +326,17 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
                         </div>
                     )}
 
-                    {(!formData.sendInvite) && (
+                    {(user || !formData.sendInvite) && (
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-                                {user ? 'Reset Password (Optional)' : 'Initial Password'}
+                                {user ? 'Reset Password (Leave empty to keep current)' : 'Initial Password'}
                             </label>
                             <input
                                 type="password"
                                 className="input-field"
                                 value={formData.password}
                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                placeholder={user ? "Leave empty to keep current" : "Set password"}
+                                placeholder={user ? "Enter new password to reset" : "Set password"}
                                 required={!user && !formData.sendInvite}
                             />
                         </div>
