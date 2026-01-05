@@ -14,6 +14,7 @@ function BatchesContent() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [clientFilter, setClientFilter] = useState('All');
     const [modeFilter, setModeFilter] = useState('All');
+    const [error, setError] = useState('');
 
     // Helper to get local date string YYYY-MM-DD
     const getLocalDateString = (date: Date) => {
@@ -58,9 +59,6 @@ function BatchesContent() {
                 const safeBatches = Array.isArray(batchData) ? batchData : [];
                 const safeClients = Array.isArray(clientData) ? clientData : [];
 
-                if (!Array.isArray(batchData)) console.error("Batches API returned non-array:", batchData);
-                if (!Array.isArray(clientData)) console.error("Clients API returned non-array:", clientData);
-
                 setBatches(safeBatches);
                 setClients(safeClients);
 
@@ -77,6 +75,34 @@ function BatchesContent() {
                 setLoading(false);
             });
     }, []);
+
+    const handleDeleteBatch = async (e: React.MouseEvent, batchId: number) => {
+        e.stopPropagation(); // Prevent row click
+        if (!confirm('Are you sure you want to delete this batch?')) return;
+
+        try {
+            const res = await fetch(`/api/batches?id=${batchId}`, { method: 'DELETE' });
+            const data = await res.json();
+
+            if (!res.ok) {
+                // Safe Deletion: Handle Foreign Key Violation
+                if (data.details?.code === '23503' || data.error?.includes('foreign key') || data.details === '23503') {
+                    setError("Cannot delete batch. It contains donations. Please remove all donations from the batch first.");
+                } else {
+                    setError(data.error || 'Failed to delete batch');
+                }
+                // Clear error after 5 seconds
+                setTimeout(() => setError(''), 5000);
+                return;
+            }
+
+            // Success: Remove from local state
+            setBatches(prev => prev.filter(b => b.BatchID !== batchId));
+        } catch (err) {
+            console.error(err);
+            setError("An unexpected error occurred.");
+        }
+    };
 
     const filteredBatches = batches.filter(b => {
         // Status Filter (Group Submitted under Closed)
@@ -111,6 +137,11 @@ function BatchesContent() {
 
     return (
         <div className="max-w-[1600px] mx-auto px-6 py-8">
+            {error && (
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-red-500/90 text-white px-6 py-3 rounded shadow-lg backdrop-blur mb-8 font-medium animate-pulse">
+                    ⚠️ {error}
+                </div>
+            )}
             <header className="page-header flex justify-between items-end mb-8">
                 <div>
                     <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Processing</h2>
@@ -257,7 +288,14 @@ function BatchesContent() {
                                             <td className="text-right font-medium text-white font-mono">
                                                 ${Number(batch.TotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td className="text-right">
+                                            <td className="text-right whitespace-nowrap">
+                                                <button
+                                                    onClick={(e) => handleDeleteBatch(e, batch.BatchID)}
+                                                    className="text-gray-600 hover:text-red-400 transition-colors text-xs uppercase font-bold tracking-wide mr-4"
+                                                    title="Delete Batch"
+                                                >
+                                                    Delete
+                                                </button>
                                                 <span className="text-gray-500 group-hover:text-white transition-colors text-xs uppercase font-bold tracking-wide">
                                                     Manage &rarr;
                                                 </span>

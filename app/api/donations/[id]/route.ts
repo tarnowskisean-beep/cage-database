@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { verifyDonationAccess, UserSession } from '@/lib/auth-helpers';
+import { formatName, formatAddress, formatState, formatZip, formatEmail, formatPhone, cleanText } from '@/lib/cleaners';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -41,12 +42,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             DonorPhone, DonorEmail, OrganizationName
         } = body;
 
-        // 4. Fetch existing record
-        const existingRes = await query('SELECT * FROM "Donations" WHERE "DonationID" = $1', [id]);
+        // 4. Fetch existing record and Check Batch Status
+        const existingRes = await query(`
+            SELECT d.*, b."Status" as "BatchStatus" 
+            FROM "Donations" d
+            LEFT JOIN "Batches" b ON d."BatchID" = b."BatchID"
+            WHERE d."DonationID" = $1
+        `, [id]);
+
         if (existingRes.rows.length === 0) {
             return NextResponse.json({ error: 'Donation not found' }, { status: 404 });
         }
         const current = existingRes.rows[0];
+
+        // CRITICAL: Integrity Lock
+        // Prevent editing if the batch is already closed or reconciled
+        if (current.BatchStatus === 'Closed' || current.BatchStatus === 'Reconciled') {
+            return NextResponse.json({
+                error: `Cannot edit donation. Batch status is '${current.BatchStatus}'.`
+            }, { status: 403 });
+        }
 
         // 5. Version Check
         if (providedVersion !== undefined && providedVersion !== null) {
@@ -60,6 +75,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
         // 6. Merge existing data
         const val = (v: any, cur: any) => v === undefined ? cur : v;
+        const withClean = (v: any, fn: (s: string) => string | null, cur?: any) => v === undefined ? undefined : fn(v);
 
         const result = await query(
             `UPDATE "Donations" SET
@@ -109,21 +125,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 val(GiftType, current.GiftType),
                 val(GiftYear, current.GiftYear),
                 val(GiftQuarter, current.GiftQuarter),
-                val(DonorEmail, current.DonorEmail),
-                val(DonorPhone, current.DonorPhone),
+                val(withClean(DonorEmail, formatEmail), current.DonorEmail),
+                val(withClean(DonorPhone, formatPhone), current.DonorPhone),
                 val(OrganizationName, current.OrganizationName),
 
                 val(DonorPrefix, current.DonorPrefix),
-                val(DonorFirstName, current.DonorFirstName),
-                val(DonorMiddleName, current.DonorMiddleName),
-                val(DonorLastName, current.DonorLastName),
-                val(DonorSuffix, current.DonorSuffix),
-                val(DonorAddress, current.DonorAddress),
-                val(DonorCity, current.DonorCity),
-                val(DonorState, current.DonorState),
-                val(DonorZip, current.DonorZip),
-                val(DonorEmployer, current.DonorEmployer),
-                val(DonorOccupation, current.DonorOccupation),
+                val(withClean(DonorFirstName, formatName), current.DonorFirstName),
+                val(withClean(DonorMiddleName, formatName), current.DonorMiddleName),
+                val(withClean(DonorLastName, formatName), current.DonorLastName),
+                val(withClean(DonorSuffix, cleanText), current.DonorSuffix),
+                val(withClean(DonorAddress, formatAddress), current.DonorAddress),
+                val(withClean(DonorCity, formatName), current.DonorCity),
+                val(withClean(DonorState, formatState), current.DonorState),
+                val(withClean(DonorZip, formatZip), current.DonorZip),
+                val(withClean(DonorEmployer, formatName), current.DonorEmployer),
+                val(withClean(DonorOccupation, formatName), current.DonorOccupation),
                 val(GiftPledgeAmount, current.GiftPledgeAmount),
                 val(GiftFee, current.GiftFee),
                 val(GiftCustodian, current.GiftCustodian),
