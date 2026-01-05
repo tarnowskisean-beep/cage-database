@@ -2,252 +2,170 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useRouter } from 'next/navigation';
 
-export default function ReconciliationDashboard() {
-    const [periods, setPeriods] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+export default function ReconciliationStart() {
+    const router = useRouter();
     const [clients, setClients] = useState<any[]>([]);
-    const [selectedClient, setSelectedClient] = useState('');
+    const [formData, setFormData] = useState({
+        clientId: '',
+        endingDate: new Date().toISOString().slice(0, 10),
+        endingBalance: '',
+        beginningBalance: '0.00' // Placeholder, ideally fetched
+    });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(setClients).catch(console.error);
+        fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(data => {
+            setClients(data || []);
+            if (data && data.length > 0) {
+                setFormData(prev => ({ ...prev, clientId: data[0].ClientID }));
+            }
+        }).catch(console.error);
     }, []);
 
+    // Effect to fetch last period's ending balance when client changes
     useEffect(() => {
-        let url = '/api/reconciliation/periods?';
-        if (selectedClient) url += `clientId=${selectedClient}`;
+        if (!formData.clientId) return;
+        // Mock fetch or actual logic to get 'beginning balance' (last reconciled balance)
+        // fetch(\`/api/reconciliation/last-balance?clientId=\${formData.clientId}\`)...
+        // For now, static or random for demo
+        setFormData(prev => ({ ...prev, beginningBalance: '100.00' }));
+    }, [formData.clientId]);
 
+    const handleStart = async (e: React.FormEvent) => {
+        e.preventDefault();
         setLoading(true);
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                setPeriods(Array.isArray(data) ? data : []);
-            })
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [selectedClient]);
 
-    const handleCreatePeriod = async () => {
-        if (!selectedClient) return alert('Select a client first');
-        const end = prompt("Enter Period End Date (e.g. 2025-01-31):", new Date().toISOString().slice(0, 10));
-        if (!end) return;
-
-        // Dynamic Start Date (Monday)
-        const d = new Date(end);
-        const day = d.getDay();
-        const daysToMonday = day === 0 ? 6 : day - 1;
-
-        const start = new Date(d);
-        start.setDate(d.getDate() - daysToMonday);
-        const startStr = start.toISOString().slice(0, 10);
+        // Calculate Start Date (Simple logic: Month start or day after last period)
+        const d = new Date(formData.endingDate);
+        const startDate = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
 
         try {
             const res = await fetch('/api/reconciliation/periods', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clientId: selectedClient, startDate: startStr, endDate: end })
+                body: JSON.stringify({
+                    clientId: formData.clientId,
+                    startDate: startDate,
+                    endDate: formData.endingDate,
+                    statementEndingBalance: parseFloat(formData.endingBalance) // Pass this initial target
+                })
             });
 
-            if (res.ok) window.location.reload();
-            else {
+            if (res.ok) {
+                const period = await res.json();
+                router.push(\`/reconciliation/\${period.ReconciliationPeriodID}\`);
+            } else {
                 const err = await res.json();
                 alert('Error: ' + err.error);
+                setLoading(false);
             }
-        } catch (e) {
-            alert('Failed to create period');
+        } catch (error) {
+            console.error(error);
+            alert('Failed to start reconciliation');
+            setLoading(false);
         }
     };
 
-    // Metrics Calculation
-    const totalVolume = periods.reduce((acc, p) => acc + Number(p.TotalPeriodAmount), 0);
-    const pendingPeriods = periods.filter(p => p.Status === 'Open' || p.Status === 'Exception').length;
-    const avgVolume = periods.length > 0 ? totalVolume / periods.length : 0;
-
-    // Chart Data (Reverse chronological for chart, limit 8)
-    const chartData = [...periods].reverse().slice(-8).map(p => ({
-        name: new Date(p.PeriodEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        amount: Number(p.TotalPeriodAmount),
-        status: p.Status
-    }));
-
     return (
-        <div className="max-w-[1600px] mx-auto px-6 py-8">
-            <header className="page-header flex justify-between items-end mb-8">
+        <div className="max-w-[1200px] mx-auto px-6 py-12">
+            <header className="flex justify-between items-start mb-12">
                 <div>
-                    <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Financial Oversight</h2>
-                    <h1 className="text-4xl text-white font-display">Reconciliation</h1>
-                </div>
-
-                <div className="flex gap-4 items-center">
-                    <div className="relative group">
-                        <select
-                            className="input-field min-w-[200px]"
-                            value={selectedClient}
-                            onChange={e => setSelectedClient(e.target.value)}
-                        >
-                            <option value="">All Clients</option>
-                            {clients.map(c => <option key={c.ClientID} value={c.ClientID}>{c.ClientCode}</option>)}
-                        </select>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-gray-500 text-sm">Chart of accounts</span>
+                        <span className="text-gray-600">/</span>
+                        <span className="text-gray-500 text-sm">Bank register</span>
+                        <span className="text-gray-600">/</span>
+                        <span className="text-white text-sm">Reconcile</span>
                     </div>
-
-                    <button
-                        className="btn-primary"
-                        onClick={handleCreatePeriod}
-                    >
-                        + New Period
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-3xl font-display font-bold text-white">Reconcile</h1>
+                        <span className="text-gray-500 hover:text-gray-300 cursor-pointer">ⓘ</span>
+                    </div>
+                </div>
+                <div className="flex gap-4">
+                    <button className="text-[var(--color-accent)] font-medium hover:underline">Summary</button>
+                    <button className="px-4 py-2 border border-green-500 text-green-500 rounded font-medium hover:bg-green-500/10 transition-colors">History by account</button>
                 </div>
             </header>
 
-            {/* Glass Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="glass-panel p-8 relative overflow-hidden group">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Total Verified Volume</p>
-                    <p className="text-4xl font-display text-white mt-2 font-bold">${totalVolume.toLocaleString()}</p>
-                    <div className="mt-4 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                        <span className="text-sm text-gray-400">All Time</span>
-                    </div>
-                </div>
-
-                <div className="glass-panel p-8 relative overflow-hidden group">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Weekly Average</p>
-                    <p className="text-4xl font-display text-white mt-2 font-bold">${avgVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                    <div className="mt-4 flex items-center gap-2">
-                        <span className="text-sm text-gray-400">Consistent Flow</span>
-                    </div>
-                </div>
-
-                <div className="glass-panel p-8 relative overflow-hidden group">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Action Required</p>
-                    <p className="text-4xl font-display text-white mt-2 font-bold">{pendingPeriods} <span className="text-lg font-sans text-gray-500 font-normal">Weeks</span></p>
-                    <div className={`mt-4 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${pendingPeriods > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500'
-                        }`}>
-                        {pendingPeriods > 0 ? 'Review Needed' : 'All Clear'}
-                    </div>
-                </div>
-            </div>
-
-            {/* Chart Section */}
-            <div className="glass-panel p-8 mb-8">
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h3 className="text-xl font-display text-white font-bold">Volume Trends</h3>
-                    </div>
-                </div>
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} barCategoryGap="20%">
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                            <XAxis
-                                dataKey="name"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#71717a', fontSize: 11 }}
-                                dy={15}
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#71717a', fontSize: 11 }}
-                                tickFormatter={(val) => `$${val / 1000}k`}
-                            />
-                            <Tooltip
-                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{
-                                    backgroundColor: '#18181b',
-                                    border: '1px solid #27272a',
-                                    borderRadius: '4px',
-                                    padding: '12px',
-                                    color: '#fff'
-                                }}
-                                formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Volume']}
-                            />
-                            <Bar dataKey="amount" radius={[2, 2, 0, 0]}>
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.amount > avgVolume ? '#ffffff' : '#52525b'} />
+            <form onSubmit={handleStart} className="glass-panel p-12 max-w-4xl">
+                <div className="mb-12">
+                    <h2 className="text-xl text-gray-400 mb-4 font-light">Which account do you want to reconcile?</h2>
+                    
+                    <div className="flex gap-4 items-end">
+                        <div className="w-full max-w-md">
+                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-bold">Account</label>
+                            <select
+                                className="w-full bg-[#111] border border-gray-700 rounded px-4 py-3 text-white focus:border-green-500 outline-none transition-colors appearance-none"
+                                value={formData.clientId}
+                                onChange={e => setFormData({ ...formData, clientId: e.target.value })}
+                            >
+                                {clients.map(c => (
+                                    <option key={c.ClientID} value={c.ClientID}>
+                                        {c.ClientCode} {c.ClientName}
+                                    </option>
                                 ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Table */}
-            <div className="glass-panel overflow-hidden">
-                <div className="px-8 py-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-white/5">
-                    <h3 className="text-lg font-display text-white font-bold">History</h3>
-                    <div className="text-xs text-gray-500 tracking-widest uppercase">
-                        {periods.length} Records
+                            </select>
+                        </div>
+                        <div className="mb-0.5">
+                            <button type="button" className="text-green-500 font-bold border border-green-500 px-6 py-3 rounded hover:bg-green-500/10 transition-colors">
+                                View statements
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="p-12 text-center text-gray-500 animate-pulse text-xs uppercase tracking-widest">Loading Records...</div>
-                ) : periods.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">No reconciliation periods found.</div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th className="px-8 py-4">Client</th>
-                                    <th className="px-6 py-4">Period Range</th>
-                                    <th className="px-6 py-4">Transfer Date</th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Volume</th>
-                                    <th className="px-6 py-4 text-center">Verified</th>
-                                    <th className="px-6 py-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {periods.map((p) => (
-                                    <tr key={p.ReconciliationPeriodID} className="group hover:bg-white/5 transition-colors">
-                                        <td className="px-8 py-4 text-white font-medium">{p.ClientName}</td>
-                                        <td className="px-6 py-4 text-gray-400 text-xs uppercase tracking-wider">
-                                            {new Date(p.PeriodStartDate).toLocaleDateString()} — {new Date(p.PeriodEndDate).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-500 font-mono text-xs">
-                                            {new Date(p.ScheduledTransferDate).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`
-                                                inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border
-                                                ${p.Status === 'Open' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : ''}
-                                                ${p.Status === 'Reconciled' ? 'bg-green-500/10 text-green-400 border-green-500/20' : ''}
-                                                ${p.Status === 'Exception' ? 'bg-red-500/10 text-red-400 border-red-500/20' : ''}
-                                                ${p.Status === 'Transferred' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : ''}
-                                                ${p.Status === 'Scheduled' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : ''}
-                                            `}>
-                                                {p.Status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-medium text-white font-mono">
-                                            ${Number(p.TotalPeriodAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {p.BankBalanceVerified ? (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 mx-auto"></div>
-                                            ) : (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-zinc-700 mx-auto"></div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <Link
-                                                href={`/reconciliation/${p.ReconciliationPeriodID}`}
-                                                className="text-gray-500 hover:text-white font-bold text-xs uppercase tracking-wide transition-colors"
-                                            >
-                                                Details &rarr;
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex justify-between items-end border-b border-gray-800 pb-4">
+                        <h2 className="text-xl text-gray-300 font-light">Add the following information</h2>
+                        <span className="text-blue-400 text-xs cursor-pointer hover:underline">Last statement ending date 11/30/2025</span>
                     </div>
-                )}
-            </div>
+
+                    <div className="flex gap-12">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-300 mb-2">Beginning balance</label>
+                            <div className="text-lg font-mono text-white">{formData.beginningBalance}</div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-300 mb-2">Statement ending balance</label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    required
+                                    className="w-40 bg-white border border-gray-300 rounded px-3 py-2 text-black font-mono focus:ring-2 focus:ring-green-500 outline-none"
+                                    value={formData.endingBalance}
+                                    onChange={e => setFormData({ ...formData, endingBalance: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-300 mb-2">Statement ending date</label>
+                            <input
+                                type="date"
+                                required
+                                className="bg-white border border-gray-300 rounded px-3 py-2 text-black"
+                                value={formData.endingDate}
+                                onChange={e => setFormData({ ...formData, endingDate: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="pt-8">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded font-bold transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'Setting up...' : 'Start reconciling'}
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     );
 }
