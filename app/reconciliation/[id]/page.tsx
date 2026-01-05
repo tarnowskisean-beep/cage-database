@@ -208,43 +208,67 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                 </div>
 
                 {/* The Equation Bar */}
-                <div className="flex flex-col md:flex-row items-center justify-center gap-12 mt-8 pb-4">
-                    {/* Statement Ending */}
-                    <div className="text-center group">
-                        <div className="text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors">${statementBalance.toFixed(2)}</div>
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-400 transition-colors">Statement Ending Balance</div>
-                    </div>
+                {/* Metrics Panel - Professional & Clean */}
+                <div className="max-w-4xl mx-auto mt-6 mb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded-lg overflow-hidden shadow-xl">
 
-                    <div className="text-zinc-700 text-3xl font-light">-</div>
-
-                    {/* Cleared Balance */}
-                    <div className="text-center group">
-                        <div className="text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors">${clearedBalance.toFixed(2)}</div>
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-400 transition-colors">Cleared Balance</div>
-
-                        {/* Breakdown Tooltip/Subtext */}
-                        <div className="text-[10px] text-zinc-600 mt-2 flex gap-3 justify-center bg-white/5 py-1 px-3 rounded-full">
-                            <span>{clearedPaymentsCount} payments</span>
-                            <span className="text-zinc-700">•</span>
-                            <span>{clearedDepositsCount} deposits</span>
+                        {/* Statement Ending */}
+                        <div className="bg-[#09090b]/40 backdrop-blur p-6 flex flex-col items-center justify-center group relative overflow-hidden">
+                            <div className="absolute top-0 inset-x-0 h-1 bg-zinc-700/50"></div>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2 group-hover:text-gray-300 transition-colors">Statement Balance</span>
+                            <span className="text-3xl font-mono font-medium text-white tracking-tight">
+                                ${statementBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
                         </div>
+
+                        {/* Cleared Balance */}
+                        <div className="bg-[#09090b]/40 backdrop-blur p-6 flex flex-col items-center justify-center group relative overflow-hidden">
+                            <div className="absolute top-0 inset-x-0 h-1 bg-blue-500/50"></div>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2 group-hover:text-gray-300 transition-colors">Cleared Balance</span>
+                            <span className="text-3xl font-mono font-medium text-blue-100 tracking-tight">
+                                ${clearedBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
+                            <div className="flex gap-3 mt-2 opacity-50 text-[10px] font-mono text-blue-300/80">
+                                <span>-{clearedPaymentsCount} pts</span>
+                                <span>+{clearedDepositsCount} deps</span>
+                            </div>
+                        </div>
+
+                        {/* Difference */}
+                        <div className="bg-[#09090b]/40 backdrop-blur p-6 flex flex-col items-center justify-center group relative overflow-hidden">
+                            <div className={`absolute top-0 inset-x-0 h-1 transition-colors duration-500 ${isBalanced ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2 group-hover:text-gray-300 transition-colors">Difference</span>
+
+                            {isBalanced ? (
+                                <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                                    <span className="text-3xl font-mono font-medium text-emerald-400 tracking-tight">
+                                        $0.00
+                                    </span>
+                                    <span className="text-[10px] text-emerald-500/80 font-bold tracking-widest mt-1 flex items-center gap-1">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                        BALANCED
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center">
+                                    <span className="text-3xl font-mono font-medium text-rose-400 tracking-tight">
+                                        ${difference.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </span>
+                                    <span className="text-[10px] text-rose-500/80 font-bold tracking-widest mt-1">OFF BALANCE</span>
+                                </div>
+                            )}
+                        </div>
+
                     </div>
 
-                    <div className="hidden md:block w-px h-12 bg-zinc-800 mx-4"></div>
-
-                    {/* Difference */}
-                    <div className="text-center flex flex-col items-center">
-                        {isBalanced ? (
-                            <div className="flex items-center gap-3 animate-in zoom-in spin-in-3 duration-500">
-                                <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                </div>
-                                <div className="text-2xl font-bold text-white">$0.00</div>
-                            </div>
-                        ) : (
-                            <div className="text-2xl font-bold text-white">${difference.toFixed(2)}</div>
-                        )}
-                        <div className={`text-[10px] font-bold uppercase tracking-widest mt-2 ${isBalanced ? 'text-emerald-400' : 'text-zinc-500'}`}>Difference</div>
+                    {/* Visual Formula Guide (Subtle) */}
+                    <div className="flex justify-between px-12 -mt-3 relative z-10 pointer-events-none opacity-0 md:opacity-100">
+                        <div className="w-8 h-8 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center text-gray-600 text-lg shadow-lg transform -translate-y-1/2 translate-x-1/2">
+                            −
+                        </div>
+                        <div className="w-8 h-8 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center text-gray-600 text-lg shadow-lg transform -translate-y-1/2 -translate-x-1/2">
+                            =
+                        </div>
                     </div>
                 </div>
             </header>
