@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { query } from '@/lib/db';
+import { generateJournalRows, JOURNAL_HEADERS } from '@/lib/journal-mapper';
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
@@ -38,43 +39,18 @@ export async function POST(req: NextRequest) {
         const donations = dataRes.rows;
 
         // 3. Generate CSV
-        const HEADERS = [
-            'JournalNo', 'JournalDate', 'AccountName', 'Debits', 'Credits',
-            'Description', 'Name', 'Currency', 'Location', 'Class'
-        ];
+        const rows = generateJournalRows(donations, template);
+        const headersStr = JOURNAL_HEADERS.join(',') + '\n';
 
-        let csvContent = HEADERS.join(',') + '\n';
-
-        for (const donation of donations) {
-            // Helper for interpolation
-            const replacer = (val: string) => {
-                if (!val) return '';
-                return val
-                    .replace(/{BatchCode}/g, donation.BatchCode || '')
-                    .replace(/{Date}/g, new Date(donation.Date).toLocaleDateString())
-                    .replace(/{Amount}/g, donation.GiftAmount || '0')
-                    .replace(/{DonorName}/g, `${donation.FirstName || ''} ${donation.LastName || ''}`.trim())
-                    .replace(/{PaymentMethod}/g, donation.GiftMethod || '')
-                    .replace(/{CheckNumber}/g, donation.CheckNumber || '')
-                    .replace(/{Platform}/g, donation.GiftPlatform || '')
-                    .replace(/{TransactionType}/g, donation.TransactionType || '')
-                    .replace(/{Fund}/g, '') // Placeholder for future
-                    .replace(/{Campaign}/g, ''); // Placeholder for future
-            };
-
-            for (const rowDef of rowsDef) {
-                const csvRow = HEADERS.map(header => {
-                    const rawValue = rowDef[header] || '';
-                    const finalValue = replacer(rawValue);
-                    // Escape commas/quotes
-                    if (finalValue.includes(',') || finalValue.includes('"')) {
-                        return `"${finalValue.replace(/"/g, '""')}"`;
-                    }
-                    return finalValue;
-                });
-                csvContent += csvRow.join(',') + '\n';
-            }
-        }
+        const csvContent = headersStr + rows.map(row => {
+            return JOURNAL_HEADERS.map(header => {
+                const val = row[header] || '';
+                if (val.includes(',') || val.includes('"')) {
+                    return `"${val.replace(/"/g, '""')}"`;
+                }
+                return val;
+            }).join(',');
+        }).join('\n');
 
         return new NextResponse(csvContent, {
             headers: {
