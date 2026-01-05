@@ -41,6 +41,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 // We await it to ensure data consistency before calling it "Done".
                 if (batchIds.length > 0) {
                     await resolveBatchDonations(batchIds);
+
+                    // CRITICAL: Update Batch Status to Reconciled to close the loop
+                    await client.query(`
+                        UPDATE "Batches" SET "Status" = 'Reconciled'
+                        WHERE "BatchID" = ANY($1)
+                    `, [batchIds]);
                 }
 
                 await client.query(`

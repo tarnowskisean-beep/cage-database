@@ -27,6 +27,12 @@ describe('Reconciliation Flow', () => {
             json: async () => ([{ ClientID: '1', ClientCode: 'TEST', ClientName: 'Test Client' }]),
         });
 
+        // Mock History (triggered by clientId change)
+        (fetch as any).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ([]),
+        });
+
         // Mock Create Response
         (fetch as any).mockResolvedValueOnce({
             ok: true,
@@ -56,18 +62,12 @@ describe('Reconciliation Flow', () => {
 
     it('Workspace: calculates difference correctly', async () => {
         (fetch as any).mockImplementation((url: string) => {
-            console.log('Fetching:', url);
-            if (url.includes('/items')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: async () => ({
-                        transactions: [{ BankTransactionID: 't1', AmountOut: 100, TransactionDate: '2025-01-01' }],
-                        batches: [{ BatchID: 'b1', AmountDonorNet: 200, DepositDate: '2025-01-01' }],
-                        cleared: []
-                    })
-                });
-            }
             if (url.includes('/api/reconciliation/periods/')) {
+                // If it ends with /reconcile or /items (PATCH), mock success
+                if (url.endsWith('/reconcile')) return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+                if (url.endsWith('/items')) return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+
+                // Main GET
                 return Promise.resolve({
                     ok: true,
                     json: async () => ({
@@ -75,7 +75,10 @@ describe('Reconciliation Flow', () => {
                         StatementEndingBalance: 500.00,
                         PeriodEndDate: '2025-12-31',
                         ClientName: 'Test Client',
-                        Status: 'Open'
+                        ClientCode: 'TEST',
+                        Status: 'Open',
+                        batches: [{ id: 'b1', type: 'Batch', date: '2025-01-01', amount: 200, desc: 'Batch 1', cleared: false }],
+                        payments: [{ id: 't1', type: 'Payment', date: '2025-01-01', amount: 100, desc: 'Txn 1', cleared: false }]
                     })
                 });
             }
@@ -84,22 +87,14 @@ describe('Reconciliation Flow', () => {
 
         render(<ReconciliationWorkspace params={Promise.resolve({ id: '123' })} />);
 
-        await waitFor(() => screen.getByText(/Test Client/i));
+        await waitFor(() => screen.getByText(/TEST/i));
 
         // Initial State: 
         // Statement: 500
         // Beginning: 100 (Hardcoded in component for now)
         // Cleared: 100 (Begin) - 0 + 0 = 100
         // Diff: 500 - 100 = 400
+        // Note: The mock data has uncleared items, so clearedBalance = startBalance (100)
         expect(screen.getByText(/\$400.00/)).toBeDefined();
-
-        // Toggle Payment (t1, $100)
-        // New Cleared: 100 - 100 = 0
-        // Diff: 500 - 0 = 500
-
-        // Currently testing UI toggle logic might be complex without comprehensive mocking of the toggleClear function's optimistic update which depends on state.
-        // But the component logic:
-        // const clearedBalance = beginBalance - clearedPaymentsSum + clearedDepositsSum;
-        // should update immediately on click.
     });
 });
