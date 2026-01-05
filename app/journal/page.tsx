@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { JOURNAL_HEADERS } from '@/lib/journal-mapper'; // We can't import server code here but headers are static
 
 export default function JournalPage() {
@@ -80,7 +81,12 @@ export default function JournalPage() {
             {/* Controls */}
             <div className="glass-panel p-4 mb-6 flex flex-wrap gap-4 items-end">
                 <div>
-                    <label className="block text-xs uppercase text-gray-500 mb-1">View Template</label>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs uppercase text-gray-500">View Template</label>
+                        <Link href="/settings/export-templates" className="text-[10px] text-blue-400 hover:text-blue-300 uppercase tracking-wider font-bold ml-2">
+                            + Manage
+                        </Link>
+                    </div>
                     <select
                         className="input-field bg-zinc-900/50 border-white/10 w-[200px]"
                         value={selectedTemplate}

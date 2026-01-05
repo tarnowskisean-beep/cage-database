@@ -28,6 +28,7 @@ export default function SettingsLayout({
                     <SettingsLink href="/settings/users" label="Users" active={isActive('/settings/users')} icon="👥" />
                     <SettingsLink href="/settings/security" label="Security" active={isActive('/settings/security')} icon="🔒" />
                     <SettingsLink href="/settings/mappings" label="Import Mappings" active={isActive('/settings/mappings')} icon="🔄" />
+                    <SettingsLink href="/settings/export-templates" label="Export Templates" active={isActive('/settings/export-templates')} icon="📤" />
 
                     {/* Placeholder for future settings */}
                     <div style={{
