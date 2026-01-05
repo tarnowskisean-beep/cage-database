@@ -1,12 +1,14 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { query } from '@/lib/db';
-import { generateJournalRows, Template } from '@/lib/journal-mapper';
+import { generateJournalRows, Template, headersToCsv } from '@/lib/journal-mapper';
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     try {
         const { templateId, startDate, endDate, clientId } = await req.json();
@@ -18,7 +20,7 @@ export async function POST(req: NextRequest) {
         if (templateRes.rows.length === 0) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
         const template: Template = templateRes.rows[0];
 
-        // 2. Build Query
+        // 2. Fetch Reconciled Data
         let sql = `
             SELECT 
                 d.*,
@@ -47,14 +49,37 @@ export async function POST(req: NextRequest) {
             params.push(clientId);
         }
 
-        sql += ` ORDER BY d."Date" ASC LIMIT 5000`; // Safety limit
+        sql += ` ORDER BY d."Date" ASC`;
 
         const dataRes = await query(sql, params);
+        if (dataRes.rows.length === 0) {
+            return NextResponse.json({ error: 'No reconciled data found for this period.' }, { status: 404 });
+        }
 
-        // 3. Generate Rows using Shared Logic
+        // 3. Generate Rows
         const rows = generateJournalRows(dataRes.rows, template);
 
-        return NextResponse.json({ rows, count: rows.length });
+        // 4. Convert to CSV
+        const csv = headersToCsv(rows);
+
+        // 5. Log Export
+        await query(`
+            INSERT INTO "ExportLogs" ("TemplateID", "UserID", "FilterCriteria", "Status")
+            VALUES ($1, $2, $3, 'Success')
+        `, [
+            templateId,
+            userId,
+            JSON.stringify({ startDate, endDate, clientId })
+        ]);
+
+        // 6. Return CSV
+        return new NextResponse(csv, {
+            status: 200,
+            headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="journal_export_${new Date().toISOString().split('T')[0]}.csv"`,
+            },
+        });
 
     } catch (e: any) {
         console.error(e);

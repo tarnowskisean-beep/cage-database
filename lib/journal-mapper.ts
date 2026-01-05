@@ -57,5 +57,19 @@ export function generateJournalRows(donations: any[], template: Template) {
         }
     }
 
+
     return results;
+}
+
+export function headersToCsv(rows: any[]): string {
+    if (!rows || rows.length === 0) return '';
+    const headers = JOURNAL_HEADERS;
+    const csvRows = [
+        headers.join(','), // Header Row
+        ...rows.map(row => headers.map(fieldName => {
+            const val = (row[fieldName] || '').toString().replace(/"/g, '""'); // Escape quotes
+            return `"${val}"`; // Wrap in quotes
+        }).join(','))
+    ];
+    return csvRows.join('\n');
 }

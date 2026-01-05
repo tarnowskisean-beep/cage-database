@@ -97,12 +97,23 @@ CREATE TABLE IF NOT EXISTS "BankDeposits" (
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 -- DepositDonationLinks Table
 CREATE TABLE IF NOT EXISTS "DepositDonationLinks" (
     "LinkID" SERIAL PRIMARY KEY,
     "BankDepositID" INT NOT NULL REFERENCES "BankDeposits"("BankDepositID"),
     "DonationID" INT NOT NULL REFERENCES "Donations"("DonationID"),
     "AmountApplied" DECIMAL(18, 2) NOT NULL
+);
+
+-- ExportLogs Table (Tracks Journal Exports)
+CREATE TABLE IF NOT EXISTS "ExportLogs" (
+    "LogID" SERIAL PRIMARY KEY,
+    "TemplateID" TEXT NOT NULL, -- UUID or ID from template
+    "UserID" INT NOT NULL REFERENCES "Users"("UserID"),
+    "CreatedAt" TIMESTAMPTZ DEFAULT NOW(),
+    "FilterCriteria" JSONB, -- Stores StartDate, EndDate, ClientID
+    "Status" TEXT DEFAULT 'Success'
 );
 
 -- SEED DATA

@@ -60,6 +60,40 @@ export default function JournalPage() {
         }
     };
 
+    const handleExport = async () => {
+        if (!selectedTemplate) return alert('Select a template first');
+
+        try {
+            const res = await fetch('/api/journal/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    templateId: selectedTemplate,
+                    clientId: selectedClient,
+                    startDate,
+                    endDate
+                })
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `journal_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Export failed');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Export failed due to network error');
+        }
+    };
+
     // Calculate totals
     const totalDebits = rows.reduce((sum, r) => sum + (parseFloat(r.Debits) || 0), 0);
     const totalCredits = rows.reduce((sum, r) => sum + (parseFloat(r.Credits) || 0), 0);
@@ -130,6 +164,13 @@ export default function JournalPage() {
                     className="btn-primary h-[42px] px-6"
                 >
                     {loading ? 'Loading...' : 'View Ledger'}
+                </button>
+                <button
+                    onClick={handleExport}
+                    disabled={loading || !selectedTemplate || !fetched || rows.length === 0}
+                    className="h-[42px] px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded uppercase tracking-wider text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Export CSV
                 </button>
             </div>
 
