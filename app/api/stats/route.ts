@@ -89,7 +89,7 @@ export async function GET(request: Request) {
 
             // 8. Chart Data (Revenue by Month)
             query(`
-                SELECT TO_CHAR(d."GiftDate", 'Mon') as name, SUM(d."GiftAmount") as amount 
+                SELECT TO_CHAR(d."GiftDate", 'Mon') as name, SUM(d."GiftAmount") as amount, COUNT(*) as count
                 FROM "Donations" d 
                 ${whereClause} 
                 GROUP BY TO_CHAR(d."GiftDate", 'Mon'), DATE_TRUNC('month', d."GiftDate") 
@@ -110,7 +110,11 @@ export async function GET(request: Request) {
             uniqueDonors: parseInt(uniqueDonorsRes.rows[0]?.count || '0'),
 
             // Charts & Tables
-            chartData: chartRes.rows.map(row => ({ name: row.name, amount: parseFloat(row.amount) })),
+            chartData: chartRes.rows.map(row => ({
+                name: row.name,
+                amount: parseFloat(row.amount),
+                count: parseInt(row.count)
+            })),
             recentLogs: logsRes.rows,
 
             // Legacy / Extra Data

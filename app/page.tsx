@@ -13,6 +13,7 @@ function DashboardContent() {
   // Filters
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
+  const [chartMetric, setChartMetric] = useState<'amount' | 'count'>('amount');
 
   // Default to current week (Saturday to Friday)
   const [startDate, setStartDate] = useState(() => {
@@ -262,12 +263,22 @@ function DashboardContent() {
         {/* Chart Section - Wide */}
         <div className="lg:col-span-2 glass-panel p-6 min-h-[400px]">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-display text-white">Revenue Trend</h3>
-            <div className="flex gap-2">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span className="w-3 h-3 bg-white rounded-sm"></span>
-                <span>Volume</span>
-              </div>
+            <h3 className="text-lg font-display text-white">
+              {chartMetric === 'amount' ? 'Revenue Trend' : 'Volume Trend'}
+            </h3>
+            <div className="flex gap-2 bg-zinc-900 border border-white/10 p-1 rounded-lg">
+              <button
+                onClick={() => setChartMetric('amount')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${chartMetric === 'amount' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                $ Revenue
+              </button>
+              <button
+                onClick={() => setChartMetric('count')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${chartMetric === 'count' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                # Volume
+              </button>
             </div>
           </div>
           <div className="h-80 w-full">
@@ -291,7 +302,7 @@ function DashboardContent() {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#71717a', fontSize: 11 }}
-                  tickFormatter={(val) => `$${val / 1000}k`}
+                  tickFormatter={(val) => chartMetric === 'amount' ? `$${val / 1000}k` : val.toLocaleString()}
                 />
                 <Tooltip
                   contentStyle={{
@@ -301,10 +312,11 @@ function DashboardContent() {
                     fontSize: '12px'
                   }}
                   cursor={{ stroke: 'white', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  formatter={(value: any) => chartMetric === 'amount' ? [`$${value.toLocaleString()}`, 'Revenue'] : [value.toLocaleString(), 'Count']}
                 />
                 <Area
                   type="monotone"
-                  dataKey="amount"
+                  dataKey={chartMetric}
                   stroke="#ffffff"
                   strokeWidth={2}
                   fillOpacity={1}
