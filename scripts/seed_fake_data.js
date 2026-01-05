@@ -7,7 +7,7 @@ const path = require('path');
 const CONNECTION_STRING = 'postgresql://postgres:dadmy9-hoRqeg-budvyg@db.lrrlssecgkeqztwpkeca.supabase.co:5432/postgres';
 
 async function seed() {
-    console.log("🌱 Starting Database Seed (Bulk 100k + People/Comments)...");
+    console.log("🌱 Starting Database Seed (Final Fix - Users Restored)...");
 
     const client = new Client({
         connectionString: CONNECTION_STRING,
@@ -18,19 +18,14 @@ async function seed() {
         await client.connect();
 
         // ---------------------------------------------------------
-        // 0. SCHEMA ASSURANCE (Ensure Tables Exist)
+        // 0. SCHEMA ASSURANCE
         // ---------------------------------------------------------
         console.log("🛠️  Verifying Schema...");
-
-        // Import Schema
         try {
             const schemaPath = path.join(__dirname, '../database/schema_import.sql');
-            if (fs.existsSync(schemaPath)) {
-                await client.query(fs.readFileSync(schemaPath, 'utf8'));
-            }
+            if (fs.existsSync(schemaPath)) await client.query(fs.readFileSync(schemaPath, 'utf8'));
         } catch (e) { console.warn("Import schema warning:", e.message); }
 
-        // People Extension & Schema
         await client.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
         await client.query(`
             CREATE TABLE IF NOT EXISTS "Donors" (
@@ -47,11 +42,11 @@ async function seed() {
                 "UpdatedAt" TIMESTAMP DEFAULT NOW()
             );
         `);
-        // Add indices
+        // Indices
         await client.query(`CREATE INDEX IF NOT EXISTS idx_donors_email ON "Donors" ("Email");`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_donors_name ON "Donors" ("LastName", "FirstName");`);
 
-        // Check/Add DonorID to Donations
+        // Check/Add DonorID
         await client.query(`
             DO $$
             BEGIN
@@ -63,7 +58,7 @@ async function seed() {
             $$;
         `);
 
-        // Comments (DonorNotes) Schema
+        // Comments
         await client.query(`
             CREATE TABLE IF NOT EXISTS "DonorNotes" (
                 "NoteID" SERIAL PRIMARY KEY,
@@ -77,10 +72,9 @@ async function seed() {
 
 
         // ---------------------------------------------------------
-        // 1. TRUNCATE (But keep structure)
+        // 1. TRUNCATE
         // ---------------------------------------------------------
         console.log("🧹 Cleaning up old data...");
-        // Truncate tables including new ones
         await client.query(`
             TRUNCATE "Users", "Clients", "Batches", "BatchDocuments", "Donations", 
             "BankDeposits", "DepositDonationLinks", "AuditLogs", 
@@ -91,14 +85,13 @@ async function seed() {
             RESTART IDENTITY CASCADE;
         `);
 
-        // Re-seed default mapping rules
-        const schemaPath = path.join(__dirname, '../database/schema_import.sql');
-        if (fs.existsSync(schemaPath)) {
-            await client.query(fs.readFileSync(schemaPath, 'utf8'));
-        }
+        try {
+            const schemaPath = path.join(__dirname, '../database/schema_import.sql');
+            if (fs.existsSync(schemaPath)) await client.query(fs.readFileSync(schemaPath, 'utf8'));
+        } catch (e) { }
 
         // ---------------------------------------------------------
-        // 2. CLIENTS (Preserve Originals)
+        // 2. CLIENTS
         // ---------------------------------------------------------
         console.log("🏢 Creating 16 Original Clients...");
         const clientsData = [
@@ -134,12 +127,14 @@ async function seed() {
         }
 
         // ---------------------------------------------------------
-        // 3. USERS
+        // 3. USERS (RESTORED)
         // ---------------------------------------------------------
-        console.log("👤 Creating Users...");
+        console.log("👤 Creating Users (starnowski, agraham, etc)...");
         const passwordHash = await bcrypt.hash('password', 10);
 
         const usersData = [
+            { user: 'starnowski', email: 'sean@compass.cpa', role: 'Admin', initials: 'ST' },
+            { user: 'agraham', email: 'alyssa@compass.cpa', role: 'Admin', initials: 'AG' },
             { user: 'admin', email: 'admin@compass.cpa', role: 'Admin', initials: 'ADM' },
             { user: 'clerk', email: 'clerk@compass.cpa', role: 'Clerk', initials: 'CLK' },
             { user: 'viewer', email: 'viewer@compass.cpa', role: 'ClientUser', initials: 'VWR', clientId: clientIds[0] }
@@ -154,34 +149,30 @@ async function seed() {
             );
             userIds.push(res.rows[0].UserID);
         }
-        const adminId = userIds[0];
-        const clerkId = userIds[1];
+        const adminId = userIds[2]; // 'admin' general user for system logs
+        const clerkId = userIds[3]; // 'clerk' for batches
 
         // ---------------------------------------------------------
-        // 4. PEOPLE (Donors) & COMMENTS
+        // 4. PEOPLE & COMMENTS
         // ---------------------------------------------------------
         console.log("👥 Creating 500 People & Comments...");
         const donorIds = [];
         const DONOR_COUNT = 500;
 
-        // Chunk inserts for donors
         async function insertDonorsChunk(donors) {
             if (donors.length === 0) return;
             const values = [];
             const params = [];
             let pIndex = 1;
-
             for (const d of donors) {
                 values.push(`($${pIndex++}, $${pIndex++}, $${pIndex++}, $${pIndex++}, $${pIndex++}, $${pIndex++}, $${pIndex++}, $${pIndex++})`);
                 params.push(d.firstName, d.lastName, d.email, d.phone, d.address, d.city, d.state, d.zip);
             }
-
             const res = await client.query(`
                 INSERT INTO "Donors" ("FirstName", "LastName", "Email", "Phone", "Address", "City", "State", "Zip")
                 VALUES ${values.join(', ')}
                 RETURNING "DonorID"
             `, params);
-
             res.rows.forEach(r => donorIds.push(r.DonorID));
         }
 
@@ -204,23 +195,17 @@ async function seed() {
         }
         await insertDonorsChunk(donorBuffer);
 
-        // Add Comments to random donors
-        console.log("💬 Adding Comments to People...");
-        for (let i = 0; i < 200; i++) { // 200 notes
+        console.log("💬 Adding Comments...");
+        for (let i = 0; i < 200; i++) {
             const donorId = faker.helpers.arrayElement(donorIds);
             await client.query(`
                 INSERT INTO "DonorNotes" ("DonorID", "AuthorName", "Content", "CreatedAt")
                 VALUES ($1, $2, $3, $4)
-            `, [
-                donorId,
-                'Admin User',
-                faker.lorem.sentence(),
-                faker.date.recent({ days: 30 })
-            ]);
+            `, [donorId, 'Sean Tarnowski', faker.lorem.sentence(), faker.date.recent({ days: 30 })]);
         }
 
         // ---------------------------------------------------------
-        // 5. BATCHES & DONATIONS (Bulk 100k)
+        // 5. BATCHES & DONATIONS (100k)
         // ---------------------------------------------------------
         console.log("📦 Generating 5,000 Batches (~100k Donations linked to People)...");
 
@@ -229,8 +214,7 @@ async function seed() {
         const entryModes = ['Barcode', 'Datamatrix', 'Manual'];
         const paymentCategories = ['Checks', 'CC', 'EFT', 'Mixed'];
         const statuses = ['Open', 'Submitted', 'Closed'];
-
-        const getBatchDateString = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');
+        const platformCodes = { 'Cage': 'CG', 'Stripe': 'ST', 'WinRed': 'WR', 'Anedot': 'AN' };
 
         async function insertDonationsChunk(donations) {
             if (donations.length === 0) return;
@@ -258,11 +242,21 @@ async function seed() {
             const clientCode = clientIdToCode[clientId];
             const status = faker.helpers.arrayElement(statuses);
             const date = faker.date.past({ years: 0.5 });
+            const entryMode = faker.helpers.arrayElement(entryModes);
+            const payCat = faker.helpers.arrayElement(paymentCategories);
 
-            // Composite Batch Code
-            const dateStr = getBatchDateString(date);
-            const suffix = faker.string.alphanumeric(4).toUpperCase();
-            const batchCode = `${clientCode}-${dateStr}-${suffix}`;
+            // Platform Decision
+            const platform = faker.helpers.arrayElement(['Cage', 'Stripe', 'WinRed', 'Anedot']);
+            const pCode = platformCodes[platform] || 'OT';
+
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const initials = 'ST'; // Use User ID logic if real, simulating ST here
+            const seq = String(faker.number.int({ min: 1, max: 99 })).padStart(2, '0');
+
+            // NEW FORMAT: AFL.CG.2025.12.25.ST.01
+            const batchCode = `${clientCode}.${pCode}.${yyyy}.${mm}.${dd}.${initials}.${seq}`;
 
             const res = await client.query(
                 `INSERT INTO "Batches" ("BatchCode", "ClientID", "EntryMode", "PaymentCategory", "Status", "CreatedBy", "Date")
@@ -270,8 +264,8 @@ async function seed() {
                 [
                     batchCode,
                     clientId,
-                    faker.helpers.arrayElement(entryModes),
-                    faker.helpers.arrayElement(paymentCategories),
+                    entryMode,
+                    payCat,
                     status,
                     clerkId,
                     date
@@ -281,15 +275,11 @@ async function seed() {
 
             for (let j = 0; j < DONATIONS_PER_BATCH; j++) {
                 const amount = faker.finance.amount({ min: 10, max: 5000 });
-                const platform = faker.helpers.arrayElement(['Cage', 'Stripe', 'WinRed', 'Anedot']);
+                const personId = Math.random() > 0.2 ? faker.helpers.arrayElement(donorIds) : null;
+
                 let method = 'Check';
                 if (['Stripe', 'WinRed', 'Anedot'].includes(platform)) method = 'Online';
-
-                const year = date.getFullYear();
-                const quarter = `Q${Math.ceil((date.getMonth() + 1) / 3)}`;
-
-                // Link to a person? 80% chance
-                const personId = Math.random() > 0.2 ? faker.helpers.arrayElement(donorIds) : null;
+                else method = 'Check';
 
                 donationBuffer.push({
                     clientId,
@@ -299,8 +289,8 @@ async function seed() {
                     platform,
                     date: date.toISOString(),
                     type: 'Donation',
-                    year,
-                    quarter,
+                    year: yyyy,
+                    quarter: `Q${Math.ceil((date.getMonth() + 1) / 3)}`,
                     giftType: 'Individual',
                     donorId: personId
                 });
@@ -316,14 +306,12 @@ async function seed() {
         console.log("\n✅ 100,000+ Donations Seeded!");
 
         // ---------------------------------------------------------
-        // 6. RECONCILIATION
+        // 6. RECONCILIATION & AUDIT & IMPORT
         // ---------------------------------------------------------
         console.log("⚖️  Creating Reconciliation Data...");
         const demoClientId = clientIds[0];
-        const periodStart = new Date();
-        periodStart.setDate(1);
+        const periodStart = new Date(); periodStart.setDate(1);
         const periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0);
-
         const recRes = await client.query(
             `INSERT INTO "ReconciliationPeriods" 
             ("ClientID", "PeriodStartDate", "PeriodEndDate", "ScheduledTransferDate", "Status", "StatementEndingBalance", "CreatedBy")
@@ -331,81 +319,30 @@ async function seed() {
             [demoClientId, periodStart, periodEnd, periodEnd, adminId]
         );
         const periodId = recRes.rows[0].ReconciliationPeriodID;
-
-        // Mock Bank Transactions
+        // Mock Transactions...
         for (let i = 0; i < 5; i++) {
-            await client.query(
-                `INSERT INTO "ReconciliationBankTransactions"
-                ("ReconciliationPeriodID", "ClientID", "TransactionDate", "TransactionType", "AmountIn", "Description", "Matched")
-                VALUES ($1, $2, $3, 'Deposit', $4, $5, $6)`,
-                [periodId, demoClientId, faker.date.recent(), faker.finance.amount({ min: 100, max: 2000 }), "Mobile Deposit", false]
-            );
+            await client.query(`INSERT INTO "ReconciliationBankTransactions" ("ReconciliationPeriodID", "ClientID", "TransactionDate", "TransactionType", "AmountIn", "Description", "Matched") VALUES ($1, $2, $3, 'Deposit', $4, $5, $6)`, [periodId, demoClientId, faker.date.recent(), faker.finance.amount({ min: 100, max: 2000 }), "Mobile Deposit", false]);
         }
         for (let i = 0; i < 10; i++) {
-            await client.query(
-                `INSERT INTO "ReconciliationBankTransactions"
-                ("ReconciliationPeriodID", "ClientID", "TransactionDate", "TransactionType", "AmountOut", "Description", "Matched")
-                VALUES ($1, $2, $3, 'Payment', $4, $5, $6)`,
-                [periodId, demoClientId, faker.date.recent(), faker.finance.amount({ min: 10, max: 500 }), "Vendor Payment", false]
-            );
+            await client.query(`INSERT INTO "ReconciliationBankTransactions" ("ReconciliationPeriodID", "ClientID", "TransactionDate", "TransactionType", "AmountOut", "Description", "Matched") VALUES ($1, $2, $3, 'Payment', $4, $5, $6)`, [periodId, demoClientId, faker.date.recent(), faker.finance.amount({ min: 10, max: 500 }), "Vendor Payment", false]);
         }
 
-        // ---------------------------------------------------------
-        // 7. AUDIT LOGS
-        // ---------------------------------------------------------
-        console.log("📜 Creating Audit Logs...");
+        console.log("📜 Audits & Imports...");
+        // Audit Logs
         const actions = ['LOGIN', 'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'EXPORT'];
         for (let i = 0; i < 100; i++) {
-            const randomUserIndex = faker.number.int({ min: 0, max: usersData.length - 1 });
-            const actorEmail = usersData[randomUserIndex].email;
-            const action = faker.helpers.arrayElement(actions);
-            let entityType = 'USER';
-            let entityId = null;
-            let details = null;
-
-            if (['CREATE', 'UPDATE', 'VIEW'].includes(action)) {
-                entityType = 'BATCH';
-                details = 'Batch Operation';
-            } else if (action === 'LOGIN') {
-                entityType = 'AUTH';
-                details = "User logged in";
-            }
-
-            await client.query(
-                `INSERT INTO "AuditLogs" ("Action", "EntityType", "EntityID", "Details", "Actor", "CreatedAt", "IPAddress")
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [action, entityType, entityId, details, actorEmail, faker.date.recent({ days: 7 }), faker.internet.ip()]
-            );
+            const randomUser = faker.helpers.arrayElement(usersData);
+            await client.query(`INSERT INTO "AuditLogs" ("Action", "EntityType", "Details", "Actor", "CreatedAt", "IPAddress") VALUES ($1, $2, $3, $4, $5, $6)`,
+                [faker.helpers.arrayElement(actions), 'USER', 'Details', randomUser.email, faker.date.recent(), faker.internet.ip()]);
         }
-
-        // ---------------------------------------------------------
-        // 8. IMPORT LOGS
-        // ---------------------------------------------------------
-        console.log("📥 Creating Import Logs...");
+        // Import Logs
         for (let i = 0; i < 5; i++) {
-            const status = faker.helpers.arrayElement(['Completed', 'Failed', 'Processing']);
-            const sessionRes = await client.query(
-                `INSERT INTO "import_sessions" ("filename", "source_system", "status", "created_by", "row_count", "processed_count")
-                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-                [`upload_${faker.date.recent().getTime()}.csv`, 'Winred', status, adminId, 100, 100]
-            );
-            const sessionId = sessionRes.rows[0].id;
-            if (status !== 'Failed') {
-                for (let j = 0; j < 10; j++) {
-                    await client.query(
-                        `INSERT INTO "staging_revenue" ("session_id", "source_row_data", "validation_status")
-                         VALUES ($1, $2, $3)`,
-                        [sessionId, JSON.stringify({ amount: faker.finance.amount() }), 'Valid']
-                    );
-                }
-            }
+            const sessionRes = await client.query(`INSERT INTO "import_sessions" ("filename", "source_system", "status", "created_by", "row_count", "processed_count") VALUES ($1, $2, $3, $4, 100, 100) RETURNING id`, [`upload.csv`, 'Winred', 'Completed', adminId]);
+            const sid = sessionRes.rows[0].id;
+            for (let j = 0; j < 10; j++) await client.query(`INSERT INTO "staging_revenue" ("session_id", "source_row_data", "validation_status") VALUES ($1, $2, 'Valid')`, [sid, JSON.stringify({ amt: 100 })]);
         }
 
         console.log("✅ Database Seeded Successfully!");
-        console.log("   - Clients: 16 (Originals)");
-        console.log("   - People: 500 Donors (with Comments)");
-        console.log("   - Batches: 5,000");
-        console.log("   - Donations: 100,000+ (Linked to People)");
 
     } catch (e) {
         console.error("❌ Seeding Failed:", e);
