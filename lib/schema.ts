@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const CreateBatchSchema = z.object({
     clientId: z.string().min(1, 'Client ID is required'),
-    entryMode: z.enum(['Scan/Barcode', 'Manual', 'Zeros', 'Import', 'Data Entry']), // Added Data Entry for backwards compat if needed
+    entryMode: z.enum(['Scan/Barcode', 'Barcode/Datamatrix', 'Manual', 'Zeros', 'Import', 'Data Entry', 'Barcode', 'Datamatrix', 'ZerosOCR']),
     paymentCategory: z.string(),
     zerosType: z.string().optional(),
 
