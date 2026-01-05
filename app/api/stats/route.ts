@@ -139,8 +139,8 @@ export async function GET(request: Request) {
             // Legacy / Extra Data
             totalRevenue: parseFloat(totalRevenue.toString()),
             byClient: clientRes.rows.map(row => ({ ...row, total: parseFloat(row.total) })),
-            byMethod: methodRes.rows.map(row => ({ ...row, count: parseInt(row.count), total: parseFloat(row.total) })),
-            byPlatform: platformRes.rows.map(row => ({ ...row, count: parseInt(row.count), total: parseFloat(row.total) }))
+            byMethod: methodRes.rows.map(row => ({ name: row.GiftMethod || 'Unknown', count: parseInt(row.count), total: parseFloat(row.total) })),
+            byPlatform: platformRes.rows.map(row => ({ name: row.GiftPlatform || 'Unknown', count: parseInt(row.count), total: parseFloat(row.total) }))
         });
 
     } catch (error) {

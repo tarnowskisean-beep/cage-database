@@ -380,7 +380,7 @@ function DashboardContent() {
           </div>
           <div className="p-3 border-t border-[var(--glass-border)] bg-zinc-900/50">
             <button
-              onClick={() => router.push('/search')}
+              onClick={() => router.push('/audit')}
               className="w-full py-2 text-[10px] text-gray-400 hover:text-white hover:bg-white/5 rounded transition-all uppercase tracking-widest font-bold"
             >
               View Full Audit Log
