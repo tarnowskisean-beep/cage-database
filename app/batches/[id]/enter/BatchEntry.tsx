@@ -454,13 +454,24 @@ export default function BatchEntry({ id }: { id: string }) {
                             </div>
 
                             <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                                <button className="btn-primary" style={{ flex: 1, background: 'var(--color-border)' }} onClick={resetForm}>Reset</button>
+                                <button className="btn-primary" style={{ flex: 1, background: '#3f3f46', color: 'white', border: '1px solid #52525b' }} onClick={resetForm}>Reset</button>
                                 {batch?.Status === 'Reconciled' ? (
-                                    <button className="btn-primary" style={{ flex: 2, background: 'var(--color-text-muted)', cursor: 'not-allowed' }} disabled>
+                                    <button className="btn-primary" style={{ flex: 2, background: '#27272a', color: '#71717a', cursor: 'not-allowed', border: '1px solid #3f3f46' }} disabled>
                                         🔒 Batch Locked (Reconciled)
                                     </button>
                                 ) : (
-                                    <button className="btn-primary" style={{ flex: 2, background: editingId ? 'var(--color-active)' : undefined }} onClick={handleSave} disabled={saving}>
+                                    <button
+                                        className="btn-primary"
+                                        style={{
+                                            flex: 2,
+                                            background: editingId ? '#3b82f6' : '#10b981', // Blue for Update, Green for Save
+                                            color: 'white',
+                                            boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+                                            border: 'none'
+                                        }}
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                    >
                                         {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
                                     </button>
                                 )}
@@ -512,7 +523,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                         </span>
                                         {(r.DonorAddress || r.DonorCity) && (
                                             <span style={{ fontSize: '0.7rem', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {[r.DonorAddress, r.DonorCity, r.DonorState].filter(Boolean).join(', ')}
+                                                {[r.DonorAddress, r.DonorCity, r.DonorState, r.DonorZip].filter(Boolean).join(', ')}
                                             </span>
                                         )}
                                     </div>
