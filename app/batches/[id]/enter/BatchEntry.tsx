@@ -244,17 +244,22 @@ export default function BatchEntry({ id }: { id: string }) {
                         display: 'grid',
                         gridTemplateColumns: '1fr 1fr',
                         gap: '2rem',
-                        alignItems: 'start'
+                        alignItems: 'start',
+                        // High Contrast Container
+                        background: '#000000',
+                        border: '1px solid #3f3f46',
+                        padding: '2rem',
+                        borderRadius: '8px'
                     }}>
 
                         {/* LEFT COLUMN: DONOR */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>ClientID</Label>
-                                <Input disabled value={batch?.ClientCode || ''} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>ClientID</Label>
+                                <Input disabled value={batch?.ClientCode || ''} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>CagingID / Scan</Label>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>CagingID / Scan</Label>
                                 {batch?.EntryMode === 'Manual' ? (
                                     <div style={{
                                         padding: '0.4rem',
@@ -272,7 +277,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <Input
                                         ref={scanRef}
                                         placeholder="Scan here..."
-                                        style={{ border: '1px solid var(--color-primary)' }}
+                                        style={{ border: '2px solid var(--color-primary)', background: '#1c1c1e', color: 'white' }}
                                         value={formData.scanString}
                                         onChange={handleChange('scanString')}
                                         onKeyDown={e => e.key === 'Enter' && handleScanLookup()}
@@ -281,57 +286,58 @@ export default function BatchEntry({ id }: { id: string }) {
                                 )}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Mail Code</Label>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Mail Code</Label>
                                 <Input
                                     ref={manualEntryRef}
                                     value={formData.mailCode}
                                     onChange={handleChange('mailCode')}
                                     autoFocus={batch?.EntryMode === 'Manual'}
+                                    style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}
                                 />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Prefix</Label>
-                                <Input value={formData.donorPrefix} onChange={handleChange('donorPrefix')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Prefix</Label>
+                                <Input value={formData.donorPrefix} onChange={handleChange('donorPrefix')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>First Name</Label>
-                                <Input value={formData.donorFirstName} onChange={handleChange('donorFirstName')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>First Name</Label>
+                                <Input value={formData.donorFirstName} onChange={handleChange('donorFirstName')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Middle Name</Label>
-                                <Input value={formData.donorMiddleName} onChange={handleChange('donorMiddleName')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Middle Name</Label>
+                                <Input value={formData.donorMiddleName} onChange={handleChange('donorMiddleName')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Last Name</Label>
-                                <Input value={formData.donorLastName} onChange={handleChange('donorLastName')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Last Name</Label>
+                                <Input value={formData.donorLastName} onChange={handleChange('donorLastName')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Suffix</Label>
-                                <Input value={formData.donorSuffix} onChange={handleChange('donorSuffix')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Suffix</Label>
+                                <Input value={formData.donorSuffix} onChange={handleChange('donorSuffix')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Employer</Label>
-                                <Input value={formData.donorEmployer} onChange={handleChange('donorEmployer')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Employer</Label>
+                                <Input value={formData.donorEmployer} onChange={handleChange('donorEmployer')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Occupation</Label>
-                                <Input value={formData.donorOccupation} onChange={handleChange('donorOccupation')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Occupation</Label>
+                                <Input value={formData.donorOccupation} onChange={handleChange('donorOccupation')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Address</Label>
-                                <Input value={formData.donorAddress} onChange={handleChange('donorAddress')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Address</Label>
+                                <Input value={formData.donorAddress} onChange={handleChange('donorAddress')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>City</Label>
-                                <Input value={formData.donorCity} onChange={handleChange('donorCity')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>City</Label>
+                                <Input value={formData.donorCity} onChange={handleChange('donorCity')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>State</Label>
-                                <Input value={formData.donorState} onChange={handleChange('donorState')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>State</Label>
+                                <Input value={formData.donorState} onChange={handleChange('donorState')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Zip</Label>
-                                <Input value={formData.donorZip} onChange={handleChange('donorZip')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Zip</Label>
+                                <Input value={formData.donorZip} onChange={handleChange('donorZip')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
 
                         </div>
@@ -339,107 +345,109 @@ export default function BatchEntry({ id }: { id: string }) {
                         {/* RIGHT COLUMN: TRANSACTION */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Platform</Label>
-                                <Select value={formData.platform} onChange={handleChange('platform')}>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Platform</Label>
+                                <Select value={formData.platform} onChange={handleChange('platform')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}>
                                     {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Trans. Type</Label>
-                                <Select value={formData.transactionType} onChange={handleChange('transactionType')}>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Trans. Type</Label>
+                                <Select value={formData.transactionType} onChange={handleChange('transactionType')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}>
                                     {TRANSACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Entity Type</Label>
-                                <Select value={formData.giftType} onChange={handleChange('giftType')}>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Entity Type</Label>
+                                <Select value={formData.giftType} onChange={handleChange('giftType')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}>
                                     {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Method</Label>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Method</Label>
                                 <Select
                                     value={formData.method}
                                     onChange={handleChange('method')}
                                     disabled={!!batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)}
                                     style={{
-                                        background: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 'var(--color-bg-base)' : undefined,
-                                        opacity: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 0.7 : 1
+                                        background: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? '#0f0f10' : '#1c1c1e',
+                                        opacity: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 0.7 : 1,
+                                        borderColor: '#52525b',
+                                        color: 'white'
                                     }}
                                 >
                                     {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Yes Inactive</Label>
-                                <Select value={formData.isInactive} onChange={handleChange('isInactive')}>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Yes Inactive</Label>
+                                <Select value={formData.isInactive} onChange={handleChange('isInactive')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}>
                                     {YES_NO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Batch</Label>
-                                <Input disabled value={batch?.BatchCode || ''} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Batch</Label>
+                                <Input disabled value={batch?.BatchCode || ''} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Date</Label>
-                                <Input disabled value={new Date().toLocaleString()} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Date</Label>
+                                <Input disabled value={new Date().toLocaleString()} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>PostMark Year</Label>
-                                <Select value={formData.postMarkYear} onChange={handleChange('postMarkYear')}>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>PostMark Year</Label>
+                                <Select value={formData.postMarkYear} onChange={handleChange('postMarkYear')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}>
                                     {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>PostMark Qtr</Label>
-                                <Select value={formData.postMarkQuarter} onChange={handleChange('postMarkQuarter')}>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>PostMark Qtr</Label>
+                                <Select value={formData.postMarkQuarter} onChange={handleChange('postMarkQuarter')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}>
                                     {['Q1', 'Q2', 'Q3', 'Q4'].map(q => <option key={q} value={q}>{q}</option>)}
                                 </Select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Gift Organization</Label>
-                                <Input value={formData.organizationName} onChange={handleChange('organizationName')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Gift Organization</Label>
+                                <Input value={formData.organizationName} onChange={handleChange('organizationName')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Gift Custodian</Label>
-                                <Input value={formData.giftCustodian} onChange={handleChange('giftCustodian')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Gift Custodian</Label>
+                                <Input value={formData.giftCustodian} onChange={handleChange('giftCustodian')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Conduit</Label>
-                                <Input value={formData.giftConduit} onChange={handleChange('giftConduit')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Conduit</Label>
+                                <Input value={formData.giftConduit} onChange={handleChange('giftConduit')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label style={{ fontWeight: 700, color: 'var(--color-active)' }}>Gift Amount</Label>
+                                <Label style={{ fontWeight: 700, color: 'var(--color-active)', fontSize: '0.85rem' }}>Gift Amount</Label>
                                 <Input
                                     ref={amountRef}
                                     type="number"
-                                    style={{ fontWeight: 700, borderColor: 'var(--color-active)', color: 'var(--color-active)' }}
+                                    style={{ fontWeight: 700, borderColor: 'var(--color-active)', color: 'var(--color-active)', background: '#1c1c1e' }}
                                     value={formData.amount}
                                     onChange={handleChange('amount')}
                                     onKeyDown={e => e.key === 'Enter' && handleSave()}
                                 />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Fee</Label>
-                                <Input type="number" value={formData.giftFee} onChange={handleChange('giftFee')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Fee</Label>
+                                <Input type="number" value={formData.giftFee} onChange={handleChange('giftFee')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Pledge Amount</Label>
-                                <Input type="number" value={formData.pledgeAmount} onChange={handleChange('pledgeAmount')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Pledge Amount</Label>
+                                <Input type="number" value={formData.pledgeAmount} onChange={handleChange('pledgeAmount')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Phone</Label>
-                                <Input value={formData.donorPhone} onChange={handleChange('donorPhone')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Phone</Label>
+                                <Input value={formData.donorPhone} onChange={handleChange('donorPhone')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Email</Label>
-                                <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} />
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Email</Label>
+                                <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label>Comment</Label>
+                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Comment</Label>
                                 <textarea
                                     className="input-field"
-                                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem', marginBottom: '0.5rem', height: '60px' }}
+                                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem', marginBottom: '0.5rem', height: '60px', background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}
                                     value={formData.comment}
                                     onChange={handleChange('comment')}
                                 />
