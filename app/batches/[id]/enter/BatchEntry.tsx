@@ -498,7 +498,16 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>{r.OrganizationName || `${r.DonorFirstName || ''} ${r.DonorLastName || ''}`.trim() || <i style={{ opacity: 0.5 }}>No Name</i>}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', marginRight: '0.5rem' }}>
+                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {r.OrganizationName || `${r.DonorFirstName || ''} ${r.DonorLastName || ''}`.trim() || <i style={{ opacity: 0.5 }}>No Name</i>}
+                                        </span>
+                                        {(r.DonorAddress || r.DonorCity) && (
+                                            <span style={{ fontSize: '0.7rem', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {[r.DonorAddress, r.DonorCity, r.DonorState].filter(Boolean).join(', ')}
+                                            </span>
+                                        )}
+                                    </div>
                                     {r.ScanDocumentID && (
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button
