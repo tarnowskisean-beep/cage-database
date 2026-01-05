@@ -73,10 +73,27 @@ export async function GET(request: Request) {
             `, params),
 
             // 5. Open Batches Count
-            query(`SELECT COUNT(*) as count FROM "Batches" WHERE "Status" = 'Open'`),
+            query(`SELECT COUNT(*) as count FROM "Batches" WHERE "Status" = 'Open' ${clientId ? `AND "ClientID" = $${params.length + 1}` : ''}`, clientId ? [...params, clientId] : params), // Note: We shouldn't reuse params array index blindly if we don't push to it, but "params" contains [clientId, start, end]. 
+            // Actually, simpler logic: Reuse the params but we need to match the indices.
+            // The `whereClause` uses $1, $2, $3...
+            // `conditions` and `params` are built for the Donation queries.
+            // For Batches, we only care about ClientID (and maybe date? No, "Open" implies current state regardless of date usually, OR maybe created date?)
+            // Let's stick to just ClientID for Batches/Clients counts to avoid complexity with mismatched $ indexes if we try to reuse the main array.
+
+            // BETTER APPROACH:
+            // Create specific params for these queries.
+
+            // 5. Open Batches Count
+            query(
+                `SELECT COUNT(*) as count FROM "Batches" WHERE "Status" = 'Open' ${clientId ? 'AND "ClientID" = $1' : ''}`,
+                clientId ? [clientId] : []
+            ),
 
             // 6. Active Clients Count
-            query(`SELECT COUNT(*) as count FROM "Clients"`),
+            query(
+                `SELECT COUNT(*) as count FROM "Clients" ${clientId ? 'WHERE "ClientID" = $1' : ''}`,
+                clientId ? [clientId] : []
+            ),
 
             // 7. Unique Donors
             query(`SELECT COUNT(DISTINCT d."DonorID") as count FROM "Donations" d ${whereClause}`, params),

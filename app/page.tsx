@@ -221,20 +221,20 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Active Clients */}
+        {/* Closed Batches */}
         <div className="glass-panel p-6 flex flex-col justify-between h-40">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Active Clients</p>
-              <h3 className="text-3xl font-display mt-2 text-white">{stats?.activeClients || 0}</h3>
+              <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Closed Batches</p>
+              <h3 className="text-3xl font-display mt-2 text-white">{stats?.closedBatches || 0}</h3>
             </div>
             <div className="p-2 bg-white/5 rounded text-white">
-              <span className="text-xl">🏢</span>
+              <span className="text-xl">✅</span>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Portfolio Status:</span>
-            <span className="text-white font-medium">Healthy</span>
+            <span className="text-white font-medium">Archived</span>
+            <span>Successfully processed</span>
           </div>
         </div>
 
