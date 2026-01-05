@@ -87,14 +87,33 @@ export async function GET(request: Request) {
             // 7. Unique Donors
             query(`SELECT COUNT(DISTINCT d."DonorID") as count FROM "Donations" d ${whereClause}`, params),
 
-            // 8. Chart Data (Revenue by Month)
-            query(`
-                SELECT TO_CHAR(d."GiftDate", 'Mon') as name, SUM(d."GiftAmount") as amount, COUNT(*) as count
-                FROM "Donations" d 
-                ${whereClause} 
-                GROUP BY TO_CHAR(d."GiftDate", 'Mon'), DATE_TRUNC('month', d."GiftDate") 
-                ORDER BY DATE_TRUNC('month', d."GiftDate")
-            `, params),
+            // 8. Chart Data (Dynamic Aggregation)
+            (() => {
+                // Calculate duration to decide granularity
+                const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 1));
+                const end = endDate ? new Date(endDate) : new Date();
+                const diffTime = Math.abs(end.getTime() - start.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                // If more than 60 days, show Months. Else show Days.
+                if (diffDays > 60) {
+                    return query(`
+                        SELECT TO_CHAR(d."GiftDate", 'Mon YY') as name, SUM(d."GiftAmount") as amount, COUNT(*) as count
+                        FROM "Donations" d 
+                        ${whereClause} 
+                        GROUP BY TO_CHAR(d."GiftDate", 'Mon YY'), DATE_TRUNC('month', d."GiftDate") 
+                        ORDER BY DATE_TRUNC('month', d."GiftDate")
+                    `, params);
+                } else {
+                    return query(`
+                        SELECT TO_CHAR(d."GiftDate", 'MM/DD') as name, SUM(d."GiftAmount") as amount, COUNT(*) as count
+                        FROM "Donations" d 
+                        ${whereClause} 
+                        GROUP BY TO_CHAR(d."GiftDate", 'MM/DD'), DATE_TRUNC('day', d."GiftDate") 
+                        ORDER BY DATE_TRUNC('day', d."GiftDate")
+                    `, params);
+                }
+            })(),
 
             // 9. Recent Logs
             query(`SELECT * FROM "AuditLogs" ORDER BY "CreatedAt" DESC LIMIT 5`)

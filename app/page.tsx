@@ -15,25 +15,15 @@ function DashboardContent() {
   const [selectedClient, setSelectedClient] = useState('');
   const [chartMetric, setChartMetric] = useState<'amount' | 'count'>('amount');
 
-  // Default to current week (Saturday to Friday)
+  // Default to Last 6 Months
   const [startDate, setStartDate] = useState(() => {
-    const today = new Date();
-    const day = today.getDay(); // 0=Sun, 6=Sat
-    const diff = (day + 1) % 7; // Days since last Saturday
-    const lastSaturday = new Date(today);
-    lastSaturday.setDate(today.getDate() - diff);
-    return lastSaturday.toISOString().split('T')[0];
+    const d = new Date();
+    d.setMonth(d.getMonth() - 6);
+    return d.toISOString().split('T')[0];
   });
 
   const [endDate, setEndDate] = useState(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = (day + 1) % 7;
-    const lastSaturday = new Date(today);
-    lastSaturday.setDate(today.getDate() - diff);
-    const nextFriday = new Date(lastSaturday);
-    nextFriday.setDate(lastSaturday.getDate() + 6);
-    return nextFriday.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   });
 
   // Fetch Clients
