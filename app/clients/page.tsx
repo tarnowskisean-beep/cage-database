@@ -8,6 +8,10 @@ export default function ClientsPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingClient, setEditingClient] = useState<any>(null); // If null, creating new
 
+    // Import Logic
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importingClient, setImportingClient] = useState<any>(null);
+
     const refreshClients = () => {
         setLoading(true);
         // Prevent caching of old empty lists
@@ -38,6 +42,11 @@ export default function ClientsPage() {
     const handleCreate = () => {
         setEditingClient(null);
         setShowModal(true);
+    };
+
+    const handleImport = (client: any) => {
+        setImportingClient(client);
+        setShowImportModal(true);
     };
 
     return (
@@ -102,7 +111,20 @@ export default function ClientsPage() {
                                                 {client.Status || 'Active'}
                                             </span>
                                         </td>
-                                        <td className="text-right">
+                                        <td className="text-right flex items-center justify-end gap-3 py-4 pr-6">
+                                            <button
+                                                onClick={() => handleImport(client)}
+                                                className="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wide transition-colors flex items-center gap-1"
+                                                title="Import Finder File"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                    <polyline points="17 8 12 3 7 8" />
+                                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                                </svg>
+                                                Import
+                                            </button>
+                                            <div className="w-px h-3 bg-gray-700"></div>
                                             <button
                                                 onClick={() => handleEdit(client)}
                                                 className="text-xs font-bold text-gray-500 hover:text-white uppercase tracking-wide transition-colors"
@@ -128,6 +150,127 @@ export default function ClientsPage() {
                     }}
                 />
             )}
+
+            {showImportModal && importingClient && (
+                <ImportFinderModal
+                    client={importingClient}
+                    onClose={() => setShowImportModal(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+// Import Finder File Modal
+function ImportFinderModal({ client, onClose }: { client: any, onClose: () => void }) {
+    const [file, setFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [result, setResult] = useState<any>(null);
+
+    const handleUpload = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!file) return;
+        setUploading(true);
+        setResult(null);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch(`/api/clients/${client.ClientID}/import`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setResult({ success: true, count: data.count, skipped: data.skipped });
+                setFile(null); // Clear file after success
+            } else {
+                setResult({ success: false, error: data.error });
+            }
+        } catch (err) {
+            setResult({ success: false, error: 'Network Error' });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+            <div className="glass-panel w-full max-w-md p-8 border border-white/10 bg-[#09090b]">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 className="text-xl font-display text-white">Import Finder File</h2>
+                        <p className="text-gray-500 text-xs mt-1">Target: <span className="text-white font-bold">{client.ClientCode}</span> ({client.ClientName})</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-500 hover:text-white">✕</button>
+                </div>
+
+                {!result ? (
+                    <form onSubmit={handleUpload} className="space-y-6">
+                        <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:bg-white/5 transition-colors cursor-pointer relative">
+                            <input
+                                type="file"
+                                accept=".csv,.txt"
+                                onChange={e => setFile(e.target.files?.[0] || null)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                            {file ? (
+                                <div className="text-emerald-400 font-bold text-sm break-all">
+                                    📄 {file.name}
+                                </div>
+                            ) : (
+                                <div className="text-gray-500 text-sm">
+                                    <span className="block text-2xl mb-2">📥</span>
+                                    <span>Click to upload CSV</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-4 py-2 text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={!file || uploading}
+                                className="btn-primary"
+                            >
+                                {uploading ? 'Importing...' : 'Start Import'}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="text-center py-4">
+                        {result.success ? (
+                            <div className="mb-6">
+                                <div className="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">✓</div>
+                                <h3 className="text-white font-bold mb-1">Import Successful</h3>
+                                <p className="text-gray-400 text-sm">
+                                    Processed <span className="text-white">{result.count}</span> records.
+                                    {result.skipped > 0 && <span className="block text-xs text-orange-400 mt-1">Skipped {result.skipped} invalid rows.</span>}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="mb-6">
+                                <div className="w-12 h-12 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">✕</div>
+                                <h3 className="text-white font-bold mb-1">Import Failed</h3>
+                                <p className="text-red-400 text-sm">{result.error}</p>
+                            </div>
+                        )}
+                        <button
+                            onClick={result.success ? onClose : () => setResult(null)}
+                            className="btn-primary w-full"
+                        >
+                            {result.success ? 'Done' : 'Try Again'}
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
