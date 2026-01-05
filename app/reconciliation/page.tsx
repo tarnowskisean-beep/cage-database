@@ -55,6 +55,11 @@ export default function ReconciliationStart() {
 
             if (res.ok) {
                 const period = await res.json();
+                console.log("Created Period Response:", period); // DEBUG LOG
+                if (!period.ReconciliationPeriodID) {
+                    alert("Error: API did not return a valid ReconciliationPeriodID. Please contact support.");
+                    return;
+                }
                 router.push(`/reconciliation/${period.ReconciliationPeriodID}`);
             } else {
                 const err = await res.json();
