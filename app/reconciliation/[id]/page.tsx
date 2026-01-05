@@ -34,23 +34,27 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
         setLoading(true);
 
         Promise.all([
-            fetch(`/api/reconciliation/periods/${periodId}`).then(res => res.json()),
-            fetch(`/api/reconciliation/periods/${periodId}/items`).then(res => res.json())
+            fetch(`/api/reconciliation/periods/${periodId}`).then(res => res.json())
         ])
-            .then(([p, items]) => {
+            .then(([p]) => {
+                console.log('Period Fetched:', p);
                 if (p && !p.error) {
                     setPeriod(p);
                     setStatementEndingBalance(p.StatementEndingBalance || '');
-                    setMoneyIn(items.batches || []);
-                    setMoneyOut(items.transactions || []);
+                    // API returns 'batches' and 'payments' (mapped to moneyIn/moneyOut)
+                    setMoneyIn(p.batches || []);
+                    setMoneyOut(p.payments || []);
 
-                    // Initialize cleared set
+                    // Initialize cleared set from boolean flags on items
                     const cleared = new Set<string>();
-                    (items.cleared || []).forEach((c: any) => cleared.add(c.ItemID));
+                    (p.batches || []).forEach((b: any) => { if (b.cleared) cleared.add(b.id); });
+                    (p.payments || []).forEach((t: any) => { if (t.cleared) cleared.add(t.id); });
                     setClearedItems(cleared);
+                } else {
+                    console.error("API Error:", p?.error);
                 }
             })
-            .catch(e => console.error('Promise.all error:', e))
+            .catch(e => console.error('Fetch error:', e))
             .finally(() => setLoading(false));
     }, [periodId]);
 
