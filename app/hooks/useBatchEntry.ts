@@ -97,7 +97,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     ...prev,
                     platform: data.DefaultGiftPlatform || 'Cage',
                     giftType: data.DefaultGiftType || 'Individual/Trust/IRA',
-                    transactionType: data.DefaultTransactionType || 'Contribution',
+                    transactionType: (data.DefaultTransactionType === 'Contribution' ? 'Donation' : data.DefaultTransactionType) || 'Donation',
                     method: defaultMethod,
                     giftYear: data.DefaultGiftYear?.toString(),
                     giftQuarter: data.DefaultGiftQuarter,
@@ -241,7 +241,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
             scanString: record.ScanString || '',
             platform: record.GiftPlatform || batch?.DefaultGiftPlatform || '',
             giftType: record.GiftType || batch?.DefaultGiftType || '',
-            transactionType: record.TransactionType || batch?.DefaultTransactionType || 'Contribution',
+            transactionType: (record.TransactionType === 'Contribution' ? 'Donation' : record.TransactionType) ||
+                (batch?.DefaultTransactionType === 'Contribution' ? 'Donation' : batch?.DefaultTransactionType) || 'Donation',
             method: record.GiftMethod || batch?.DefaultGiftMethod || '',
             postMarkYear: record.PostMarkYear?.toString() || new Date().getFullYear().toString(),
             postMarkQuarter: record.PostMarkQuarter || `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
@@ -403,7 +404,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
             // RESTORE DEFAULTS
             platform: batch.DefaultGiftPlatform || 'Cage',
             giftType: batch.DefaultGiftType || 'Individual/Trust/IRA',
-            transactionType: batch.DefaultTransactionType || 'Contribution',
+            transactionType: batch.DefaultTransactionType === 'Contribution' ? 'Donation' : (batch.DefaultTransactionType || 'Donation'),
             method: forced || batch.DefaultGiftMethod || 'Check',
 
             // Keep current date context

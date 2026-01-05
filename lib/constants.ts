@@ -4,6 +4,6 @@ export const PLATFORMS = ['Chainbridge', 'Stripe', 'National Capital', 'City Nat
 
 export const GIFT_TYPES = ['Individual/IRA/Trust', 'Company', 'Foundation', 'Donor-Advised Fund'];
 
-export const TRANSACTION_TYPES = ['Contribution', 'Pledge Payment', 'Non-Monetary/In-Kind'];
+export const TRANSACTION_TYPES = ['Donation', 'Refund', 'Chargeback', 'Adjustment', 'Void'];
 
 export const YES_NO_OPTIONS = ['False', 'True'];

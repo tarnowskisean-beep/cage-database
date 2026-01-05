@@ -291,7 +291,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
         entryMode: 'Barcode/Datamatrix', // Updated default
         paymentCategory: 'Checks',
         defaultGiftPlatform: 'Chainbridge',
-        defaultTransactionType: 'Contribution',
+        defaultTransactionType: 'Donation',
         defaultGiftYear: new Date().getFullYear().toString(),
         defaultGiftQuarter: 'Q1',
         defaultGiftType: 'Individual/IRA/Trust'
