@@ -13,6 +13,25 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Filters
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [clientFilter, setClientFilter] = useState('All');
+    const [methodFilter, setMethodFilter] = useState('All');
+
+    // Derived Lists for Dropdowns
+    const uniqueClients = Array.from(new Set(history.map(h => h.ClientCode).filter(Boolean))).sort();
+    const uniqueMethods = Array.from(new Set(history.map(h => h.GiftMethod || 'Check').filter(Boolean))).sort();
+
+    // Filter Logic
+    const filteredHistory = history.filter(h => {
+        const d = h.GiftDate.substring(0, 10);
+        const matchDate = (!startDate || d >= startDate) && (!endDate || d <= endDate);
+        const matchClient = clientFilter === 'All' || h.ClientCode === clientFilter;
+        const matchMethod = methodFilter === 'All' || (h.GiftMethod || 'Check') === methodFilter;
+        return matchDate && matchClient && matchMethod;
+    });
+
     useEffect(() => {
         if (!donorId) return;
         fetch(`/api/people/${donorId}`)
@@ -165,8 +184,41 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
 
             {/* Timeline / History Table */}
             <div className="glass-panel overflow-hidden">
-                <div className="px-8 py-6 border-b border-[var(--glass-border)] bg-white/5">
+                <div className="px-8 py-6 border-b border-[var(--glass-border)] bg-white/5 flex flex-col md:flex-row justify-between items-end gap-4">
                     <h3 className="text-lg font-display text-white">Donation Timeline</h3>
+
+                    {/* Filter Bar */}
+                    <div className="flex flex-wrap gap-2">
+                        <input
+                            type="date"
+                            className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                        />
+                        <span className="text-gray-500 self-center">-</span>
+                        <input
+                            type="date"
+                            className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                        />
+                        <select
+                            className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+                            value={clientFilter}
+                            onChange={e => setClientFilter(e.target.value)}
+                        >
+                            <option value="All">All Clients</option>
+                            {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <select
+                            className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+                            value={methodFilter}
+                            onChange={e => setMethodFilter(e.target.value)}
+                        >
+                            <option value="All">All Methods</option>
+                            {uniqueMethods.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="data-table">
@@ -180,12 +232,12 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                             </tr>
                         </thead>
                         <tbody>
-                            {history.length === 0 ? (
+                            {filteredHistory.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-12 text-center text-gray-500 italic">No donation history available.</td>
+                                    <td colSpan={5} className="px-8 py-12 text-center text-gray-500 italic">No donation history matches filters.</td>
                                 </tr>
                             ) : (
-                                history.map((h: any) => (
+                                filteredHistory.map((h: any) => (
                                     <tr key={h.DonationID} className="group hover:bg-white/5 transition-colors">
                                         <td className="px-8 py-4 text-gray-300 font-mono text-xs">
                                             {new Date(h.GiftDate).toLocaleDateString()}

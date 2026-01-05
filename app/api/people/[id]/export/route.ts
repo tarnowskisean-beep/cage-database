@@ -16,19 +16,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const donor = donorRes.rows[0];
 
         const donationsRes = await query(`
-            SELECT "Date", "GiftAmount", "CheckNumber", "PaymentCategory" 
-            FROM "Donations" 
-            WHERE "DonorID" = $1 
-            ORDER BY "Date" DESC
+            SELECT d."GiftDate", d."GiftAmount", d."CheckNumber", d."GiftMethod", d."GiftPlatform", c."ClientCode"
+            FROM "Donations" d
+            LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
+            WHERE d."DonorID" = $1
+            ORDER BY d."GiftDate" DESC
         `, [id]);
 
         // Generate CSV manually (simple enough)
-        const headers = ['Date', 'Amount', 'Check Number', 'Category'];
+        const headers = ['Date', 'Client', 'Amount', 'Method', 'Platform', 'Check Number'];
         const rows = donationsRes.rows.map(d => [
-            new Date(d.Date).toLocaleDateString(),
+            new Date(d.GiftDate).toLocaleDateString(),
+            d.ClientCode || '',
             d.GiftAmount,
+            d.GiftMethod || '',
+            d.GiftPlatform || '',
             d.CheckNumber || '',
-            d.PaymentCategory
         ]);
 
         const csvContent = [
