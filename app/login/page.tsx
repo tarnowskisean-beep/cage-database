@@ -48,28 +48,25 @@ export default function LoginPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03),transparent)] pointer-events-none" />
 
             <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-md p-8 flex flex-col items-center">
-                <div className="text-center mb-12">
-                    {/* Compass Logo - White */}
-                    <div className="inline-flex items-center justify-center w-20 h-20 mb-6 text-white">
-                        <svg width="100%" height="100%" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                            />
-                            <path
-                                d="M24 10L27 21L38 24L27 27L24 38L21 27L10 24L21 21L24 10Z"
-                                fill="currentColor"
-                            />
-                        </svg>
+                {/* Compass Logo - White - Large */}
+                <div className="flex flex-col items-center select-none mb-10">
+                    <div className="flex items-center gap-2 mb-3">
+                        <span className="font-display font-medium text-6xl text-white tracking-tight">C</span>
+                        <div className="relative w-14 h-14 flex items-center justify-center">
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {/* Ring */}
+                                <circle cx="50" cy="50" r="38" stroke="white" strokeWidth="6" />
+                                {/* Star Points */}
+                                <path d="M50 0 L63 37 L100 50 L63 63 L50 100 L37 63 L0 50 L37 37 Z" fill="white" />
+                                {/* Inner Detail */}
+                                <circle cx="50" cy="50" r="8" fill="#09090b" />
+                            </svg>
+                        </div>
+                        <span className="font-display font-medium text-6xl text-white tracking-tight">MPASS</span>
                     </div>
-
-                    <h1 className="text-4xl font-display font-light tracking-wide text-white mb-2">
-                        COMPASS
-                    </h1>
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-medium">
-                        Professional
-                    </p>
+                    <div className="flex justify-between w-full text-xs uppercase text-gray-500 font-bold tracking-[0.4em] px-1">
+                        <span>P</span><span>R</span><span>O</span><span>F</span><span>E</span><span>S</span><span>S</span><span>I</span><span>O</span><span>N</span><span>A</span><span>L</span>
+                    </div>
                 </div>
 
                 {error && (

@@ -69,29 +69,33 @@ export default function Sidebar() {
             </button>
 
             {/* Brand Header */}
-            <div className={`flex items-center gap-4 p-6 ${isCollapsed ? 'justify-center px-2' : ''}`}>
-                <div className="relative shrink-0 w-10 h-10 flex items-center justify-center">
-                    {/* Abstract Compass Logo - White/Monochrome */}
-                    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z"
-                            stroke="white"
-                            strokeWidth="2"
-                        />
-                        <path
-                            d="M24 10L27 21L38 24L27 27L24 38L21 27L10 24L21 21L24 10Z"
-                            fill="white"
-                        />
+            <div className={`flex flex-col items-center justify-center py-6 ${isCollapsed ? 'px-2' : 'px-6'}`}>
+                {isCollapsed ? (
+                    /* Collapsed: Just the Compass Star Icon */
+                    <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="30" stroke="white" strokeWidth="6" />
+                        <path d="M50 5 L60 40 L95 50 L60 60 L50 95 L40 60 L5 50 L40 40 Z" fill="white" />
                     </svg>
-                </div>
-                {!isCollapsed && (
-                    <div className="flex flex-col overflow-hidden">
-                        <span className="font-display font-bold text-lg tracking-tight text-white whitespace-nowrap">
-                            COMPASS
-                        </span>
-                        <span className="text-[0.6rem] uppercase tracking-[0.2em] text-gray-500 font-medium whitespace-nowrap">
-                            PROFESSIONAL
-                        </span>
+                ) : (
+                    /* Expanded: Full Logo Type */
+                    <div className="flex flex-col items-start leading-none select-none">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                            <span className="font-display font-medium text-3xl text-white tracking-tight">C</span>
+                            <div className="relative w-8 h-8 flex items-center justify-center">
+                                <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    {/* Ring */}
+                                    <circle cx="50" cy="50" r="38" stroke="white" strokeWidth="6" />
+                                    {/* Star Points (North/South/East/West) */}
+                                    <path d="M50 0 L63 37 L100 50 L63 63 L50 100 L37 63 L0 50 L37 37 Z" fill="white" />
+                                    {/* Inner Detail */}
+                                    <circle cx="50" cy="50" r="8" fill="#09090b" />
+                                </svg>
+                            </div>
+                            <span className="font-display font-medium text-3xl text-white tracking-tight">MPASS</span>
+                        </div>
+                        <div className="flex justify-between w-full text-[0.65rem] uppercase text-white font-bold tracking-widest pl-1">
+                            <span>P</span><span>R</span><span>O</span><span>F</span><span>E</span><span>S</span><span>S</span><span>I</span><span>O</span><span>N</span><span>A</span><span>L</span>
+                        </div>
                     </div>
                 )}
             </div>

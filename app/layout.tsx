@@ -11,7 +11,7 @@ const inter = Inter_Tight({ subsets: ['latin'], variable: '--font-inter' });
 const oldStandard = Old_Standard_TT({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-old-standard' });
 
 export const metadata: Metadata = {
-  title: 'Compass Caging Database',
+  title: 'Compass Professional',
   description: 'High-performance donation processing system',
 };
 

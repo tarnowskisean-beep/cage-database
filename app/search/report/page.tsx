@@ -245,21 +245,24 @@ function ReportContent() {
             {/* Header Section */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3rem', alignItems: 'flex-start' }}>
                 {/* COMPASS LOGO */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z"
-                            stroke="black"
-                            strokeWidth="2"
-                        />
-                        <path
-                            d="M24 10L27 21L38 24L27 27L24 38L21 27L10 24L21 21L24 10Z"
-                            fill="black"
-                        />
-                    </svg>
-                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                        <span style={{ fontWeight: '800', fontSize: '1.4rem', letterSpacing: '-0.5px' }}>COMPASS</span>
-                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '3px', fontWeight: '600', color: '#555' }}>PROFESSIONAL</span>
+                {/* COMPASS LOGO - PRINT VERSION (BLACK) */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1, userSelect: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '2rem', letterSpacing: '-0.02em', color: 'black' }}>C</span>
+                        <div style={{ position: 'relative', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {/* Ring */}
+                                <circle cx="50" cy="50" r="38" stroke="black" strokeWidth="6" />
+                                {/* Star Points */}
+                                <path d="M50 0 L63 37 L100 50 L63 63 L50 100 L37 63 L0 50 L37 37 Z" fill="black" />
+                                {/* Inner Detail */}
+                                <circle cx="50" cy="50" r="8" fill="white" />
+                            </svg>
+                        </div>
+                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '2rem', letterSpacing: '-0.02em', color: 'black' }}>MPASS</span>
+                    </div>
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 'bold', color: 'black', paddingLeft: '4px' }}>
+                        <span>P</span><span>R</span><span>O</span><span>F</span><span>E</span><span>S</span><span>S</span><span>I</span><span>O</span><span>N</span><span>A</span><span>L</span>
                     </div>
                 </div>
 
