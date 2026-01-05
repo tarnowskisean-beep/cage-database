@@ -289,7 +289,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
             return adjusted.toISOString().split('T')[0];
         })(),
         entryMode: 'Barcode/Datamatrix', // Updated default
-        paymentCategory: 'Check',
+        paymentCategory: 'Checks',
         defaultGiftPlatform: 'Chainbridge',
         defaultTransactionType: 'Contribution',
         defaultGiftYear: new Date().getFullYear().toString(),
@@ -394,14 +394,15 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                                 value={formData.paymentCategory}
                                 onChange={e => setFormData({ ...formData, paymentCategory: e.target.value })}
                             >
-                                <option value="Check">Check</option>
+                                <option value="Checks">Check</option>
                                 <option value="Cash">Cash</option>
-                                <option value="Credit Card">Credit Card</option>
-                                <option value="Online">Online</option>
+                                <option value="CC">Credit Card</option>
                                 <option value="EFT">EFT</option>
-                                <option value="Stock">Stock</option>
-                                <option value="Crypto">Crypto</option>
-                                <option value="In-Kind">In-Kind</option>
+                                {/* <option value="Online">Online</option> */}
+                                {/* <option value="Stock">Stock</option> */}
+                                {/* <option value="Crypto">Crypto</option> */}
+                                {/* <option value="In-Kind">In-Kind</option> */}
+                                <option value="Mixed">Mixed</option>
                             </select>
                         </div>
                     </div>
