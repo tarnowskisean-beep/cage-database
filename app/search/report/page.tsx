@@ -243,31 +243,58 @@ function ReportContent() {
             `}</style>
 
             {/* Header Section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'flex-start' }}>
-                <div>
-                    <h1 style={{ fontWeight: 'bold', fontSize: '1.5rem', marginBottom: '0.25rem' }}>COMPASS</h1>
-                    <div style={{ fontSize: '0.9rem', letterSpacing: '2px' }}>PROFESSIONAL</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3rem', alignItems: 'flex-start' }}>
+                {/* COMPASS LOGO */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z"
+                            stroke="black"
+                            strokeWidth="2"
+                        />
+                        <path
+                            d="M24 10L27 21L38 24L27 27L24 38L21 27L10 24L21 21L24 10Z"
+                            fill="black"
+                        />
+                    </svg>
+                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                        <span style={{ fontWeight: '800', fontSize: '1.4rem', letterSpacing: '-0.5px' }}>COMPASS</span>
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '3px', fontWeight: '600', color: '#555' }}>PROFESSIONAL</span>
+                    </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
+
+                {/* CONTROLS & CLIENT LOGO */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1.5rem' }}>
                     <div className="no-print" style={{ display: 'flex', gap: '1rem' }}>
                         <button
                             onClick={() => window.history.back()}
-                            style={{ padding: '0.5rem 1rem', background: '#ffffff', color: '#333', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                            style={{ padding: '0.5rem 1rem', background: '#ffffff', color: '#333', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
                         >
                             &larr; Back
                         </button>
                         <button
                             onClick={() => window.print()}
-                            style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                            style={{ padding: '0.5rem 1rem', background: '#09090b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
                         >
                             🖨️ Print / Save PDF
                         </button>
                     </div>
                     {client?.LogoURL ? (
-                        <img src={client.LogoURL} alt="Client Logo" style={{ height: '90px', objectFit: 'contain' }} />
+                        <img src={client.LogoURL} alt="Client Logo" style={{ padding: '5px', height: '80px', maxWidth: '200px', objectFit: 'contain' }} />
                     ) : (
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', fontStyle: 'italic', fontFamily: 'serif' }}>
-                            {client ? client.ClientCode : 'Multi-Client Report'}
+                        <div style={{
+                            fontSize: '2rem',
+                            fontWeight: 'bold',
+                            fontFamily: 'serif',
+                            border: '3px solid black',
+                            width: '64px',
+                            height: '64px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '50%'
+                        }}>
+                            {client?.ClientCode?.substring(0, 2) || 'M'}
                         </div>
                     )}
                 </div>
