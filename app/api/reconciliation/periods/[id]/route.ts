@@ -94,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const batchesRes = await query(`
-            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared", "EntryMode", "TotalAmount"
+            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared", "EntryMode"
             FROM "Batches"
             WHERE "ClientID" = $1 
             AND "Date" >= $2 AND "Date" <= $3
@@ -104,16 +104,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const batches = [];
         for (const b of batchesRes.rows) {
-            // Recalculate total from Donations if needed, but Batch.TotalAmount should be accurate if closed
+            // Calculate total dynamically to avoid missing column 'TotalAmount'
+            const sumRes = await query('SELECT SUM("GiftAmount") as total FROM "Donations" WHERE "BatchID" = $1', [b.BatchID]);
+            const total = sumRes.rows[0].total ? parseFloat(sumRes.rows[0].total) : 0;
+
             batches.push({
                 id: b.BatchID,
                 type: 'Deposit',
                 date: b.Date,
-                clearedDate: b.Cleared ? b.Date : null, // Placeholder: If cleared, assume it matched on batch date for now unless we have bank date
+                clearedDate: b.Cleared ? b.Date : null,
                 ref: b.BatchCode,
-                payee: b.PaymentCategory, // e.g. "Check", "EFT"
-                memo: b.BatchCode, // Using BatchCode as memo for now as requested by user fallback
-                amount: parseFloat(b.TotalAmount),
+                payee: b.PaymentCategory,
+                memo: b.BatchCode,
+                amount: total,
                 cleared: b.Cleared || false
             });
         }
