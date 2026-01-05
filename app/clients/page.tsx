@@ -167,6 +167,18 @@ function ImportFinderModal({ client, onClose }: { client: any, onClose: () => vo
     const [uploading, setUploading] = useState(false);
     const [result, setResult] = useState<any>(null);
 
+    const downloadTemplate = () => {
+        const headers = ['CagingID', 'MailerID', 'MailCode', 'FirstName', 'LastName', 'Address', 'City', 'State', 'Zip'];
+        const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "finder_file_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!file) return;
@@ -197,7 +209,7 @@ function ImportFinderModal({ client, onClose }: { client: any, onClose: () => vo
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]">
-            <div className="glass-panel w-full max-w-md p-8 border border-white/10 bg-[#09090b]">
+            <div className="glass-panel w-full max-w-lg p-8 border border-white/10 bg-[#09090b]">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h2 className="text-xl font-display text-white">Import Finder File</h2>
@@ -208,6 +220,30 @@ function ImportFinderModal({ client, onClose }: { client: any, onClose: () => vo
 
                 {!result ? (
                     <form onSubmit={handleUpload} className="space-y-6">
+                        {/* INSTRUCTIONS */}
+                        <div className="bg-white/5 rounded-md p-4 border border-white/5">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="text-xs uppercase tracking-widest text-gray-400 font-bold">Instructions</h4>
+                                <button
+                                    type="button"
+                                    onClick={downloadTemplate}
+                                    className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded transition-colors flex items-center gap-1"
+                                >
+                                    <span>⬇</span> Download Template
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">
+                                PROSPECTS will be matched/updated based on <b>CagingID</b>. New records will be inserted.
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {['CagingID', 'MailerID', 'MailCode', 'First', 'Last', 'Address', 'City', 'State', 'Zip'].map(h => (
+                                    <span key={h} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-gray-400 font-mono">
+                                        {h}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:bg-white/5 transition-colors cursor-pointer relative">
                             <input
                                 type="file"
