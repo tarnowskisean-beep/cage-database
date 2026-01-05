@@ -94,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const batchesRes = await query(`
-            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared", "EntryMode", "Description"
+            SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared", "EntryMode", "Description", "DefaultGiftPlatform"
             FROM "Batches"
             WHERE "ClientID" = $1 
             AND "Date" >= $2 AND "Date" <= $3
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 date: b.Date,
                 clearedDate: b.Cleared ? b.Date : null,
                 ref: b.BatchCode,
-                payee: b.PaymentCategory,
+                payee: b.DefaultGiftPlatform || b.PaymentCategory, // User requested Platform as Payee
                 memo: b.Description || b.BatchCode, // Use Description (Comment) if available
                 amount: total,
                 cleared: b.Cleared || false
