@@ -498,7 +498,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>{r.DonorFirstName} {r.DonorLastName}</span>
+                                    <span>{r.OrganizationName || `${r.DonorFirstName || ''} ${r.DonorLastName || ''}`.trim() || <i style={{ opacity: 0.5 }}>No Name</i>}</span>
                                     {r.ScanDocumentID && (
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button
