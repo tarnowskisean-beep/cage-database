@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             `, [periodId]);
 
             // 5. Audit
-            await logAudit('UNDO_RECONCILIATION', 'ReconciliationPeriod', periodId, `Reverted status from Reconciled to Open. Affected Batches: ${batchIds.join(', ')}`, user.email);
+            await logAudit('UNDO_RECONCILIATION', 'ReconciliationPeriod', periodId, `Reverted status from Reconciled to Open. Affected Batches: ${batchIds.join(', ')}`, user.email || 'system');
 
             return { success: true, count: batchIds.length };
         });
