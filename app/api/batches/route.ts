@@ -98,6 +98,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Enforce Client Permission for Creation
+    if ((session.user as any).role === 'ClientUser') {
+      const allowedIds: number[] = (session.user as any).allowedClientIds || [];
+      if (!allowedIds.includes(Number(data.clientId))) {
+        return NextResponse.json({ error: 'You are not authorized to create batches for this client.' }, { status: 403 });
+      }
+    }
+
     // 3. User Resolution
     let userId = parseInt(session.user.id);
     let userInitials = (session.user.name || 'Unknown').substring(0, 2).toUpperCase();
