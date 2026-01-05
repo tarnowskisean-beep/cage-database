@@ -3,9 +3,31 @@ import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+
 export async function GET() {
     try {
-        const result = await query('SELECT "ClientID", "ClientCode", "ClientName", "LogoURL", "ClientType", "Status" FROM "Clients" ORDER BY "ClientCode"');
+        const session = await getServerSession(authOptions);
+
+        let queryText = 'SELECT "ClientID", "ClientCode", "ClientName", "LogoURL", "ClientType", "Status" FROM "Clients"';
+        const params: any[] = [];
+
+        // If ClientUser, filter by allowed IDs
+        if (session?.user && (session.user as any).role === 'ClientUser') {
+            const allowedIds = (session.user as any).allowedClientIds || [];
+            if (allowedIds.length > 0) {
+                queryText += ' WHERE "ClientID" = ANY($1)';
+                params.push(allowedIds);
+            } else {
+                // If no clients assigned, return empty list
+                return NextResponse.json([]);
+            }
+        }
+
+        queryText += ' ORDER BY "ClientCode"';
+
+        const result = await query(queryText, params);
         return NextResponse.json(result.rows);
     } catch (error) {
         console.error('GET /api/clients error:', error);
