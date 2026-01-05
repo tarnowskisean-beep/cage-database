@@ -40,6 +40,7 @@ function BatchesContent() {
     });
 
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
 
     // Fetch batches and clients
     useEffect(() => {
@@ -98,12 +99,20 @@ function BatchesContent() {
                     <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Processing</h2>
                     <h1 className="text-4xl text-white font-display">Batches</h1>
                 </div>
-                <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="btn-primary"
-                >
-                    + New Batch
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setShowExportModal(true)}
+                        className="px-4 py-2 border border-white/20 text-white rounded hover:bg-white/5 transition-colors text-sm font-medium"
+                    >
+                        Export To CSV
+                    </button>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="btn-primary"
+                    >
+                        + New Batch
+                    </button>
+                </div>
             </header>
 
             {/* Filter Bar & Stats */}
@@ -235,10 +244,105 @@ function BatchesContent() {
             </div>
 
             {showCreateModal && <CreateBatchModal onClose={() => setShowCreateModal(false)} refresh={() => window.location.reload()} />}
+            {showExportModal && (
+                <ExportModal
+                    onClose={() => setShowExportModal(false)}
+                    batchIds={filteredBatches.map(b => b.BatchID)}
+                    recordCount={totalCount}
+                />
+            )}
         </div>
     );
 }
 
+function ExportModal({ onClose, batchIds, recordCount }: { onClose: () => void, batchIds: number[], recordCount: number }) {
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/settings/export-templates').then(r => r.json()).then(setTemplates).catch(console.error);
+    }, []);
+
+    const handleExport = async () => {
+        if (!selectedTemplate) return;
+        setLoading(true);
+        try {
+            const res = await fetch('/api/export/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ templateId: selectedTemplate, batchIds })
+            });
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Get filename from header or default
+                const contentDisp = res.headers.get('Content-Disposition');
+                const filename = contentDisp ? contentDisp.split('filename=')[1]?.replace(/"/g, '') : 'export.csv';
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                onClose();
+            } else {
+                alert('Export failed');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Export error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+            <div className="glass-panel w-full max-w-md p-8 border border-white/10 bg-[#09090b]">
+                <h2 className="text-2xl font-display text-white mb-2">Export Journal Entries</h2>
+                <div className="text-sm text-gray-500 mb-6">
+                    Exporting <strong>{recordCount}</strong> batches.
+                </div>
+
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Select Template</label>
+                        <select
+                            className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
+                            value={selectedTemplate}
+                            onChange={e => setSelectedTemplate(e.target.value)}
+                        >
+                            <option value="">-- Select Template --</option>
+                            {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                        <div className="mt-2 text-right">
+                            <Link href="/settings/export-templates" className="text-xs text-blue-400 hover:text-blue-300">Manage Templates &rarr;</Link>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4 pt-6 border-t border-white/10 mt-6">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 px-4 py-3 rounded bg-transparent border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors text-xs font-bold uppercase tracking-widest"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            disabled={!selectedTemplate || loading}
+                            className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'Generating...' : 'Download CSV'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Keep CreateBatchModal as is...
 function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: () => void }) {
     const router = useRouter();
     const [clients, setClients] = useState<any[]>([]);
