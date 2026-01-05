@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             SELECT 
                 "DonationID", "GiftDate", "GiftAmount", "GiftMethod", "GiftPlatform", 
                 "BatchID", "CheckNumber",
-                c."ClientName"
+                c."ClientName", c."ClientCode"
             FROM "Donations" d
             LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
             WHERE "DonorID" = $1

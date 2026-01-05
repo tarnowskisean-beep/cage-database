@@ -29,12 +29,12 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
 
     // Prepare Chart Data
     const chartData = history.reduce((acc: any[], curr: any) => {
-        const year = new Date(curr.DonationDate).getFullYear();
+        const year = new Date(curr.GiftDate).getFullYear();
         const existing = acc.find(x => x.name === year);
         if (existing) {
-            existing.amount += Number(curr.Amount);
+            existing.amount += Number(curr.GiftAmount);
         } else {
-            acc.push({ name: year, amount: Number(curr.Amount) });
+            acc.push({ name: year, amount: Number(curr.GiftAmount) });
         }
         return acc;
     }, []).sort((a: any, b: any) => a.name - b.name);
@@ -188,13 +188,13 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 history.map((h: any) => (
                                     <tr key={h.DonationID} className="group hover:bg-white/5 transition-colors">
                                         <td className="px-8 py-4 text-gray-300 font-mono text-xs">
-                                            {new Date(h.DonationDate).toLocaleDateString()}
+                                            {new Date(h.GiftDate).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 text-white font-medium">
-                                            {h.ClientCode}
+                                            {h.ClientCode || h.ClientName}
                                         </td>
                                         <td className="px-6 py-4 text-gray-400">
-                                            {h.DonationType || 'Check'}
+                                            {h.GiftMethod || 'Check'}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">
@@ -202,7 +202,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono text-white font-medium">
-                                            ${Number(h.Amount).toFixed(2)}
+                                            ${Number(h.GiftAmount).toFixed(2)}
                                         </td>
                                     </tr>
                                 ))
