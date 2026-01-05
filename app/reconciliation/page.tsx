@@ -55,7 +55,7 @@ export default function ReconciliationStart() {
 
             if (res.ok) {
                 const period = await res.json();
-                router.push(\`/reconciliation/\${period.ReconciliationPeriodID}\`);
+                router.push(`/reconciliation/${period.ReconciliationPeriodID}`);
             } else {
                 const err = await res.json();
                 alert('Error: ' + err.error);
@@ -93,7 +93,7 @@ export default function ReconciliationStart() {
             <form onSubmit={handleStart} className="glass-panel p-12 max-w-4xl">
                 <div className="mb-12">
                     <h2 className="text-xl text-gray-400 mb-4 font-light">Which account do you want to reconcile?</h2>
-                    
+
                     <div className="flex gap-4 items-end">
                         <div className="w-full max-w-md">
                             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-bold">Account</label>
@@ -130,9 +130,10 @@ export default function ReconciliationStart() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-300 mb-2">Statement ending balance</label>
+                            <label htmlFor="endingBalance" className="block text-xs font-bold text-gray-300 mb-2">Statement ending balance</label>
                             <div className="relative">
                                 <input
+                                    id="endingBalance"
                                     type="number"
                                     step="0.01"
                                     required
@@ -144,8 +145,9 @@ export default function ReconciliationStart() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-300 mb-2">Statement ending date</label>
+                            <label htmlFor="endingDate" className="block text-xs font-bold text-gray-300 mb-2">Statement ending date</label>
                             <input
+                                id="endingDate"
                                 type="date"
                                 required
                                 className="bg-white border border-gray-300 rounded px-3 py-2 text-black"

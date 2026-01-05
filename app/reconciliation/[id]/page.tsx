@@ -10,7 +10,10 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     const router = useRouter();
 
     useEffect(() => {
-        params.then(p => setPeriodId(p.id));
+        params.then(p => {
+            console.log('Params resolved:', p);
+            setPeriodId(p.id);
+        });
     }, [params]);
 
     const [loading, setLoading] = useState(true);
@@ -29,31 +32,25 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
         if (!periodId) return;
 
         setLoading(true);
-        // In a real app, we'd fetch specific items. For now, we mock or fetch broad data.
-        // We'll assume the API returns structure: { period: {...}, moneyIn: [...], moneyOut: [...] }
-        fetch(`/api/reconciliation/periods/${periodId}`)
-            .then(res => res.json())
-            .then(data => {
-                setPeriod(data.period);
-                setMoneyIn(data.moneyIn || []); // Batches
-                setMoneyOut(data.moneyOut || []); // Bank Txns / Fees
 
-                // Initialize state
-                setStatementEndingBalance(data.period.StatementEndingBalance || '');
-                setStatementLink(data.period.StatementLink || '');
+        Promise.all([
+            fetch(`/api/reconciliation/periods/${periodId}`).then(res => res.json()),
+            fetch(`/api/reconciliation/periods/${periodId}/items`).then(res => res.json())
+        ])
+            .then(([p, items]) => {
+                if (p && !p.error) {
+                    setPeriod(p);
+                    setStatementEndingBalance(p.StatementEndingBalance || '');
+                    setMoneyIn(items.batches || []);
+                    setMoneyOut(items.transactions || []);
 
-
-                // Initialize cleared items
-                const initialCleared = new Set<string>();
-                (data.moneyIn || []).forEach((i: any) => {
-                    if (i.cleared) initialCleared.add(i.id);
-                });
-                (data.moneyOut || []).forEach((i: any) => {
-                    if (i.cleared) initialCleared.add(i.id);
-                });
-                setClearedItems(initialCleared);
+                    // Initialize cleared set
+                    const cleared = new Set<string>();
+                    (items.cleared || []).forEach((c: any) => cleared.add(c.ItemID));
+                    setClearedItems(cleared);
+                }
             })
-            .catch(console.error)
+            .catch(e => console.error('Promise.all error:', e))
             .finally(() => setLoading(false));
     }, [periodId]);
 
@@ -138,7 +135,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
             date: i.DepositDate,
             ref: 'DEP',
             payee: 'Deposit', // Could be client name or "Batch"
-            memo: \`Batch #\${i.BatchID}\`,
+            memo: `Batch #${i.BatchID}`,
             amount: Number(i.AmountDonorNet),
             isPayment: false
         }))
@@ -150,6 +147,28 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
         return true;
     });
 
+    // Finish Reconcile
+    const handleFinish = async () => {
+        if (!isBalanced) return alert('Difference must be 0.00 to reconcile.');
+        if (!confirm('Are you sure you want to finalize this period? This action cannot be undone.')) return;
+
+        setSubmitting(true);
+        try {
+            const res = await fetch(`/api/reconciliation/periods/${periodId}/reconcile`, { method: 'POST' });
+            if (res.ok) {
+                router.push('/reconciliation');
+            } else {
+                const err = await res.json();
+                alert('Error: ' + err.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to reconcile');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     if (loading) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-gray-500 animate-pulse">Loading Workspace...</div>;
     if (!period) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-red-500">Period Not Found</div>;
 
@@ -160,25 +179,25 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <div className="flex items-center gap-2 mb-1 text-sm text-gray-500">
-                             <span>Chart of accounts</span> <span>/</span> <span>Bank register</span> <span>/</span> <span>Reconcile</span>
+                            <span>Chart of accounts</span> <span>/</span> <span>Bank register</span> <span>/</span> <span>Reconcile</span>
                         </div>
                         <h1 className="text-2xl font-medium text-gray-800">
-                             {period.ClientCode || 'Account'} <span className="text-gray-400 font-light mx-2">|</span> {period.ClientName}
+                            {period.ClientCode || 'Account'} <span className="text-gray-400 font-light mx-2">|</span> {period.ClientName}
                         </h1>
                         <p className="text-sm text-gray-500 mt-1">Statement ending date: {new Date(period.PeriodEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                     </div>
                     <div className="flex gap-2">
-                         <button className="px-4 py-2 border border-green-600 text-green-700 font-medium rounded hover:bg-green-50">Edit info</button>
-                         <div className="flex">
-                             <button 
-                                 onClick={handleFinish}
-                                 disabled={!isBalanced}
-                                 className={`px - 6 py - 2 bg - green - 600 text - white font - medium rounded - l hover: bg - green - 700 disabled: opacity - 50 disabled: cursor - not - allowed`}
-                             >
-                                 Finish now
-                             </button>
-                             <button className="px-3 bg-green-600 border-l border-green-700 text-white rounded-r hover:bg-green-700">▼</button>
-                         </div>
+                        <button className="px-4 py-2 border border-green-600 text-green-700 font-medium rounded hover:bg-green-50">Edit info</button>
+                        <div className="flex">
+                            <button
+                                onClick={handleFinish}
+                                disabled={!isBalanced}
+                                className={`px - 6 py - 2 bg - green - 600 text - white font - medium rounded - l hover: bg - green - 700 disabled: opacity - 50 disabled: cursor - not - allowed`}
+                            >
+                                Finish now
+                            </button>
+                            <button className="px-3 bg-green-600 border-l border-green-700 text-white rounded-r hover:bg-green-700">▼</button>
+                        </div>
                     </div>
                 </div>
 
@@ -194,26 +213,26 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Cleared Balance</div>
                     </div>
                     <div className="w-px h-12 bg-gray-300 mx-4"></div>
-                     <div className="text-center">
+                    <div className="text-center">
                         <div className="text-2xl font-medium text-gray-900">
-                             {/* Breakdown if needed: Beginning + Deposits - Payments */}
+                            {/* Breakdown if needed: Beginning + Deposits - Payments */}
                         </div>
-                         <div className="flex gap-12 text-sm text-gray-600">
-                             <div>
-                                 <div>${beginBalance.toFixed(2)}</div>
-                                 <div className="text-[10px] uppercase text-gray-400 font-bold">Beginning Balance</div>
-                             </div>
-                             <div className="text-gray-400">-</div>
-                             <div>
-                                 <div>{clearedPaymentsCount} payments</div>
-                                 <div className="font-medium">${clearedPaymentsSum.toFixed(2)}</div>
-                             </div>
-                             <div className="text-gray-400">+</div>
-                             <div>
-                                 <div>{clearedDepositsCount} deposits</div>
-                                 <div className="font-medium">${clearedDepositsSum.toFixed(2)}</div>
-                             </div>
-                         </div>
+                        <div className="flex gap-12 text-sm text-gray-600">
+                            <div>
+                                <div>${beginBalance.toFixed(2)}</div>
+                                <div className="text-[10px] uppercase text-gray-400 font-bold">Beginning Balance</div>
+                            </div>
+                            <div className="text-gray-400">-</div>
+                            <div>
+                                <div>{clearedPaymentsCount} payments</div>
+                                <div className="font-medium">${clearedPaymentsSum.toFixed(2)}</div>
+                            </div>
+                            <div className="text-gray-400">+</div>
+                            <div>
+                                <div>{clearedDepositsCount} deposits</div>
+                                <div className="font-medium">${clearedDepositsSum.toFixed(2)}</div>
+                            </div>
+                        </div>
                     </div>
                     <div className="w-px h-12 bg-gray-300 mx-4"></div>
                     <div className="text-center">
@@ -224,37 +243,37 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         ) : (
                             <div className="text-2xl font-medium text-gray-900">${difference.toFixed(2)}</div>
                         )}
-                        <div className={`text - xs font - bold uppercase tracking - widest mt - 1 ${ isBalanced? 'text-green-600': 'text-gray-500' }`}>Difference</div>
+                        <div className={`text - xs font - bold uppercase tracking - widest mt - 1 ${isBalanced ? 'text-green-600' : 'text-gray-500'}`}>Difference</div>
                     </div>
                 </div>
 
                 {/* Filter Tabs */}
                 <div className="flex justify-between items-end border-b border-gray-200">
-                   <div className="flex space-x-1">
+                    <div className="flex space-x-1">
                         {['Payments', 'Deposits', 'All'].map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f as any)}
                                 className={`
                                     px - 6 py - 3 font - medium text - sm border - t border - l border - r rounded - t transition - colors
-                                    ${ filter === f
-            ? 'bg-white border-gray-300 text-gray-900 -mb-px'
-            : 'bg-gray-100 border-transparent text-gray-500 hover:text-gray-700'}
+                                    ${filter === f
+                                        ? 'bg-white border-gray-300 text-gray-900 -mb-px'
+                                        : 'bg-gray-100 border-transparent text-gray-500 hover:text-gray-700'}
 `}
                             >
                                 {f}
                             </button>
                         ))}
-                   </div>
-                   <div className="pb-2 flex gap-2">
-                       <button className="px-3 py-1.5 border border-green-600 text-green-700 text-sm font-medium rounded hover:bg-green-50">View statements</button>
-                       <div className="text-gray-400 px-2 py-1.5">
-                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2.4-9a3.5 3.5 0 0110.5 0" /></svg>
-                       </div>
-                       <div className="text-gray-400 px-2 py-1.5">
-                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                       </div>
-                   </div>
+                    </div>
+                    <div className="pb-2 flex gap-2">
+                        <button className="px-3 py-1.5 border border-green-600 text-green-700 text-sm font-medium rounded hover:bg-green-50">View statements</button>
+                        <div className="text-gray-400 px-2 py-1.5">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2.4-9a3.5 3.5 0 0110.5 0" /></svg>
+                        </div>
+                        <div className="text-gray-400 px-2 py-1.5">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -292,15 +311,14 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                                     {!item.isPayment && item.amount.toFixed(2)}
                                 </td>
                                 <td className="p-3 text-center">
-                                    <button 
+                                    <button
                                         onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')}
                                         className={`
 w - 6 h - 6 rounded - full flex items - center justify - center transition - colors
-                                            ${
-    clearedItems.has(item.id)
-    ? 'bg-green-500 text-white shadow-sm'
-    : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
-}
+                                            ${clearedItems.has(item.id)
+                                                ? 'bg-green-500 text-white shadow-sm'
+                                                : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                                            }
 `}
                                     >
                                         {clearedItems.has(item.id) ? '✓' : ''}
@@ -311,7 +329,7 @@ w - 6 h - 6 rounded - full flex items - center justify - center transition - col
                     </tbody>
                 </table>
             </div>
-            
+
             <div className="bg-gray-100 border-t border-gray-200 p-2 text-xs text-center text-gray-500">
                 End of list
             </div>
