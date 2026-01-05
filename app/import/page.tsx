@@ -355,7 +355,8 @@ export default function ImportPage() {
                 <div className="max-w-4xl mx-auto">
                     {/* Steps Indicator */}
                     <div className="flex justify-between items-center mb-10 relative">
-                        <div className="absolute top-1/2 left-0 w-full h-px bg-white/10 -z-10"></div>
+                        {/* Connecting Line - Increased opacity/color */}
+                        <div className="absolute top-1/2 left-0 w-full h-px bg-zinc-700 -z-10"></div>
                         <StepBadge num={1} active={step >= 1} current={step === 1} label="Upload CSV" />
                         <StepBadge num={2} active={step >= 2} current={step === 2} label="Normalize" />
                         <StepBadge num={3} active={step >= 3} current={step === 3} label="Review & Commit" />
@@ -376,7 +377,7 @@ export default function ImportPage() {
                                     📂
                                 </div>
                                 <h3 className="text-xl font-display text-white mb-2">Select Source & File</h3>
-                                <p className="text-gray-500 text-sm">Upload a CSV export from your donation platform.</p>
+                                <p className="text-gray-400 text-sm">Upload a CSV export from your donation platform.</p>
                             </div>
 
                             <form onSubmit={handleUpload} className="max-w-md mx-auto space-y-6">
@@ -448,7 +449,7 @@ export default function ImportPage() {
                                             <h4 className="text-orange-400 font-bold text-lg mb-1">Mapping Configuration Required</h4>
                                             <p className="text-orange-300/70 text-sm">
                                                 This appears to be a new source. Please map the CSV columns to our database fields below.
-                                                We&apos;ll save this configuration for next time.
+                                                We'll save this configuration for next time.
                                             </p>
                                         </div>
                                     </div>
@@ -701,21 +702,21 @@ function CreatableSelect({ label, value, options, onChange, placeholder = "Selec
 
 function StepBadge({ num, active, current, label }: { num: number, active: boolean, current?: boolean, label: string }) {
     return (
-        <div className={`flex flex-col items-center gap-2 relative z-10 ${active ? 'opacity-100' : 'opacity-40'}`}>
+        <div className={`flex flex-col items-center gap-2 relative z-10 ${active ? 'opacity-100' : 'opacity-100' /* Force opacity 100 on inactive too */}`}>
             <div className={`
                 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300
                 ${current
                     ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50 scale-110'
                     : active
                         ? 'bg-zinc-800 text-green-400 border border-green-500/50' // Completed state
-                        : 'bg-zinc-900 text-gray-600 border border-zinc-800'
+                        : 'bg-zinc-800 text-gray-400 border border-zinc-600' // Inactive state (Brighter border/text)
                 }
             `}>
                 {active && !current ? '✓' : num}
             </div>
             <span className={`
                 font-medium tracking-wide uppercase text-[10px] transition-colors
-                ${current ? 'text-blue-400' : active ? 'text-gray-300' : 'text-gray-600'}
+                ${current ? 'text-blue-400' : active ? 'text-gray-300' : 'text-gray-400'}
             `}>
                 {label}
             </span>
