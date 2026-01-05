@@ -363,7 +363,14 @@ export default function ImportPage() {
 
                     {/* Step 1: Upload */}
                     {step === 1 && (
-                        <div className="glass-panel p-8 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div
+                            className="glass-panel p-8 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                            style={{
+                                background: '#000000',
+                                border: '1px solid #3f3f46',
+                                borderRadius: '8px'
+                            }}
+                        >
                             <div className="text-center mb-8">
                                 <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center text-xl mx-auto mb-4 border border-blue-500/20">
                                     📂
@@ -384,10 +391,13 @@ export default function ImportPage() {
                                 </div>
 
                                 <div className="group relative">
-                                    <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-semibold group-hover:text-blue-400 transition-colors">
+                                    <label className="block text-xs uppercase tracking-widest text-white mb-2 font-bold group-hover:text-blue-400 transition-colors">
                                         CSV File
                                     </label>
-                                    <div className="relative border-2 border-dashed border-white/10 rounded-lg p-8 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-center cursor-pointer">
+                                    <div
+                                        className="relative border-2 border-dashed rounded-lg p-8 hover:bg-blue-500/5 transition-all text-center cursor-pointer"
+                                        style={{ borderColor: '#52525b', background: '#18181b' }}
+                                    >
                                         <input
                                             type="file"
                                             accept=".csv"
@@ -400,7 +410,7 @@ export default function ImportPage() {
                                                     <span>📄</span> {file.name}
                                                 </div>
                                             ) : (
-                                                <span className="text-gray-500 text-sm">Drag & drop or Click to Browse</span>
+                                                <span className="text-gray-400 text-sm">Drag & drop or Click to Browse</span>
                                             )}
                                         </div>
                                     </div>
@@ -624,13 +634,21 @@ function CreatableSelect({ label, value, options, onChange, placeholder = "Selec
     const isCustom = value && !options.includes(value);
     const [mode, setMode] = useState<'select' | 'input'>(isCustom ? 'input' : 'select');
 
+    // Auto-switch to select mode if value appears in options (e.g. after loading)
+    useEffect(() => {
+        if (options.includes(value)) {
+            setMode('select');
+        }
+    }, [options, value]);
+
     return (
         <div className="space-y-2">
-            <label className="block text-xs uppercase tracking-widest text-gray-500 font-bold">{label}</label>
+            <label className="block text-xs uppercase tracking-widest text-white font-bold">{label}</label>
             {mode === 'select' ? (
                 <div className="relative">
                     <select
-                        className="input-field bg-zinc-900 border-white/10 w-full appearance-none"
+                        className="input-field w-full appearance-none"
+                        style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}
                         value={options.includes(value) ? value : ''}
                         onChange={(e) => {
                             if (e.target.value === '__NEW__') {
@@ -650,7 +668,8 @@ function CreatableSelect({ label, value, options, onChange, placeholder = "Selec
             ) : (
                 <div className="flex gap-2">
                     <input
-                        className="input-field bg-zinc-900 border-white/10 w-full"
+                        className="input-field w-full"
+                        style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}
                         value={value}
                         onChange={e => onChange(e.target.value)}
                         placeholder={placeholder}
@@ -658,7 +677,17 @@ function CreatableSelect({ label, value, options, onChange, placeholder = "Selec
                     />
                     <button
                         type="button"
-                        onClick={() => { setMode('select'); onChange(options[0] || ''); }}
+                        onClick={() => {
+                            setMode('select');
+                            // Don't auto-select the first option if the user just wants to cancel;
+                            // keep current if valid, or clear, or default safely.
+                            // If they cancel out of custom, and current val is custom, maybe clear it?
+                            // But the issue was "turns to Anedot".
+                            // Let's try to select the first available option only if current value is invalid for select
+                            if (!options.includes(value)) {
+                                onChange(options[0] || '');
+                            }
+                        }}
                         className="px-3 py-2 bg-zinc-800 border border-white/10 rounded hover:bg-zinc-700 transition-colors text-gray-400 hover:text-white"
                         title="Cancel custom entry"
                     >
