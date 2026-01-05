@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
             VALUES ($1)
         `, [periodId]);
 
-        return NextResponse.json({ success: true, periodId });
+        return NextResponse.json({ success: true, ReconciliationPeriodID: periodId });
     } catch (e: any) {
         if (e.code === '23505') {
             return NextResponse.json({ error: 'Period already exists for these dates.' }, { status: 409 });
