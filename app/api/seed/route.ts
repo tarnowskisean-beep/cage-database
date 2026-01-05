@@ -117,7 +117,7 @@ export async function GET(request: Request) {
                         const amount = randomAmount();
                         let method = randomChoice(METHODS);
                         const platform = randomChoice(PLATFORMS);
-                        let type = 'Contribution';
+                        const type = 'Contribution';
 
                         if (['WinRed', 'Stripe', 'Anedot'].includes(platform)) {
                             method = 'Online';

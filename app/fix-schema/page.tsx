@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function FixSchemaPage() {
     let status = 'Initializing...';
-    let logs: string[] = [];
+    const logs: string[] = [];
 
     const log = (msg: string) => logs.push(`[${new Date().toISOString().split('T')[1]}] ${msg}`);
 

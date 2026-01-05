@@ -1,0 +1,167 @@
+
+> cage-database@0.1.0 lint
+> eslint
+
+
+/Users/seantarnowski/Desktop/cage-database/app/api/batches/[id]/documents/route.ts
+  50:15  warning  'buffer' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  63:13  warning  'fileSizeBytes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/batches/[id]/donations/route.ts
+    5:72  warning  'formatEmail' is defined but never used  @typescript-eslint/no-unused-vars
+    5:85  warning  'formatPhone' is defined but never used  @typescript-eslint/no-unused-vars
+   34:16  warning  'POST' is defined but never used         @typescript-eslint/no-unused-vars
+  132:31  warning  'request' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/debug-full/clients/route.ts
+  4:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/debug-full/route.ts
+  9:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/dev/verify-import/route.ts
+  4:35  warning  'formatZip' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/dev/verify-revert/route.ts
+  41:15  warning  'delDonationsBatch' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/documents/[id]/route.ts
+  12:11  warning  'userId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/donations/[id]/route.ts
+  34:38  warning  'CheckNumber' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  36:13  warning  'TransactionType' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  78:70  warning  'cur' is defined but never used                       @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/import/process/[id]/route.ts
+   8:7   warning  'cleanKey' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  84:30  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+  94:26  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/import/revert/[id]/route.ts
+  22:15  warning  'impSession' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/migrate/import-donations-csv/route.ts
+   11:28  warning  'request' is defined but never used           @typescript-eslint/no-unused-vars
+  105:19  warning  'comment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/migrate/reset-data/route.ts
+  8:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/reconciliation/periods/[id]/bank-import/route.ts
+  15:27  warning  'clientId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/reconciliation/periods/[id]/items/route.ts
+  15:17  warning  'id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/reconciliation/periods/[id]/transfer/route.ts
+  11:11  warning  'userId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/save-donation/route.ts
+    6:72  warning  'formatEmail' is defined but never used  @typescript-eslint/no-unused-vars
+    6:85  warning  'formatPhone' is defined but never used  @typescript-eslint/no-unused-vars
+  116:31  warning  'request' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/settings/export-templates/route.ts
+  6:27  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/batches/page.tsx
+   4:8   warning  'Link' is defined but never used               @typescript-eslint/no-unused-vars
+   6:10  warning  'METHODS' is defined but never used            @typescript-eslint/no-unused-vars
+   6:42  warning  'TRANSACTION_TYPES' is defined but never used  @typescript-eslint/no-unused-vars
+  12:12  warning  'stats' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/clients/page.tsx
+    4:10  warning  'Suspense' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   93:53  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  204:18  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  432:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/seantarnowski/Desktop/cage-database/app/components/BatchAttachments.tsx
+  26:8  warning  React Hook useEffect has a missing dependency: 'fetchDocuments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/seantarnowski/Desktop/cage-database/app/components/MainLayout.tsx
+  8:13  warning  'isCollapsed' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/debug-env/page.tsx
+  26:22  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/hooks/useBatchEntry.ts
+  159:17  warning  'cagingId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/import/page.tsx
+    5:10  warning  'METHODS' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+    5:19  warning  'PLATFORMS' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+    5:30  warning  'GIFT_TYPES' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   43:18  warning  'e' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+  162:8   warning  React Hook useEffect has a missing dependency: 'checkRules'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/seantarnowski/Desktop/cage-database/app/journal/page.tsx
+  4:10  warning  'useRouter' is defined but never used        @typescript-eslint/no-unused-vars
+  6:10  warning  'JOURNAL_HEADERS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/page.tsx
+  5:10   warning  'BarChart' is defined but never used  @typescript-eslint/no-unused-vars
+  5:20   warning  'Bar' is defined but never used       @typescript-eslint/no-unused-vars
+  5:101  warning  'Cell' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/people/[id]/page.tsx
+    3:31  warning  'use' is defined but never used            @typescript-eslint/no-unused-vars
+    5:25  warning  'XAxis' is defined but never used          @typescript-eslint/no-unused-vars
+    5:32  warning  'YAxis' is defined but never used          @typescript-eslint/no-unused-vars
+    5:75  warning  'CartesianGrid' is defined but never used  @typescript-eslint/no-unused-vars
+  320:18  warning  'e' is defined but never used              @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/reconciliation/[id]/page.tsx
+    4:31  warning  'use' is defined but never used                        @typescript-eslint/no-unused-vars
+    5:8   warning  'Link' is defined but never used                       @typescript-eslint/no-unused-vars
+   26:27  warning  'setStatementLink' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   28:12  warning  'submitting' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   62:11  warning  'handleSaveDraft' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   98:19  warning  'reverted' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  108:11  warning  'totalPayments' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  109:11  warning  'totalDeposits' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/search/page.tsx
+  558:96  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+  567:96  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/search/report/page.tsx
+   34:12  warning  'dateRange' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  286:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  396:65  warning  '_' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/export-templates/page.tsx
+  37:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/mappings/page.tsx
+  4:10  warning  'useRouter' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/security/page.tsx
+   7:19  warning  'session' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  13:11  warning  'checkStatus' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  97:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/seantarnowski/Desktop/cage-database/lib/audit.ts
+  2:10  warning  'getServerSession' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/lib/db.ts
+  9:11  warning  'start' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/scripts/check-schema.js
+  3:7  warning  'client' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/scripts/seed-history.js
+   64:15  warning  'hasComment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   83:18  warning  'e' is defined but never used                    @typescript-eslint/no-unused-vars
+   94:18  warning  'e' is defined but never used                    @typescript-eslint/no-unused-vars
+  172:25  warning  'batchTotal' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/scripts/seed_fake_data.js
+  91:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/types/next-auth.d.ts
+  1:8  warning  'NextAuth' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 82 problems (0 errors, 82 warnings)
+

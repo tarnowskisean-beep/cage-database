@@ -438,7 +438,7 @@ export default function ImportPage() {
                                             <h4 className="text-orange-400 font-bold text-lg mb-1">Mapping Configuration Required</h4>
                                             <p className="text-orange-300/70 text-sm">
                                                 This appears to be a new source. Please map the CSV columns to our database fields below.
-                                                We'll save this configuration for next time.
+                                                We&apos;ll save this configuration for next time.
                                             </p>
                                         </div>
                                     </div>

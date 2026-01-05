@@ -1,0 +1,519 @@
+
+> cage-database@0.1.0 lint
+> eslint
+
+
+/Users/seantarnowski/Desktop/cage-database/app/api/batches/[id]/documents/route.ts
+  50:15  warning  'buffer' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  63:13  warning  'fileSizeBytes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/batches/[id]/donations/route.ts
+    5:72  warning  'formatEmail' is defined but never used  @typescript-eslint/no-unused-vars
+    5:85  warning  'formatPhone' is defined but never used  @typescript-eslint/no-unused-vars
+   34:16  warning  'POST' is defined but never used         @typescript-eslint/no-unused-vars
+  132:31  warning  'request' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/debug-full/clients/route.ts
+  4:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/debug-full/route.ts
+  9:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/dev/verify-import/route.ts
+  4:35  warning  'formatZip' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/dev/verify-revert/route.ts
+  41:15  warning  'delDonationsBatch' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/documents/[id]/route.ts
+  12:11  warning  'userId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/donations/[id]/route.ts
+  34:38  warning  'CheckNumber' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  36:13  warning  'TransactionType' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  78:70  warning  'cur' is defined but never used                       @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/import/process/[id]/route.ts
+   8:7   warning  'cleanKey' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  84:30  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+  94:26  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/import/revert/[id]/route.ts
+  22:15  warning  'impSession' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/migrate/import-donations-csv/route.ts
+   11:28  warning  'request' is defined but never used           @typescript-eslint/no-unused-vars
+  105:19  warning  'comment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/migrate/reset-data/route.ts
+  8:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/processing/link-scans/route.ts
+  37:13  error  'mimeType' is never reassigned. Use 'const' instead  prefer-const
+  43:17  error  'url' is never reassigned. Use 'const' instead       prefer-const
+
+/Users/seantarnowski/Desktop/cage-database/app/api/reconciliation/periods/[id]/bank-import/route.ts
+  15:27  warning  'clientId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/reconciliation/periods/[id]/items/route.ts
+  15:17  warning  'id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/reconciliation/periods/[id]/transfer/route.ts
+  11:11  warning  'userId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/save-donation/route.ts
+    6:72  warning  'formatEmail' is defined but never used  @typescript-eslint/no-unused-vars
+    6:85  warning  'formatPhone' is defined but never used  @typescript-eslint/no-unused-vars
+  116:31  warning  'request' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/api/seed/route.ts
+  120:29  error  'type' is never reassigned. Use 'const' instead  prefer-const
+
+/Users/seantarnowski/Desktop/cage-database/app/api/settings/export-templates/route.ts
+  6:27  warning  'req' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/batches/page.tsx
+   4:8   warning  'Link' is defined but never used               @typescript-eslint/no-unused-vars
+   6:10  warning  'METHODS' is defined but never used            @typescript-eslint/no-unused-vars
+   6:42  warning  'TRANSACTION_TYPES' is defined but never used  @typescript-eslint/no-unused-vars
+  12:12  warning  'stats' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/clients/page.tsx
+    3:10  warning  'Suspense' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   34:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/seantarnowski/Desktop/cage-database/app/clients/page.tsx:34:9
+  32 |
+  33 |     useEffect(() => {
+> 34 |         refreshClients();
+     |         ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  35 |     }, []);
+  36 |
+  37 |     const handleEdit = (client: any) => {  react-hooks/set-state-in-effect
+   92:53  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @next/next/no-img-element
+  203:18  warning  'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  431:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @next/next/no-img-element
+
+/Users/seantarnowski/Desktop/cage-database/app/components/BatchAttachments.tsx
+  26:8  warning  React Hook useEffect has a missing dependency: 'fetchDocuments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/seantarnowski/Desktop/cage-database/app/components/MainLayout.tsx
+  8:13  warning  'isCollapsed' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx
+  109:30  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:109:30
+  107 |                     {session?.user?.role !== 'ClientUser' && (
+  108 |                         <>
+> 109 |                             <NavItem href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
+      |                              ^^^^^^^ This component is created during render
+  110 |                             <NavItem href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
+  111 |                         </>
+  112 |                     )}
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                  react-hooks/static-components
+  110:30  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:110:30
+  108 |                         <>
+  109 |                             <NavItem href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
+> 110 |                             <NavItem href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
+      |                              ^^^^^^^ This component is created during render
+  111 |                         </>
+  112 |                     )}
+  113 |
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                                                                                 react-hooks/static-components
+  115:22  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:115:22
+  113 |
+  114 |                     {/* Shared tabs */}
+> 115 |                     <NavItem href="/batches" icon="📦" label="Batches" active={pathname.startsWith('/batches')} collapsed={isCollapsed} />
+      |                      ^^^^^^^ This component is created during render
+  116 |
+  117 |                     {/* Admin/Clerk specific tabs */}
+  118 |                     {session?.user?.role !== 'ClientUser' && (
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                                                                                                                                         react-hooks/static-components
+  119:26  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:119:26
+  117 |                     {/* Admin/Clerk specific tabs */}
+  118 |                     {session?.user?.role !== 'ClientUser' && (
+> 119 |                         <NavItem href="/import" icon="📥" label="Import Revenue" active={pathname.startsWith('/import')} collapsed={isCollapsed} />
+      |                          ^^^^^^^ This component is created during render
+  120 |                     )}
+  121 |
+  122 |                     {/* Shared tabs */}
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                                                                                                     react-hooks/static-components
+  123:22  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:123:22
+  121 |
+  122 |                     {/* Shared tabs */}
+> 123 |                     <NavItem href="/search" icon="🔍" label="Search" active={pathname === '/search'} collapsed={isCollapsed} />
+      |                      ^^^^^^^ This component is created during render
+  124 |
+  125 |                     {/* Admin/Clerk specific tabs */}
+  126 |                     {session?.user?.role !== 'ClientUser' && (
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                                                                                                                                                    react-hooks/static-components
+  127:26  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:127:26
+  125 |                     {/* Admin/Clerk specific tabs */}
+  126 |                     {session?.user?.role !== 'ClientUser' && (
+> 127 |                         <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
+      |                          ^^^^^^^ This component is created during render
+  128 |                     )}
+  129 |
+  130 |                     <NavItem href="/journal" icon="📒" label="Journal Entries" active={pathname.startsWith('/journal')} collapsed={isCollapsed} />
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside  react-hooks/static-components
+  130:22  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:130:22
+  128 |                     )}
+  129 |
+> 130 |                     <NavItem href="/journal" icon="📒" label="Journal Entries" active={pathname.startsWith('/journal')} collapsed={isCollapsed} />
+      |                      ^^^^^^^ This component is created during render
+  131 |
+  132 |                     <NavItem href="/people" icon="👥" label="People" active={pathname.startsWith('/people')} collapsed={isCollapsed} />
+  133 |                 </ul>
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                                                                                                         react-hooks/static-components
+  132:22  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:132:22
+  130 |                     <NavItem href="/journal" icon="📒" label="Journal Entries" active={pathname.startsWith('/journal')} collapsed={isCollapsed} />
+  131 |
+> 132 |                     <NavItem href="/people" icon="👥" label="People" active={pathname.startsWith('/people')} collapsed={isCollapsed} />
+      |                      ^^^^^^^ This component is created during render
+  133 |                 </ul>
+  134 |             </nav>
+  135 |
+
+/Users/seantarnowski/Desktop/cage-database/app/components/Sidebar.tsx:16:21
+  14 |     if (pathname === '/login' || pathname === '/search/report') return null;
+  15 |
+> 16 |     const NavItem = ({ href, icon, label, active, collapsed }: { href: string, icon: string, label: string, active: boolean, collapsed: boolean }) => (
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         <li>
+     | ^^^^^^^^^^^^
+> 18 |             <Link
+     …
+     | ^^^^^^^^^^^^
+> 41 |         </li>
+     | ^^^^^^^^^^^^
+> 42 |     );
+     | ^^^^^^ The component is created during render here
+  43 |
+  44 |     return (
+  45 |         <aside                                                                                                                             react-hooks/static-components
+
+/Users/seantarnowski/Desktop/cage-database/app/debug-env/page.tsx
+  26:22  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/fix-schema/page.tsx
+  8:9  error  'logs' is never reassigned. Use 'const' instead  prefer-const
+
+/Users/seantarnowski/Desktop/cage-database/app/hooks/useBatchEntry.ts
+  159:17  warning  'cagingId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/import/page.tsx
+    5:10  warning  'METHODS' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+    5:19  warning  'PLATFORMS' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+    5:30  warning  'GIFT_TYPES' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   43:18  warning  'e' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+  162:8   warning  React Hook useEffect has a missing dependency: 'checkRules'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  441:51  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                react/no-unescaped-entities
+
+/Users/seantarnowski/Desktop/cage-database/app/journal/page.tsx
+  4:10  warning  'useRouter' is defined but never used        @typescript-eslint/no-unused-vars
+  6:10  warning  'JOURNAL_HEADERS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/page.tsx
+   4:10   warning  'BarChart' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   4:20   warning  'Bar' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   4:101  warning  'Cell' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  42:5    error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/seantarnowski/Desktop/cage-database/app/page.tsx:42:5
+  40 |   // Fetch Stats (Debounced or on Filter Change)
+  41 |   useEffect(() => {
+> 42 |     setLoading(true);
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  43 |     const params = new URLSearchParams();
+  44 |     if (selectedClient) params.append('clientId', selectedClient);
+  45 |     if (startDate) params.append('startDate', startDate);  react-hooks/set-state-in-effect
+
+/Users/seantarnowski/Desktop/cage-database/app/people/[id]/page.tsx
+    3:31  warning  'use' is defined but never used            @typescript-eslint/no-unused-vars
+    5:25  warning  'XAxis' is defined but never used          @typescript-eslint/no-unused-vars
+    5:32  warning  'YAxis' is defined but never used          @typescript-eslint/no-unused-vars
+    5:75  warning  'CartesianGrid' is defined but never used  @typescript-eslint/no-unused-vars
+  320:18  warning  'e' is defined but never used              @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/people/page.tsx
+  23:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/seantarnowski/Desktop/cage-database/app/people/page.tsx:23:9
+  21 |
+  22 |     useEffect(() => {
+> 23 |         setLoading(true);
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  24 |         const params = new URLSearchParams();
+  25 |         if (q) params.set('q', q);
+  26 |         if (initialMin) params.set('min', initialMin);  react-hooks/set-state-in-effect
+
+/Users/seantarnowski/Desktop/cage-database/app/reconciliation/[id]/page.tsx
+    4:31  warning  'use' is defined but never used                        @typescript-eslint/no-unused-vars
+    5:8   warning  'Link' is defined but never used                       @typescript-eslint/no-unused-vars
+   26:27  warning  'setStatementLink' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   28:12  warning  'submitting' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   62:11  warning  'handleSaveDraft' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   98:19  warning  'reverted' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  108:11  warning  'totalPayments' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  109:11  warning  'totalDeposits' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/reconciliation/page.tsx
+  37:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/seantarnowski/Desktop/cage-database/app/reconciliation/page.tsx:37:9
+  35 |
+  36 |         // Reset defaults
+> 37 |         setLastStatementDate(null);
+     |         ^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  38 |         setStatementHistory([]);
+  39 |         setFormData(prev => ({ ...prev, beginningBalance: '0.00' }));
+  40 |  react-hooks/set-state-in-effect
+
+/Users/seantarnowski/Desktop/cage-database/app/search/page.tsx
+  558:96  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+  567:96  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/search/report/page.tsx
+   34:12  warning  'dateRange' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  286:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  396:65  warning  '_' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/export-templates/page.tsx
+  37:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/mappings/page.tsx
+  4:10  warning  'useRouter' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/security/page.tsx
+   7:19  warning  'session' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  13:11  warning  'checkStatus' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  97:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/users/page.tsx
+  43:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/seantarnowski/Desktop/cage-database/app/settings/users/page.tsx:43:9
+  41 |
+  42 |     useEffect(() => {
+> 43 |         fetchUsers();
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  44 |     }, []);
+  45 |
+  46 |     const handleDeactivate = async (id: number) => {  react-hooks/set-state-in-effect
+
+/Users/seantarnowski/Desktop/cage-database/debug-clients.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/seantarnowski/Desktop/cage-database/debug-db-schema.js
+  2:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/seantarnowski/Desktop/cage-database/debug-indexes.js
+  2:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/seantarnowski/Desktop/cage-database/lib/audit.ts
+  2:10  warning  'getServerSession' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/lib/db.ts
+  9:11  warning  'start' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/scripts/check-schema.js
+  3:7  warning  'client' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/scripts/seed-history.js
+   64:15  warning  'hasComment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   83:18  warning  'e' is defined but never used                    @typescript-eslint/no-unused-vars
+   94:18  warning  'e' is defined but never used                    @typescript-eslint/no-unused-vars
+  172:25  warning  'batchTotal' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/scripts/seed_fake_data.js
+  91:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/seantarnowski/Desktop/cage-database/types/next-auth.d.ts
+  1:8  warning  'NextAuth' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 106 problems (24 errors, 82 warnings)
+  4 errors and 0 warnings potentially fixable with the `--fix` option.
+

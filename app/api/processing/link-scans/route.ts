@@ -34,13 +34,13 @@ export async function POST(request: Request) {
 
         const { StorageKey } = docResult.rows[0];
         let fileBuffer: Buffer | null = null;
-        let mimeType = 'application/pdf'; // Assuming PDF for scans
+        const mimeType = 'application/pdf'; // Assuming PDF for scans
 
 
 
         // 2. Download File
         if (StorageKey.startsWith('link:')) {
-            let url = StorageKey.replace('link:', '');
+            const url = StorageKey.replace('link:', '');
             let fileBuffer: Buffer | null = null;
             let driveFileId = '';
 
