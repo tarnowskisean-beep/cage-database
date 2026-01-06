@@ -257,13 +257,16 @@ export default function BatchEntry({ id }: { id: string }) {
                     </div>
 
                     {/* MIDDLE: DATA ENTRY FORM */}
-                    <div style={{ width: '600px', padding: '1.5rem', overflowY: 'auto', background: 'var(--color-bg-base)', borderRight: '1px solid var(--color-border)' }}>
+                    <div style={{ flex: 1, minWidth: '800px', padding: '1.5rem', overflowY: 'auto', background: 'var(--color-bg-base)', borderRight: '1px solid var(--color-border)' }}>
 
                         {/* FORM CONTAINER */}
                         <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
+                            maxWidth: '1200px',
+                            margin: '0 auto',
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '2rem',
+                            alignItems: 'start',
                             // Theme Consistent Container
                             background: 'var(--color-bg-elevated)',
                             border: '1px solid var(--color-border)',
@@ -361,7 +364,7 @@ export default function BatchEntry({ id }: { id: string }) {
                             </div>
 
                             {/* RIGHT COLUMN: TRANSACTION */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Platform</Label>
                                     <Select value={formData.platform} onChange={handleChange('platform')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
@@ -476,7 +479,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 />
                             </div>
 
-                            <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                            <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', gridColumn: 'span 2' }}>
                                 <button className="btn-secondary" style={{ flex: 1 }} onClick={resetForm}>Reset</button>
                                 {batch?.Status === 'Reconciled' ? (
                                     <button className="btn-primary" style={{ flex: 2, background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', cursor: 'not-allowed' }} disabled>
