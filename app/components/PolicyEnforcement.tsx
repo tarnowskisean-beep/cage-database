@@ -4,16 +4,30 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
-export default function PolicyEnforcement() {
+interface Policy {
+    PolicyID: number;
+    PolicyType: string;
+    Version: string;
+    Content: string;
+}
+
+interface Props {
+    initialPolicies?: Policy[];
+}
+
+export default function PolicyEnforcement({ initialPolicies = [] }: Props) {
     const { data: session } = useSession();
-    const [policies, setPolicies] = useState<any[]>([]);
-    const [open, setOpen] = useState(false);
+    const [policies, setPolicies] = useState<Policy[]>(initialPolicies);
+    const [open, setOpen] = useState(initialPolicies.length > 0);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        // If we have initial policies, we don't need to fetch.
+        // If we don't, and we have a session, we can double check (fallback).
+        if (initialPolicies.length > 0) return;
         if (!session) return;
         checkPolicies();
-    }, [session]);
+    }, [session, initialPolicies]);
 
     const checkPolicies = async () => {
         try {
