@@ -108,6 +108,123 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
 
     const [filter, setFilter] = useState<'All' | 'Payments' | 'Deposits' | 'Matched' | 'Unmatched Bank' | 'Unmatched System'>('All');
 
+    // Action Modal State
+    const [matchModalOpen, setMatchModalOpen] = useState(false);
+    const [matchTarget, setMatchTarget] = useState<any>(null); // The Bank Transaction to match
+
+    const [createBatchModalOpen, setCreateBatchModalOpen] = useState(false);
+    const [createBatchData, setCreateBatchData] = useState<{ amount: number, date: string, description: string } | null>(null);
+    const [createBatchTargetId, setCreateBatchTargetId] = useState<string | null>(null); // Bank Tx ID
+
+    const batchDateRef = useRef<HTMLInputElement>(null);
+    const batchDescRef = useRef<HTMLInputElement>(null);
+
+    // Handlers
+    const openMatchModal = (bankTx: any) => {
+        setMatchTarget(bankTx);
+        setMatchModalOpen(true);
+    };
+
+    const handleManualMatch = async (systemItemId: string, systemItemType: 'Batch' | 'Donation') => {
+        if (!matchTarget) return;
+        setSubmitting(true);
+        try {
+            const res = await fetch(`/api/reconciliation/periods/${periodId}/match`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bankTransactionId: matchTarget.TransactionID,
+                    systemItemId,
+                    systemItemType
+                })
+            });
+            if (res.ok) {
+                // Refresh
+                const p = await fetch(`/api/reconciliation/periods/${periodId}`).then(r => r.json());
+                if (p && !p.error) {
+                    setPeriod(p);
+                    setBankTransactions(p.bankTransactions);
+                    setMoneyIn(p.batches);
+                    setMoneyOut(p.payments);
+                }
+                setMatchModalOpen(false);
+                setMatchTarget(null);
+            } else {
+                alert('Match failed');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error matching');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const openCreateBatchModal = (bankTx: any) => {
+        setCreateBatchData({
+            amount: bankTx.Amount,
+            date: bankTx.Date ? new Date(bankTx.Date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            description: bankTx.Description || 'Bank Import'
+        });
+        setCreateBatchTargetId(bankTx.TransactionID);
+        setCreateBatchModalOpen(true);
+    };
+
+    const confirmCreateBatch = async () => {
+        if (!period || !createBatchData || !createBatchTargetId) return;
+        setSubmitting(true);
+
+        try {
+            // 1. Create Batch
+            const batchRes = await fetch('/api/batches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clientId: period.ClientID,
+                    date: batchDateRef.current?.value || createBatchData.date,
+                    description: batchDescRef.current?.value || createBatchData.description,
+                    entryMode: 'Manual',
+                    paymentCategory: 'Check', // Defaulting for now
+                    defaultGiftPlatform: 'Cage', // Or Import?
+                    defaultGiftMethod: 'Check',
+                    defaultTransactionType: 'Gift'
+                })
+            });
+            const batchData = await batchRes.json();
+
+            if (!batchRes.ok) throw new Error(batchData.error || 'Failed to create batch');
+
+            // 2. Match it
+            const matchRes = await fetch(`/api/reconciliation/periods/${periodId}/match`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bankTransactionId: createBatchTargetId,
+                    systemItemId: batchData.BatchID,
+                    systemItemType: 'Batch'
+                })
+            });
+
+            if (!matchRes.ok) throw new Error('Failed to link batch');
+
+            // 3. Refresh
+            const p = await fetch(`/api/reconciliation/periods/${periodId}`).then(r => r.json());
+            if (p && !p.error) {
+                setPeriod(p);
+                setBankTransactions(p.bankTransactions);
+                setMoneyIn(p.batches);
+                setMoneyOut(p.payments);
+            }
+            setCreateBatchModalOpen(false);
+
+        } catch (e: any) {
+            console.error(e);
+            alert('Error: ' + e.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     // Import Handler
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -315,19 +432,21 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         )}
                     </div>
                 </td>
+                {/* Actions Column Placeholder for System Row */}
+                {(filter === 'Unmatched Bank' || filter === 'Unmatched System') && <td className="py-4 px-6"></td>}
             </tr>
         );
     }
 
     const renderTableBody = () => {
-        if (loading) return <tr><td colSpan={9} className="py-8 text-center text-gray-500">Loading period data...</td></tr>;
+        if (loading) return <tr><td colSpan={10} className="py-8 text-center text-gray-500">Loading period data...</td></tr>;
 
         // View: Bank Transactions (Matched or Unmatched)
         if (filter === 'Matched' || filter === 'Unmatched Bank') {
             const targetStatus = filter === 'Matched' ? 'Matched' : 'Unmatched';
             const displayItems = bankTransactions.filter(bt => bt.Status === targetStatus);
 
-            if (displayItems.length === 0) return <tr><td colSpan={9} className="py-8 text-center text-gray-500">No {filter.toLowerCase()} transactions found.</td></tr>;
+            if (displayItems.length === 0) return <tr><td colSpan={10} className="py-8 text-center text-gray-500">No {filter.toLowerCase()} transactions found.</td></tr>;
 
             return displayItems.map(bt => (
                 <tr key={bt.TransactionID} className="group hover:bg-white/5 transition-colors">
@@ -356,6 +475,25 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                             {bt.Status}
                         </span>
                     </td>
+                    {/* Actions Column */}
+                    {(filter === 'Unmatched Bank') && (
+                        <td className="py-4 px-6 text-right flex gap-2 justify-end">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); openMatchModal(bt); }}
+                                className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase font-bold rounded border border-white/10"
+                            >
+                                Match
+                            </button>
+                            {bt.Amount > 0 && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); openCreateBatchModal(bt); }}
+                                    className="px-2 py-1 bg-blue-900/50 hover:bg-blue-800/50 text-blue-200 text-[10px] uppercase font-bold rounded border border-blue-800/50"
+                                >
+                                    + Batch
+                                </button>
+                            )}
+                        </td>
+                    )}
                 </tr>
             ));
         }
@@ -363,7 +501,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
         // View: System Items (Unmatched System or All)
         if (filter === 'Unmatched System') {
             const displayItems = allItems.filter(i => !isSystemItemMatched(i.id));
-            if (displayItems.length === 0) return <tr><td colSpan={9} className="py-8 text-center text-gray-500">All system items are matched!</td></tr>;
+            if (displayItems.length === 0) return <tr><td colSpan={10} className="py-8 text-center text-gray-500">All system items are matched!</td></tr>;
             return displayItems.map(item => renderSystemRow(item));
         }
 
@@ -516,6 +654,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                             <th className="py-4 px-6 font-semibold text-right">Payment</th>
                             <th className="py-4 px-6 font-semibold text-right">Deposit</th>
                             <th className="py-4 px-6 font-semibold text-center w-24">Status</th>
+                            {(filter === 'Unmatched Bank' || filter === 'Unmatched System') && <th className="py-4 px-6 font-semibold text-right w-48">Actions</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -523,6 +662,79 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                     </tbody>
                 </table>
             </div>
+
+            {/* Modals */}
+            {matchModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-[#18181b] border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl p-6">
+                        <h3 className="text-xl font-bold text-white mb-4">Manual Match</h3>
+                        <p className="text-gray-400 mb-4 text-sm">Select a system item to match with bank transaction: <strong>{matchTarget?.Description}</strong> (${Math.abs(matchTarget?.Amount).toFixed(2)})</p>
+
+                        <div className="max-h-96 overflow-y-auto space-y-2 mb-4 pr-2">
+                            {/* Candidate List: Unmatched System Items */}
+                            {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).map(item => (
+                                <div key={item.id} className="flex justify-between items-center p-3 bg-white/5 rounded border border-white/5 hover:border-emerald-500/50 cursor-pointer group"
+                                    onClick={() => handleManualMatch(item.id, item.type === 'Deposit' ? 'Batch' : 'Donation')}
+                                >
+                                    <div>
+                                        <div className="text-white font-mono text-sm">{item.date.split('T')[0]}</div>
+                                        <div className="text-gray-400 text-xs">{item.payee || item.memo || 'No Description'}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-white font-mono font-bold">${item.amount.toFixed(2)}</div>
+                                        <div className="text-[10px] uppercase text-gray-500">{item.type}</div>
+                                    </div>
+                                </div>
+                            ))}
+                            {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).length === 0 && (
+                                <div className="text-center text-gray-500 py-8">No unmatched system items found.</div>
+                            )}
+                        </div>
+                        <div className="flex justify-end">
+                            <button onClick={() => setMatchModalOpen(false)} className="px-4 py-2 text-gray-300 hover:text-white transition-colors">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {createBatchModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-[#18181b] border border-white/10 rounded-xl shadow-2xl w-full max-w-lg p-6">
+                        <h3 className="text-xl font-bold text-white mb-4">Create Batch from Deposit</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs uppercase font-bold text-gray-500 mb-1">Amount</label>
+                                <div className="text-2xl font-mono text-white">${createBatchData?.amount.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <label className="block text-xs uppercase font-bold text-gray-500 mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full bg-zinc-900 border border-white/10 rounded px-3 py-2 text-white"
+                                    defaultValue={createBatchData?.date}
+                                    ref={batchDateRef}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs uppercase font-bold text-gray-500 mb-1">Description</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-zinc-900 border border-white/10 rounded px-3 py-2 text-white"
+                                    defaultValue={createBatchData?.description}
+                                    ref={batchDescRef}
+                                />
+                            </div>
+                            <div className="p-3 bg-yellow-900/20 border border-yellow-700/30 rounded text-yellow-200 text-xs">
+                                This will create a new Batch in "Open" status and immediately match it to this bank transaction.
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button onClick={() => setCreateBatchModalOpen(false)} className="px-4 py-2 text-gray-300 hover:text-white transition-colors">Cancel</button>
+                            <button onClick={confirmCreateBatch} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold transition-colors">Create & Match</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
