@@ -251,7 +251,7 @@ function ReportContent() {
                     <img
                         src="/compass-pro-logo.png"
                         alt="COMPASS PROFESSIONAL"
-                        style={{ height: '80px', filter: 'invert(1)' }}
+                        style={{ height: '80px', filter: 'contrast(150%) invert(1)', mixBlendMode: 'multiply' }}
                     />
                 </div>
 
