@@ -534,7 +534,8 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
         <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
             <div className="text-red-500 font-bold text-xl">Period Not Found</div>
             <div className="text-gray-500">ID: {periodId}</div>
-            <Link href="/reconciliation" className="text-blue-400 hover:underline">Return to List</Link>
+            {apiError && <div className="text-red-400 bg-red-900/20 p-4 rounded border border-red-900/50 mt-2 max-w-md text-center font-mono text-sm break-all">{apiError}</div>}
+            <Link href="/reconciliation" className="text-blue-400 hover:underline mt-4">Return to List</Link>
         </div>
     );
 
