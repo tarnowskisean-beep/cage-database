@@ -62,6 +62,7 @@ export default function SearchPage() {
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
     const [clients, setClients] = useState<{ ClientID: number, ClientCode: string, ClientName: string }[]>([]);
+    const [accounts, setAccounts] = useState<{ AccountID: number, AccountName: string }[]>([]);
 
     // --- FLAT FORM STATE ---
     // We store both the OPERATOR and the VALUE for each field.
@@ -75,7 +76,7 @@ export default function SearchPage() {
         checkNoOp: 'contains', checkNoVal: '',
 
         // Row 3
-        accountOp: 'contains', accountVal: '', // "Account" -> Donor Name / Org
+        accountOp: 'contains', accountVal: '', // "Account" -> AccountID via dropdown
         docTypeOp: 'equals', docTypeVal: '', // Gift Type
 
         // Row 4
@@ -107,6 +108,24 @@ export default function SearchPage() {
             .then(data => Array.isArray(data) ? setClients(data) : setClients([]))
             .catch(err => console.error(err));
     }, []);
+
+    // Load Accounts when Client Selected
+    useEffect(() => {
+        if (formData.clientVal) {
+            // Find Client ID from Code
+            const client = clients.find(c => c.ClientCode === formData.clientVal);
+            if (client) {
+                fetch(`/api/clients/${client.ClientID}/accounts`)
+                    .then(res => res.json())
+                    .then(data => setAccounts(Array.isArray(data) ? data : []))
+                    .catch(console.error);
+            } else {
+                setAccounts([]);
+            }
+        } else {
+            setAccounts([]);
+        }
+    }, [formData.clientVal, clients]);
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -141,8 +160,8 @@ export default function SearchPage() {
             // 2. Batch Code
             add('batchCode', formData.batchCodeOp, formData.batchCodeVal);
 
-            // 3. Account (Donor Name / Org) - Mapped to 'donorName'
-            add('donorName', formData.accountOp, formData.accountVal);
+            // 3. Account ID
+            add('accountId', formData.accountOp, formData.accountVal);
 
             // 4. Amount
             add('amount', formData.amountOp, formData.amountVal);
@@ -340,7 +359,32 @@ export default function SearchPage() {
 
                     {/* LEFT COLUMN */}
                     <div>
-                        <Row label="Account" fieldKey="donorName" opKey="accountOp" valKey="accountVal" />
+
+                        {/* Account Dropdown (Dynamic) */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Account:</div>
+                            <select
+                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
+                                value={formData.accountOp}
+                                onChange={e => handleChange('accountOp', e.target.value)}
+                            >
+                                <option value="equals">EQUALS</option>
+                            </select>
+                            <select
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                                value={formData.accountVal}
+                                onChange={e => handleChange('accountVal', e.target.value)}
+                                disabled={!formData.clientVal || accounts.length === 0}
+                            >
+                                <option value="" className="text-black">
+                                    {!formData.clientVal ? '(Select Client First)' : accounts.length === 0 ? '(No Accounts)' : '(All Accounts)'}
+                                </option>
+                                {accounts.map(a => (
+                                    <option key={a.AccountID} value={a.AccountID} className="text-black">{a.AccountName}</option>
+                                ))}
+                            </select>
+                            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
+                        </div>
                         <Row label="Batch No" fieldKey="batchCode" opKey="batchCodeOp" valKey="batchCodeVal" />
 
                         {/* Client Dropdown override */}
