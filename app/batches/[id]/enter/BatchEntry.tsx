@@ -226,21 +226,45 @@ export default function BatchEntry({ id }: { id: string }) {
             {/* 2. MAIN SPLIT VIEW */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-                {/* LEFT: DONOR DATA & RECORD LIST (Simulating the screen layout where left is donor) */}
-                <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                {/* LEFT: PDF VIEWER (When available) */}
+                <div style={{ flex: 1, borderRight: '1px solid var(--color-border)', background: '#1a1a1a', display: 'flex', flexDirection: 'column' }}>
+                    {(() => {
+                        const activeScan = editingId ? (() => {
+                            const r = records.find(rec => rec.DonationID === editingId);
+                            return r && r.ScanDocumentID ? { documentId: r.ScanDocumentID, pageNumber: r.ScanPageNumber } : null;
+                        })() : null;
+
+                        if (activeScan) {
+                            return (
+                                <iframe
+                                    src={`/api/documents/${activeScan.documentId}#page=${activeScan.pageNumber}`}
+                                    style={{ width: '100%', height: '100%', border: 'none' }}
+                                    title="Active Scan"
+                                />
+                            );
+                        }
+                        return (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-muted)', flexDirection: 'column', gap: '1rem' }}>
+                                <div style={{ fontSize: '3rem', opacity: 0.2 }}>📄</div>
+                                <div>No Active Scan</div>
+                                <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>Select a record with a linked scan</div>
+                            </div>
+                        );
+                    })()}
+                </div>
+
+                {/* MIDDLE: DATA ENTRY FORM */}
+                <div style={{ width: '600px', padding: '1.5rem', overflowY: 'auto', background: 'var(--color-bg-base)', borderRight: '1px solid var(--color-border)' }}>
 
                     {/* FORM CONTAINER */}
                     <div style={{
-                        maxWidth: '900px',
-                        margin: '0 auto',
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '2rem',
-                        alignItems: 'start',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1.5rem',
                         // Theme Consistent Container
                         background: 'var(--color-bg-elevated)',
                         border: '1px solid var(--color-border)',
-                        padding: '2rem',
+                        padding: '1.5rem',
                         borderRadius: '8px'
                     }}>
 
@@ -334,7 +358,7 @@ export default function BatchEntry({ id }: { id: string }) {
                         </div>
 
                         {/* RIGHT COLUMN: TRANSACTION */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Platform</Label>
                                 <Select value={formData.platform} onChange={handleChange('platform')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
