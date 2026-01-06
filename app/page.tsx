@@ -188,7 +188,7 @@ function DashboardContent() {
             </div>
           </div>
           <button
-            onClick={() => router.push('/reconciliation/resolution')}
+            onClick={() => router.push('/people/resolution')}
             className="px-6 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold uppercase text-xs rounded transition-colors shadow-lg shadow-yellow-500/20"
           >
             Review Items &rarr;

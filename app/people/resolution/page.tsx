@@ -53,23 +53,21 @@ export default function ResolutionQueue() {
     if (loading) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-gray-500 animate-pulse">Loading Queue...</div>;
 
     return (
-        <div className="min-h-screen bg-[var(--color-bg-main)] text-white font-body p-8">
-            <header className="max-w-5xl mx-auto mb-8 flex justify-between items-end">
+    return (
+        <div className="flex flex-col gap-6">
+            <header className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-display font-medium text-white tracking-tight">Identity Resolution</h1>
-                    <p className="text-gray-400 mt-2 font-light">
+                    <h2 className="text-lg font-bold text-white tracking-tight">Pending Review</h2>
+                    <p className="text-gray-400 text-sm font-light">
                         Review high-confidence ambiguous matches.
                         <span className="ml-2 bg-yellow-900/30 text-yellow-500 px-2 py-0.5 rounded text-xs font-bold uppercase border border-yellow-800/50">
                             {items.length} Pending
                         </span>
                     </p>
                 </div>
-                <Link href="/reconciliation" className="text-sm text-gray-500 hover:text-white transition-colors">
-                    &larr; Back to Reconciliation
-                </Link>
             </header>
 
-            <div className="max-w-5xl mx-auto space-y-8">
+            <div>
                 {items.length === 0 ? (
                     <div className="text-center py-24 bg-white/5 rounded-2xl border border-white/5">
                         <div className="text-4xl mb-4">🎉</div>

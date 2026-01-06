@@ -98,7 +98,6 @@ export default function Sidebar() {
                     {session?.user?.role !== 'ClientUser' && (
                         <>
                             <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
-                            <NavItem href="/reconciliation/resolution" icon="⚠️" label="Resolutions" active={pathname === '/reconciliation/resolution'} collapsed={isCollapsed} />
                             <NavItem href="/journal" icon="📒" label="Journal Entries" active={pathname.startsWith('/journal')} collapsed={isCollapsed} />
                         </>
                     )}
