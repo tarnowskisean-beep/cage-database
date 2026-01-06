@@ -41,7 +41,8 @@ export async function GET(request: Request) {
             closedBatchesRes,
             uniqueDonorsRes,
             chartRes,
-            logsRes
+            logsRes,
+            pendingResolutionRes
         ] = await Promise.all([
             // 1. Total Revenue
             query(`SELECT SUM(d."GiftAmount") as total FROM "Donations" d ${whereClause}`, params),
