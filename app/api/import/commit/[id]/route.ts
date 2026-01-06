@@ -136,15 +136,17 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                     data['Gift Date'] || batchDate,
                     data['Gift Type'] || 'Online Source',
                     data['Gift Method'] || 'Credit Card',
-                    sessionId
+                    sessionId,
+                    data['MailCode'] || data['Mail Code'] || null,
+                    data['ScanString'] || data['Scan String'] || data['Scan'] || null
                 );
-                insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
+                insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
             }
 
             if (insertValues.length > 0) {
                 const queryStr = `
                     INSERT INTO "Donations" (
-                        "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID"
+                        "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID", "MailCode", "ScanString"
                     )
                     VALUES ${insertValues.join(', ')}
                 `;

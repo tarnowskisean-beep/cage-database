@@ -442,154 +442,159 @@ export default function BatchEntry({ id }: { id: string }) {
                                 <Label style={{ color: 'white', fontSize: '0.85rem' }}>Email</Label>
                                 <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label style={{ color: 'white', fontSize: '0.85rem' }}>Comment</Label>
-                                <textarea
-                                    className="input-field"
-                                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem', marginBottom: '0.5rem', height: '60px', background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}
-                                    value={formData.comment}
-                                    onChange={handleChange('comment')}
-                                />
-                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                            <Label style={{ color: 'white', fontSize: '0.85rem' }}>Mail Code</Label>
+                            <Input value={formData.mailCode} onChange={handleChange('mailCode')} style={{ background: '#1c1c1e', borderColor: '#52525b', color: 'white' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                            <Label style={{ color: 'white', fontSize: '0.85rem' }}>Comment</Label>
+                            <textarea
+                                className="input-field"
+                                style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem', marginBottom: '0.5rem', height: '60px', background: '#1c1c1e', borderColor: '#52525b', color: 'white' }}
+                                value={formData.comment}
+                                onChange={handleChange('comment')}
+                            />
+                        </div>
 
-                            <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                                <button className="btn-primary" style={{ flex: 1, background: '#3f3f46', color: 'white', border: '1px solid #52525b' }} onClick={resetForm}>Reset</button>
-                                {batch?.Status === 'Reconciled' ? (
-                                    <button className="btn-primary" style={{ flex: 2, background: '#27272a', color: '#71717a', cursor: 'not-allowed', border: '1px solid #3f3f46' }} disabled>
-                                        🔒 Batch Locked (Reconciled)
-                                    </button>
-                                ) : (
-                                    <button
-                                        className="btn-primary"
+                        <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                            <button className="btn-primary" style={{ flex: 1, background: '#3f3f46', color: 'white', border: '1px solid #52525b' }} onClick={resetForm}>Reset</button>
+                            {batch?.Status === 'Reconciled' ? (
+                                <button className="btn-primary" style={{ flex: 2, background: '#27272a', color: '#71717a', cursor: 'not-allowed', border: '1px solid #3f3f46' }} disabled>
+                                    🔒 Batch Locked (Reconciled)
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn-primary"
+                                    style={{
+                                        flex: 2,
+                                        background: editingId ? '#3b82f6' : '#10b981', // Blue for Update, Green for Save
+                                        color: 'white',
+                                        boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+                                        border: 'none'
+                                    }}
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                >
+                                    {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {/* RIGHT SIDEBAR (HISTORY & ATTACHMENTS) */}
+            <div style={{ width: '300px', background: 'var(--color-bg-sidebar)', borderLeft: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' }}>
+
+                {/* ATTACHMENTS */}
+                {batch && (
+                    <BatchAttachments
+                        batchId={id}
+                        paymentCategory={batch.PaymentCategory}
+                        activeScan={
+                            editingId ? (() => {
+                                const r = records.find(rec => rec.DonationID === editingId);
+                                return r ? { documentId: r.ScanDocumentID || null, pageNumber: r.ScanPageNumber || null } : undefined;
+                            })() : undefined
+                        }
+                    />
+                )}
+
+                <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem' }}>RECENT SCANS</div>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {records.map(r => (
+                        <div
+                            key={r.DonationID}
+                            onClick={() => loadRecord(r)}
+                            style={{
+                                padding: '0.75rem',
+                                borderBottom: '1px solid var(--color-border)',
+                                background: r.DonationID === editingId ? 'rgba(59, 130, 246, 0.15)' : (r.DonationID === lastSavedId ? 'rgba(51, 204, 102, 0.1)' : 'transparent'),
+                                cursor: 'pointer',
+                                borderLeft: r.ScanDocumentID ? '4px solid #10b981' : (r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent')
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>${Number(r.GiftAmount).toFixed(2)}</span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', marginRight: '0.5rem' }}>
+                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {r.OrganizationName || `${r.DonorFirstName || ''} ${r.DonorLastName || ''}`.trim() || <i style={{ opacity: 0.5 }}>No Name</i>}
+                                    </span>
+                                    {(r.DonorAddress || r.DonorCity) && (
+                                        <span style={{ fontSize: '0.7rem', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {[r.DonorAddress, r.DonorCity, r.DonorState, r.DonorZip].filter(Boolean).join(', ')}
+                                        </span>
+                                    )}
+                                </div>
+                                {r.ScanDocumentID && (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(`/api/documents/${r.ScanDocumentID}#page=${r.ScanPageNumber}`, '_blank');
+                                            }}
+                                            title={`View Scan on Page ${r.ScanPageNumber}`}
+                                            style={{
+                                                background: '#d1fae5',
+                                                color: '#065f46',
+                                                border: '1px solid #10b981',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.75rem',
+                                                padding: '0.1rem 0.4rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.2rem'
+                                            }}
+                                        >
+                                            📎 {r.ScanPageNumber}
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const reason = prompt("Report AI Error:\nWhat is wrong with this link? (e.g. Wrong Page, Wrong Donor)");
+                                                if (reason) {
+                                                    alert("Feedback received. We will use this to train future models.");
+                                                }
+                                            }}
+                                            title="Report Bad Link"
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8rem',
+                                                color: '#ef4444'
+                                            }}
+                                        >
+                                            ⚠️
+                                        </button>
+                                    </div>
+                                )}
+                                {!r.ScanDocumentID && (
+                                    <span
+                                        title="No Scan Linked"
                                         style={{
-                                            flex: 2,
-                                            background: editingId ? '#3b82f6' : '#10b981', // Blue for Update, Green for Save
-                                            color: 'white',
-                                            boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-                                            border: 'none'
+                                            marginLeft: '0.5rem',
+                                            fontSize: '0.9rem',
+                                            opacity: 0.3,
+                                            cursor: 'help'
                                         }}
-                                        onClick={handleSave}
-                                        disabled={saving}
                                     >
-                                        {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
-                                    </button>
+                                        ❌
+                                    </span>
                                 )}
                             </div>
                         </div>
-
-                    </div>
+                    ))}
                 </div>
-
-                {/* RIGHT SIDEBAR (HISTORY & ATTACHMENTS) */}
-                <div style={{ width: '300px', background: 'var(--color-bg-sidebar)', borderLeft: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' }}>
-
-                    {/* ATTACHMENTS */}
-                    {batch && (
-                        <BatchAttachments
-                            batchId={id}
-                            paymentCategory={batch.PaymentCategory}
-                            activeScan={
-                                editingId ? (() => {
-                                    const r = records.find(rec => rec.DonationID === editingId);
-                                    return r ? { documentId: r.ScanDocumentID || null, pageNumber: r.ScanPageNumber || null } : undefined;
-                                })() : undefined
-                            }
-                        />
-                    )}
-
-                    <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem' }}>RECENT SCANS</div>
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
-                        {records.map(r => (
-                            <div
-                                key={r.DonationID}
-                                onClick={() => loadRecord(r)}
-                                style={{
-                                    padding: '0.75rem',
-                                    borderBottom: '1px solid var(--color-border)',
-                                    background: r.DonationID === editingId ? 'rgba(59, 130, 246, 0.15)' : (r.DonationID === lastSavedId ? 'rgba(51, 204, 102, 0.1)' : 'transparent'),
-                                    cursor: 'pointer',
-                                    borderLeft: r.ScanDocumentID ? '4px solid #10b981' : (r.DonationID === editingId ? '4px solid var(--color-primary)' : '4px solid transparent')
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>${Number(r.GiftAmount).toFixed(2)}</span>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{new Date(r.CreatedAt).toLocaleTimeString()}</span>
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', marginRight: '0.5rem' }}>
-                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {r.OrganizationName || `${r.DonorFirstName || ''} ${r.DonorLastName || ''}`.trim() || <i style={{ opacity: 0.5 }}>No Name</i>}
-                                        </span>
-                                        {(r.DonorAddress || r.DonorCity) && (
-                                            <span style={{ fontSize: '0.7rem', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {[r.DonorAddress, r.DonorCity, r.DonorState, r.DonorZip].filter(Boolean).join(', ')}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {r.ScanDocumentID && (
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    window.open(`/api/documents/${r.ScanDocumentID}#page=${r.ScanPageNumber}`, '_blank');
-                                                }}
-                                                title={`View Scan on Page ${r.ScanPageNumber}`}
-                                                style={{
-                                                    background: '#d1fae5',
-                                                    color: '#065f46',
-                                                    border: '1px solid #10b981',
-                                                    borderRadius: '4px',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.75rem',
-                                                    padding: '0.1rem 0.4rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.2rem'
-                                                }}
-                                            >
-                                                📎 {r.ScanPageNumber}
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const reason = prompt("Report AI Error:\nWhat is wrong with this link? (e.g. Wrong Page, Wrong Donor)");
-                                                    if (reason) {
-                                                        alert("Feedback received. We will use this to train future models.");
-                                                    }
-                                                }}
-                                                title="Report Bad Link"
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.8rem',
-                                                    color: '#ef4444'
-                                                }}
-                                            >
-                                                ⚠️
-                                            </button>
-                                        </div>
-                                    )}
-                                    {!r.ScanDocumentID && (
-                                        <span
-                                            title="No Scan Linked"
-                                            style={{
-                                                marginLeft: '0.5rem',
-                                                fontSize: '0.9rem',
-                                                opacity: 0.3,
-                                                cursor: 'help'
-                                            }}
-                                        >
-                                            ❌
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
             </div>
+
         </div>
+        </div >
     );
 }
