@@ -234,11 +234,10 @@ export default function BatchEntry({ id }: { id: string }) {
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
                 {/* LEFT: DONOR DATA & RECORD LIST (Simulating the screen layout where left is donor) */}
-                <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', gap: '2rem' }}>
+                <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
 
                     {/* FORM CONTAINER */}
                     <div style={{
-                        flex: 1,
                         maxWidth: '900px',
                         margin: '0 auto',
                         display: 'grid',
