@@ -38,19 +38,24 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
+        // 1. Validation (Zod)
+        const validation = CreateDonationSchema.safeParse(await request.json());
+        if (!validation.success) {
+            return NextResponse.json({ error: 'Validation Failed', details: validation.error.format() }, { status: 400 });
+        }
+        const body = validation.data;
 
         // Clean & Standardize Inputs
-        const donorFirstName = formatName(body.donorFirstName);
-        const donorMiddleName = formatName(body.donorMiddleName);
-        const donorLastName = formatName(body.donorLastName);
-        const donorSuffix = cleanText(body.donorSuffix);
-        const donorAddress = formatAddress(body.donorAddress);
-        const donorCity = formatName(body.donorCity);
-        const donorState = formatState(body.donorState);
-        const donorZip = formatZip(body.donorZip);
-        const donorEmployer = formatName(body.donorEmployer);
-        const donorOccupation = formatName(body.donorOccupation);
+        const donorFirstName = formatName(body.donorFirstName || '');
+        const donorMiddleName = formatName(body.donorMiddleName || '');
+        const donorLastName = formatName(body.donorLastName || '');
+        const donorSuffix = cleanText(body.donorSuffix || '');
+        const donorAddress = formatAddress(body.donorAddress || '');
+        const donorCity = formatName(body.donorCity || '');
+        const donorState = formatState(body.donorState || '');
+        const donorZip = formatZip(body.donorZip || '');
+        const donorEmployer = formatName(body.donorEmployer || '');
+        const donorOccupation = formatName(body.donorOccupation || '');
 
         const {
             amount, checkNumber, scanString, giftMethod, giftPlatform, giftType, giftYear, giftQuarter,
