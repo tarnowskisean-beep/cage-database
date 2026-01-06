@@ -246,24 +246,13 @@ function ReportContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3rem', alignItems: 'flex-start' }}>
                 {/* COMPASS LOGO */}
                 {/* COMPASS LOGO - PRINT VERSION (BLACK) */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1, userSelect: 'none' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '3rem', letterSpacing: '-0.02em', color: 'black' }}>C</span>
-                        <div style={{ position: 'relative', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                {/* Ring */}
-                                <circle cx="50" cy="50" r="38" stroke="black" strokeWidth="6" />
-                                {/* Star Points */}
-                                <path d="M50 0 L63 37 L100 50 L63 63 L50 100 L37 63 L0 50 L37 37 Z" fill="black" />
-                                {/* Inner Detail */}
-                                <circle cx="50" cy="50" r="8" fill="white" />
-                            </svg>
-                        </div>
-                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '3rem', letterSpacing: '-0.02em', color: 'black' }}>MPASS</span>
-                    </div>
-                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 'bold', color: 'black', paddingLeft: '6px' }}>
-                        <span>P</span><span>R</span><span>O</span><span>F</span><span>E</span><span>S</span><span>S</span><span>I</span><span>O</span><span>N</span><span>A</span><span>L</span>
-                    </div>
+                {/* COMPASS LOGO - IMAGE REPLACEMENT */}
+                <div>
+                    <img
+                        src="/compass-pro-logo.png"
+                        alt="COMPASS PROFESSIONAL"
+                        style={{ height: '80px', filter: 'invert(1)' }}
+                    />
                 </div>
 
                 {/* CONTROLS & CLIENT LOGO */}
