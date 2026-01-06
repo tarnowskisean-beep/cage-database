@@ -105,7 +105,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const batches = [];
         for (const b of batchesRes.rows) {
             // Calculate total dynamically to avoid missing column 'TotalAmount'
-            const sumRes = await query('SELECT SUM("GiftAmount") as total FROM "Donations" WHERE "BatchID" = $1', [b.BatchID]);
+            // FIX: Use Net Amount (Gross - Fee) for matching against Bank Payouts
+            const sumRes = await query('SELECT SUM("GiftAmount" - COALESCE("GiftFee", 0)) as total FROM "Donations" WHERE "BatchID" = $1', [b.BatchID]);
             const total = sumRes.rows[0].total ? parseFloat(sumRes.rows[0].total) : 0;
 
             batches.push({
