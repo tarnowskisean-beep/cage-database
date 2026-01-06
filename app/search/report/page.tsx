@@ -247,9 +247,9 @@ function ReportContent() {
                 {/* COMPASS LOGO */}
                 {/* COMPASS LOGO - PRINT VERSION (BLACK) */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1, userSelect: 'none' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '2rem', letterSpacing: '-0.02em', color: 'black' }}>C</span>
-                        <div style={{ position: 'relative', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '3rem', letterSpacing: '-0.02em', color: 'black' }}>C</span>
+                        <div style={{ position: 'relative', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 {/* Ring */}
                                 <circle cx="50" cy="50" r="38" stroke="black" strokeWidth="6" />
@@ -259,9 +259,9 @@ function ReportContent() {
                                 <circle cx="50" cy="50" r="8" fill="white" />
                             </svg>
                         </div>
-                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '2rem', letterSpacing: '-0.02em', color: 'black' }}>MPASS</span>
+                        <span style={{ fontFamily: 'var(--font-display, sans-serif)', fontWeight: 600, fontSize: '3rem', letterSpacing: '-0.02em', color: 'black' }}>MPASS</span>
                     </div>
-                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 'bold', color: 'black', paddingLeft: '4px' }}>
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 'bold', color: 'black', paddingLeft: '6px' }}>
                         <span>P</span><span>R</span><span>O</span><span>F</span><span>E</span><span>S</span><span>S</span><span>I</span><span>O</span><span>N</span><span>A</span><span>L</span>
                     </div>
                 </div>
@@ -283,7 +283,7 @@ function ReportContent() {
                         </button>
                     </div>
                     {client?.LogoURL ? (
-                        <img src={client.LogoURL} alt="Client Logo" style={{ padding: '5px', height: '80px', maxWidth: '200px', objectFit: 'contain' }} />
+                        <img src={client.LogoURL} alt="Client Logo" style={{ padding: '5px', height: '120px', maxWidth: '300px', objectFit: 'contain' }} />
                     ) : (
                         <div style={{
                             fontSize: '2rem',
