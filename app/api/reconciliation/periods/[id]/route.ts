@@ -9,7 +9,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
-    console.log(`[DEBUG] GET /api/reconciliation/periods/${id} HIT`);
 
     try {
         // 1. Fetch Period Info
