@@ -4,12 +4,21 @@ import { query } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { Storage } from '@google-cloud/storage';
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    const userId = 1; // TODO: Get from session
+
+    // Auth Check
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const username = session.user.name || 'Unknown User';
 
     try {
         // SOC 2: Access Control Check (e.g. ensure user has access to this client/batch)
@@ -29,7 +38,7 @@ export async function GET(
         const doc = result.rows[0];
 
         // SOC 2: Audit Log
-        await logAudit('VIEW_DOCUMENT', 'BATCH_DOCUMENT', id, `Viewed ${doc.FileName}`, 'SYSTEM');
+        await logAudit('VIEW_DOCUMENT', 'BATCH_DOCUMENT', id, `Viewed ${doc.FileName}`, username);
 
         // Link Redirect
         if (doc.StorageKey && doc.StorageKey.startsWith('link:')) {
