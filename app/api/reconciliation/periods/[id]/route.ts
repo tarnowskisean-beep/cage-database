@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
-    console.log(`[Reconciliation API] Fetching Period ID: ${id}`); // DEBUG LOG
+    console.log(`[DEBUG] GET /api/reconciliation/periods/${id} HIT`);
 
     try {
         // 1. Fetch Period Info
@@ -123,14 +123,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 
         const bankTransactionsRes = await query(`
-            SELECT * FROM "ReconciliationBankTransactions"
+            SELECT 
+                "TransactionID",
+                "TransactionDate" as "Date",
+                "Description",
+                "ReferenceNumber" as "Reference",
+                "Cleared",
+                "Matched",
+                "ReconciliationPeriodID",
+                (COALESCE("AmountIn", 0) - COALESCE("AmountOut", 0)) as "Amount"
+            FROM "ReconciliationBankTransactions"
             WHERE "ReconciliationPeriodID" = $1
-            ORDER BY "Date" ASC
+            ORDER BY "TransactionDate" ASC
         `, [id]);
 
         const bankTransactions = bankTransactionsRes.rows.map(bt => ({
             ...bt,
-            // Convert types if needed
             Amount: parseFloat(bt.Amount)
         }));
 
