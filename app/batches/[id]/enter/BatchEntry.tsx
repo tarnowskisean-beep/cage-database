@@ -234,245 +234,325 @@ export default function BatchEntry({ id }: { id: string }) {
 
                         {/* FORM CONTAINER */}
                         <div style={{
-                            maxWidth: '1200px',
+                            maxWidth: '1400px',
                             margin: '0 auto',
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr',
-                            gap: '2rem',
-                            alignItems: 'start',
-                            // Theme Consistent Container
                             background: 'var(--color-bg-elevated)',
                             border: '1px solid var(--color-border)',
-                            padding: '1.5rem',
-                            borderRadius: '8px'
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden' // For border radius
                         }}>
-
-                            {/* LEFT COLUMN: DONOR */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>ClientID</Label>
-                                    <Input disabled value={batch?.ClientCode || ''} />
+                            {/* FORM HEADER */}
+                            <div style={{
+                                padding: '1rem 1.5rem',
+                                borderBottom: '1px solid var(--color-border)',
+                                background: 'var(--color-bg-surface)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>record_details</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                    {batch?.EntryMode === 'Manual' ? 'Manual Entry Mode' : 'Scan Mode'}
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>CagingID / Scan</Label>
-                                    {batch?.EntryMode === 'Manual' ? (
-                                        <div style={{
-                                            padding: '0.4rem',
-                                            fontSize: '0.9rem',
-                                            marginBottom: '0.5rem',
-                                            background: 'rgba(0,0,0,0.2)',
-                                            color: 'var(--color-text-muted)',
-                                            borderRadius: '4px',
-                                            border: '1px dashed var(--color-border)',
-                                            textAlign: 'center'
-                                        }}>
-                                            Manual Entry Mode (No Scan)
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0' }}>
+
+                                {/* LEFT COLUMN: DONOR INFORMATION */}
+                                <div style={{ padding: '1.5rem', borderRight: '1px solid var(--color-border)' }}>
+                                    <div style={{
+                                        fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                        color: 'var(--color-text-muted)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                    }}>
+                                        <span>👤</span> Donor Information
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {/* Row 1: ID & Classification */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>ClientID</Label>
+                                                <Input disabled value={batch?.ClientCode || ''} style={{ background: 'var(--color-bg-base)', opacity: 0.7 }} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Control ID / Scan</Label>
+                                                {batch?.EntryMode === 'Manual' ? (
+                                                    <div style={{
+                                                        padding: '0.5rem', fontSize: '0.85rem', background: 'var(--color-bg-base)',
+                                                        borderRadius: '4px', border: '1px dashed var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'center'
+                                                    }}>
+                                                        Auto-Generated
+                                                    </div>
+                                                ) : (
+                                                    <Input
+                                                        ref={scanRef}
+                                                        placeholder="Scan Barcode..."
+                                                        style={{ borderColor: 'var(--color-brand)', boxShadow: '0 0 0 1px var(--color-brand-transparent)' }}
+                                                        value={formData.scanString}
+                                                        onChange={handleChange('scanString')}
+                                                        onKeyDown={e => e.key === 'Enter' && handleScanLookup()}
+                                                        autoFocus
+                                                    />
+                                                )}
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <Input
-                                            ref={scanRef}
-                                            placeholder="Scan here..."
-                                            style={{ border: '2px solid var(--color-success)' }}
-                                            value={formData.scanString}
-                                            onChange={handleChange('scanString')}
-                                            onKeyDown={e => e.key === 'Enter' && handleScanLookup()}
-                                            autoFocus
-                                        />
-                                    )}
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Mail Code</Label>
-                                    <Input
-                                        ref={manualEntryRef}
-                                        value={formData.mailCode}
-                                        onChange={handleChange('mailCode')}
-                                        autoFocus={batch?.EntryMode === 'Manual'}
-                                    />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Prefix</Label>
-                                    <Input value={formData.donorPrefix} onChange={handleChange('donorPrefix')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>First Name</Label>
-                                    <Input value={formData.donorFirstName} onChange={handleChange('donorFirstName')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Middle Name</Label>
-                                    <Input value={formData.donorMiddleName} onChange={handleChange('donorMiddleName')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Last Name</Label>
-                                    <Input value={formData.donorLastName} onChange={handleChange('donorLastName')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Suffix</Label>
-                                    <Input value={formData.donorSuffix} onChange={handleChange('donorSuffix')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Employer</Label>
-                                    <Input value={formData.donorEmployer} onChange={handleChange('donorEmployer')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Occupation</Label>
-                                    <Input value={formData.donorOccupation} onChange={handleChange('donorOccupation')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Address</Label>
-                                    <Input value={formData.donorAddress} onChange={handleChange('donorAddress')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>City</Label>
-                                    <Input value={formData.donorCity} onChange={handleChange('donorCity')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>State</Label>
-                                    <Input value={formData.donorState} onChange={handleChange('donorState')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Zip</Label>
-                                    <Input value={formData.donorZip} onChange={handleChange('donorZip')} />
+
+                                        {/* Row 2: Mail Code & Entity */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Mail Code</Label>
+                                                <Input
+                                                    ref={manualEntryRef}
+                                                    value={formData.mailCode}
+                                                    onChange={handleChange('mailCode')}
+                                                    autoFocus={batch?.EntryMode === 'Manual'}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Entity Type</Label>
+                                                <Select value={formData.giftType} onChange={handleChange('giftType')}>
+                                                    {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0' }}></div>
+
+                                        {/* Row 3: Name Fields */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1.5fr 0.5fr 1.5fr 0.5fr', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem' }}>Pfx</Label>
+                                                <Input value={formData.donorPrefix} onChange={handleChange('donorPrefix')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem' }}>First Name</Label>
+                                                <Input value={formData.donorFirstName} onChange={handleChange('donorFirstName')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem' }}>Mid</Label>
+                                                <Input value={formData.donorMiddleName} onChange={handleChange('donorMiddleName')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem' }}>Last Name</Label>
+                                                <Input value={formData.donorLastName} onChange={handleChange('donorLastName')} style={{ fontWeight: 600 }} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem' }}>Sfx</Label>
+                                                <Input value={formData.donorSuffix} onChange={handleChange('donorSuffix')} />
+                                            </div>
+                                        </div>
+
+                                        {/* Row 4: Professional */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Employer</Label>
+                                                <Input value={formData.donorEmployer} onChange={handleChange('donorEmployer')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Occupation</Label>
+                                                <Input value={formData.donorOccupation} onChange={handleChange('donorOccupation')} />
+                                            </div>
+                                        </div>
+
+                                        {/* Row 5: Address */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            <Label style={{ fontSize: '0.75rem' }}>Street Address</Label>
+                                            <Input value={formData.donorAddress} onChange={handleChange('donorAddress')} />
+                                        </div>
+
+                                        {/* Row 6: City/State/Zip */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 1.2fr', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>City</Label>
+                                                <Input value={formData.donorCity} onChange={handleChange('donorCity')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>State</Label>
+                                                <Input value={formData.donorState} onChange={handleChange('donorState')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Zip Code</Label>
+                                                <Input value={formData.donorZip} onChange={handleChange('donorZip')} />
+                                            </div>
+                                        </div>
+
+                                        {/* Row 7: Contact */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Phone</Label>
+                                                <Input value={formData.donorPhone} onChange={handleChange('donorPhone')} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Email</Label>
+                                                <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} />
+                                            </div>
+                                        </div>
+
+                                    </div>
                                 </div>
 
+                                {/* RIGHT COLUMN: TRANSACTION DETAILS */}
+                                <div style={{ padding: '1.5rem' }}>
+                                    <div style={{
+                                        fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                        color: 'var(--color-text-muted)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                    }}>
+                                        <span>💳</span> Transaction Details
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+                                        {/* Highlights Row */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--color-bg-base)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem', color: 'var(--color-success)', fontWeight: 600 }}>Amount</Label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-success)', fontWeight: 700 }}>$</span>
+                                                    <Input
+                                                        ref={amountRef}
+                                                        type="number"
+                                                        style={{ paddingLeft: '25px', fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+                                                        value={formData.amount}
+                                                        onChange={handleChange('amount')}
+                                                        onKeyDown={e => e.key === 'Enter' && handleSave()}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Transaction Date</Label>
+                                                <div style={{ padding: '0.6rem', fontSize: '0.9rem', color: 'var(--color-text-main)', borderBottom: '1px solid var(--color-border)' }}>
+                                                    {new Date().toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Row 2: Method & Platform */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Method</Label>
+                                                <Select
+                                                    value={formData.method}
+                                                    onChange={handleChange('method')}
+                                                    disabled={!!batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)}
+                                                    style={{ opacity: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 0.7 : 1 }}
+                                                >
+                                                    {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                                                </Select>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Platform</Label>
+                                                <Select value={formData.platform} onChange={handleChange('platform')}>
+                                                    {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        {/* Row 3: Type & Subtype */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Transaction Type</Label>
+                                                <Select value={formData.transactionType} onChange={handleChange('transactionType')}>
+                                                    {TRANSACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                                </Select>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Inactive?</Label>
+                                                <Select value={formData.isInactive} onChange={handleChange('isInactive')}>
+                                                    {YES_NO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0' }}></div>
+
+                                        {/* Row 4: Attribution */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Fund / Org</Label>
+                                                <Input value={formData.organizationName} onChange={handleChange('organizationName')} placeholder="e.g. Annual Fund" />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>Conduit / Soft Credit</Label>
+                                                <Input value={formData.giftConduit} onChange={handleChange('giftConduit')} />
+                                            </div>
+                                        </div>
+
+                                        {/* Row 5: Dates */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>PostMark Year</Label>
+                                                <Select value={formData.postMarkYear} onChange={handleChange('postMarkYear')}>
+                                                    {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                                                </Select>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.75rem' }}>PostMark Qtr</Label>
+                                                <Select value={formData.postMarkQuarter} onChange={handleChange('postMarkQuarter')}>
+                                                    {['Q1', 'Q2', 'Q3', 'Q4'].map(q => <option key={q} value={q}>{q}</option>)}
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        {/* Extra Fields Collapsed/Visually De-emphasized */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Fee</Label>
+                                                <Input type="number" value={formData.giftFee} onChange={handleChange('giftFee')} style={{ fontSize: '0.8rem', padding: '0.3rem' }} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                <Label style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Pledge</Label>
+                                                <Input type="number" value={formData.pledgeAmount} onChange={handleChange('pledgeAmount')} style={{ fontSize: '0.8rem', padding: '0.3rem' }} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            <Label style={{ fontSize: '0.75rem' }}>Splits / Comments</Label>
+                                            <textarea
+                                                className="input-field"
+                                                style={{ width: '100%', padding: '0.5rem', fontSize: '0.9rem', height: '60px', resize: 'vertical' }}
+                                                value={formData.comment}
+                                                onChange={handleChange('comment')}
+                                                placeholder="Enter notes..."
+                                            />
+                                        </div>
+
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* RIGHT COLUMN: TRANSACTION */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Platform</Label>
-                                    <Select value={formData.platform} onChange={handleChange('platform')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                                        {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Trans. Type</Label>
-                                    <Select value={formData.transactionType} onChange={handleChange('transactionType')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                                        {TRANSACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Entity Type</Label>
-                                    <Select value={formData.giftType} onChange={handleChange('giftType')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                                        {GIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Method</Label>
-                                    <Select
-                                        value={formData.method}
-                                        onChange={handleChange('method')}
-                                        disabled={!!batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)}
-                                        style={{
-                                            background: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 'var(--color-bg-main)' : 'var(--color-bg-surface)',
-                                            opacity: (batch && !['Mixed', 'Zeros'].includes(batch.PaymentCategory)) ? 0.7 : 1,
-                                            borderColor: 'var(--color-border)',
-                                            color: 'var(--color-text-main)'
-                                        }}
-                                    >
-                                        {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Yes Inactive</Label>
-                                    <Select value={formData.isInactive} onChange={handleChange('isInactive')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                                        {YES_NO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Batch</Label>
-                                    <Input disabled value={batch?.BatchCode || ''} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Date</Label>
-                                    <Input disabled value={new Date().toLocaleString()} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>PostMark Year</Label>
-                                    <Select value={formData.postMarkYear} onChange={handleChange('postMarkYear')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                                        {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>PostMark Qtr</Label>
-                                    <Select value={formData.postMarkQuarter} onChange={handleChange('postMarkQuarter')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                                        {['Q1', 'Q2', 'Q3', 'Q4'].map(q => <option key={q} value={q}>{q}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Gift Organization</Label>
-                                    <Input value={formData.organizationName} onChange={handleChange('organizationName')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Gift Custodian</Label>
-                                    <Input value={formData.giftCustodian} onChange={handleChange('giftCustodian')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Conduit</Label>
-                                    <Input value={formData.giftConduit} onChange={handleChange('giftConduit')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ fontWeight: 700, color: 'var(--color-success)', fontSize: '0.85rem' }}>Gift Amount</Label>
-                                    <Input
-                                        ref={amountRef}
-                                        type="number"
-                                        style={{ fontWeight: 700, borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
-                                        value={formData.amount}
-                                        onChange={handleChange('amount')}
-                                        onKeyDown={e => e.key === 'Enter' && handleSave()}
-                                    />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Fee</Label>
-                                    <Input type="number" value={formData.giftFee} onChange={handleChange('giftFee')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Pledge Amount</Label>
-                                    <Input type="number" value={formData.pledgeAmount} onChange={handleChange('pledgeAmount')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Phone</Label>
-                                    <Input value={formData.donorPhone} onChange={handleChange('donorPhone')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Email</Label>
-                                    <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} />
-                                </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Mail Code</Label>
-                                <Input value={formData.mailCode} onChange={handleChange('mailCode')} />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Comment</Label>
-                                <textarea
-                                    className="input-field"
-                                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem', marginBottom: '0.5rem', height: '60px' }}
-                                    value={formData.comment}
-                                    onChange={handleChange('comment')}
-                                />
-                            </div>
-
-                            <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', gridColumn: 'span 2' }}>
-                                <button className="btn-secondary" style={{ flex: 1 }} onClick={resetForm}>Reset</button>
+                            {/* FOOTER ACTIONS */}
+                            <div style={{
+                                padding: '1rem 1.5rem',
+                                borderTop: '1px solid var(--color-border)',
+                                background: 'var(--color-bg-surface)',
+                                display: 'flex',
+                                gap: '1rem',
+                                justifyContent: 'flex-end'
+                            }}>
+                                <button className="btn-secondary" onClick={resetForm} style={{ minWidth: '100px' }}>Reset</button>
                                 {batch?.Status === 'Reconciled' ? (
-                                    <button className="btn-primary" style={{ flex: 2, background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', cursor: 'not-allowed' }} disabled>
-                                        🔒 Batch Locked (Reconciled)
+                                    <button className="btn-primary" style={{ minWidth: '150px', background: 'var(--color-bg-base)', color: 'var(--color-text-muted)', cursor: 'not-allowed' }} disabled>
+                                        🔒 Locked
                                     </button>
                                 ) : (
                                     <button
                                         className="btn-primary"
                                         style={{
-                                            flex: 2,
+                                            minWidth: '200px',
                                             background: editingId ? '#3b82f6' : 'var(--color-success)',
-                                            color: 'white'
+                                            color: 'white',
+                                            fontWeight: 600
                                         }}
                                         onClick={handleSave}
                                         disabled={saving}
                                     >
-                                        {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
+                                        {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save Record')}
                                     </button>
                                 )}
                             </div>
+
                         </div>
 
                     </div>
