@@ -206,6 +206,81 @@ export default function SearchPage() {
         }));
         setResults([]);
         setSearched(false);
+        setCurrentPage(1);
+    };
+
+    // --- SORT & PAGINATION ---
+    const [sortBy, setSortBy] = useState('date-desc');
+    const [pageSize, setPageSize] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [showExportModal, setShowExportModal] = useState(false);
+
+    const getSortedResults = () => {
+        let sorted = [...results];
+        if (sortBy === 'date-desc') {
+            sorted.sort((a, b) => new Date(b.GiftDate).getTime() - new Date(a.GiftDate).getTime());
+        } else if (sortBy === 'date-asc') {
+            sorted.sort((a, b) => new Date(a.GiftDate).getTime() - new Date(b.GiftDate).getTime());
+        } else if (sortBy === 'amount-desc') {
+            sorted.sort((a, b) => Number(b.GiftAmount) - Number(a.GiftAmount));
+        } else if (sortBy === 'amount-asc') {
+            sorted.sort((a, b) => Number(a.GiftAmount) - Number(b.GiftAmount));
+        }
+        return sorted;
+    };
+
+    const paginatedResults = () => {
+        const sorted = getSortedResults();
+        const startIndex = (currentPage - 1) * pageSize;
+        return sorted.slice(startIndex, startIndex + pageSize);
+    };
+
+    const totalPages = Math.ceil(results.length / pageSize);
+
+    // --- EXPORT HANDLERS ---
+    const handleExportClick = () => setShowExportModal(true);
+
+    const handleExportCSV = () => {
+        const headers = ['Date', 'Batch', 'Donor', 'Amount', 'Client', 'Method', 'ScanString'];
+        const csvContent = [
+            headers.join(','),
+            ...results.map(r => [
+                new Date(r.GiftDate).toLocaleDateString(),
+                r.BatchCode,
+                `"${r.DonorFirstName} ${r.DonorLastName}"`,
+                r.GiftAmount,
+                r.ClientCode,
+                r.GiftMethod,
+                r.ScanString || ''
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `search_results_${new Date().getTime()}.csv`;
+        a.click();
+        setShowExportModal(false);
+    };
+
+    const handleViewReport = () => {
+        // Construct query object to pass to report page
+        const rules: any[] = [];
+        if (formData.batchDateStart) rules.push({ field: 'date', operator: 'gte', value: formData.batchDateStart });
+        if (formData.batchDateEnd) rules.push({ field: 'date', operator: 'lte', value: formData.batchDateEnd });
+        if (formData.clientVal) rules.push({ field: 'clientCode', operator: 'equals', value: formData.clientVal });
+
+        // Include other filters if text is entered
+        if (formData.accountVal) rules.push({ field: 'donorName', operator: formData.accountOp as any, value: formData.accountVal });
+        if (formData.batchCodeVal) rules.push({ field: 'batchCode', operator: formData.batchCodeOp as any, value: formData.batchCodeVal });
+        if (formData.amountVal) rules.push({ field: 'amount', operator: formData.amountOp as any, value: formData.amountVal });
+        if (formData.checkNoVal) rules.push({ field: 'checkNumber', operator: formData.checkNoOp as any, value: formData.checkNoVal });
+
+        const searchGroup = { combinator: 'AND', rules };
+        const q = encodeURIComponent(JSON.stringify(searchGroup));
+        window.open(`/search/report?q=${q}`, '_blank');
+        setShowExportModal(false);
     };
 
     // --- RENDER HELPERS ---
@@ -350,12 +425,29 @@ export default function SearchPage() {
                 <div className="mt-8 flex items-center gap-4 border-t border-white/10 pt-4 justify-end">
                     <div className="flex items-center gap-2">
                         <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Results:</div>
-                        <select className="bg-zinc-900 border border-white/10 text-white text-xs rounded p-1"><option>10</option><option>50</option><option>100</option></select>
+                        <select
+                            className="bg-zinc-900 border border-white/10 text-white text-xs rounded p-1"
+                            value={pageSize}
+                            onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                        >
+                            <option value={10}>10</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Sort:</div>
-                        <select className="bg-zinc-900 border border-white/10 text-white text-xs rounded p-1 min-w-[100px]"><option>Batch Date</option><option>Amount</option></select>
+                        <select
+                            className="bg-zinc-900 border border-white/10 text-white text-xs rounded p-1 min-w-[100px]"
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                        >
+                            <option value="date-desc">Batch Date (Newest)</option>
+                            <option value="date-asc">Batch Date (Oldest)</option>
+                            <option value="amount-desc">Amount (High-Low)</option>
+                            <option value="amount-asc">Amount (Low-High)</option>
+                        </select>
                     </div>
 
                     <div className="h-6 w-px bg-white/10 mx-2"></div>
@@ -366,7 +458,11 @@ export default function SearchPage() {
                     >
                         Search
                     </button>
-                    <button className="btn-secondary py-1 px-6 text-xs">
+                    <button
+                        onClick={handleExportClick}
+                        className="btn-secondary py-1 px-6 text-xs"
+                        disabled={results.length === 0}
+                    >
                         Export
                     </button>
                     <button
@@ -380,51 +476,114 @@ export default function SearchPage() {
 
             {/* RESULTS LIST */}
             {searched && (
-                <div className="glass-panel text-sm overflow-hidden min-h-[200px]">
+                <div className="glass-panel text-sm overflow-hidden min-h-[400px] flex flex-col mb-12">
                     <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Results</h3>
-                        <span className="text-xs text-gray-500 font-mono">{results.length} records found</span>
+                        <div className="flex items-center gap-4">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Results</h3>
+                            <span className="text-xs text-gray-500 font-mono">{results.length} records found</span>
+                        </div>
+                        {/* Pagination Indicators */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <span>Page {currentPage} of {totalPages}</span>
+                                <div className="flex gap-1">
+                                    <button
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        className="px-2 py-1 bg-white/5 hover:bg-white/10 disabled:opacity-30 rounded transition-colors"
+                                    >
+                                        &larr;
+                                    </button>
+                                    <button
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        className="px-2 py-1 bg-white/5 hover:bg-white/10 disabled:opacity-30 rounded transition-colors"
+                                    >
+                                        &rarr;
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <table className="w-full text-xs text-left">
-                        <thead className="bg-white/5 border-b border-white/10">
-                            <tr>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Batch</th>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Donor / Account</th>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Amount</th>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Client</th>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Method</th>
-                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr><td colSpan={7} className="p-8 text-center text-gray-500">Searching...</td></tr>
-                            ) : results.length === 0 ? (
-                                <tr><td colSpan={7} className="p-8 text-center text-gray-500">No records found matching criteria.</td></tr>
-                            ) : (
-                                results.map(r => (
-                                    <tr key={r.DonationID} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
-                                        <td className="p-3 text-gray-400 font-mono">{new Date(r.GiftDate).toLocaleDateString()}</td>
-                                        <td className="p-3 font-mono text-gray-500 group-hover:text-gray-300">{r.BatchCode}</td>
-                                        <td className="p-3">
-                                            <div className="font-bold text-white">{r.DonorFirstName} {r.DonorLastName}</div>
-                                            <div className="text-[10px] text-gray-500">{r.DonorCity}, {r.DonorState}</div>
-                                        </td>
-                                        <td className="p-3 font-mono text-white">${Number(r.GiftAmount).toFixed(2)}</td>
-                                        <td className="p-3 text-gray-400">{r.ClientCode}</td>
-                                        <td className="p-3 text-gray-400">{r.GiftMethod}</td>
-                                        <td className="p-3">
-                                            <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-400 hover:text-blue-300 font-bold uppercase text-[10px] tracking-wider">
-                                                VIEW &rarr;
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                    <div className="flex-1 overflow-auto">
+                        <table className="w-full text-xs text-left">
+                            <thead className="bg-white/5 border-b border-white/10 sticky top-0 backdrop-blur-md z-10">
+                                <tr>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Batch</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Donor / Account</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Amount</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Client</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Method</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">Searching...</td></tr>
+                                ) : results.length === 0 ? (
+                                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">No records found matching criteria.</td></tr>
+                                ) : (
+                                    paginatedResults().map(r => (
+                                        <tr key={r.DonationID} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                                            <td className="p-3 text-gray-400 font-mono">{new Date(r.GiftDate).toLocaleDateString()}</td>
+                                            <td className="p-3 font-mono text-gray-500 group-hover:text-gray-300">{r.BatchCode}</td>
+                                            <td className="p-3">
+                                                <div className="font-bold text-white">{r.DonorFirstName} {r.DonorLastName}</div>
+                                                <div className="text-[10px] text-gray-500">{r.DonorCity}, {r.DonorState}</div>
+                                            </td>
+                                            <td className="p-3 font-mono text-white">${Number(r.GiftAmount).toFixed(2)}</td>
+                                            <td className="p-3 text-gray-400">{r.ClientCode}</td>
+                                            <td className="p-3 text-gray-400">{r.GiftMethod}</td>
+                                            <td className="p-3">
+                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-400 hover:text-blue-300 font-bold uppercase text-[10px] tracking-wider">
+                                                    VIEW &rarr;
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* EXPORT MODAL */}
+            {showExportModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="glass-panel w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                        <h3 className="text-xl font-display text-white mb-2">Export Results</h3>
+                        <p className="text-gray-400 text-sm mb-6">Choose a format to download your search results.</p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={handleExportCSV}
+                                className="flex flex-col items-center justify-center gap-3 p-6 rounded border border-white/10 bg-white/5 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group"
+                            >
+                                <span className="text-3xl">📄</span>
+                                <span className="text-sm font-bold text-gray-300 group-hover:text-white">Download CSV</span>
+                            </button>
+
+                            <button
+                                onClick={handleViewReport}
+                                className="flex flex-col items-center justify-center gap-3 p-6 rounded border border-white/10 bg-white/5 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group"
+                            >
+                                <span className="text-3xl">📊</span>
+                                <span className="text-sm font-bold text-gray-300 group-hover:text-white">PDF Report</span>
+                            </button>
+                        </div>
+
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={() => setShowExportModal(false)}
+                                className="text-xs font-bold text-gray-500 hover:text-white uppercase tracking-wide"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
