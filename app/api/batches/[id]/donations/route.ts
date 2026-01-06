@@ -74,10 +74,14 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
         }
 
         // Get ClientID and Defaults from Batch
-        const batchRes = await query('SELECT "ClientID", "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter", "DefaultGiftType", "Date" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
+        const batchRes = await query('SELECT "ClientID", "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter", "DefaultGiftType", "Date", "Status" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
 
         if (batchRes.rows.length === 0) throw new Error('Batch not found');
         const batch = batchRes.rows[0];
+
+        if (batch.Status !== 'Open') {
+            return NextResponse.json({ error: 'Cannot add donations to a Closed or Reconciled batch.' }, { status: 400 });
+        }
 
         // Apply Defaults if missing
         const finalMethod = giftMethod || batch.DefaultGiftMethod || 'Check';
