@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import { formatName, formatAddress, formatState, formatZip, cleanText, formatEmail, formatPhone } from '@/lib/cleaners';
 
 export const dynamic = 'force-dynamic';
@@ -103,7 +104,17 @@ export async function POST(request: Request) {
             ]
         );
 
-        return NextResponse.json(result.rows[0]);
+        const newDonation = result.rows[0];
+
+        // LOG AUDIT (SOC 2)
+        await logAudit(
+            (session.user as any).id,
+            'CreateDonation',
+            newDonation.DonationID,
+            { batchId: batchId, amount: amount, client: batch.ClientID }
+        );
+
+        return NextResponse.json(newDonation);
     } catch (error: any) {
         console.error('POST /api/save-donation error:', error);
         return NextResponse.json({

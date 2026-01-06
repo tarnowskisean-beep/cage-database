@@ -3,18 +3,26 @@ import { getServerSession } from 'next-auth'; // Keep this for server-side usage
 
 /**
  * Log a sensitive action to the database for SOC 2 compliance.
- * @param action - The action performed (e.g., 'LOGIN', 'CREATE', 'DELETE')
- * @param entityType - The type of entity affected (e.g., 'BATCH', 'USER')
+ * @param userId - The ID of the user performing the action
+ * @param action - The action performed (e.g., 'LOGIN', 'CREATE_DONATION')
  * @param entityId - The ID of the entity (optional)
- * @param details - Additional context or JSON string
- * @param actor - The user performing the action (email or name)
+ * @param details - Additional context or JSON object
+ * @param ipAddress - Request IP if available
  */
-export async function logAudit(action: string, entityType: string, entityId: string | number | null, details: string, actor: string) {
+export async function logAudit(
+    userId: number | string,
+    action: string,
+    entityId: string | number | null,
+    details: any,
+    ipAddress?: string
+) {
     try {
+        const detailsStr = typeof details === 'string' ? details : JSON.stringify(details);
+
         await query(
-            `INSERT INTO "AuditLogs" ("Action", "EntityType", "EntityID", "Details", "Actor", "CreatedAt")
-             VALUES ($1, $2, $3, $4, $5, NOW())`,
-            [action, entityType, String(entityId || ''), details, actor]
+            `INSERT INTO "AuditLogs" ("UserID", "Action", "EntityID", "Details", "IPAddress") 
+             VALUES ($1, $2, $3, $4, $5)`,
+            [userId, action, String(entityId || ''), detailsStr, ipAddress || null]
         );
     } catch (e) {
         // Fallback: Start by logging to console so we don't break the app flow if DB fails
