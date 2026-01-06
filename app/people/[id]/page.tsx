@@ -12,6 +12,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     const [stats, setStats] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
     const [pledges, setPledges] = useState<any[]>([]);
+    const [isSubscribed, setIsSubscribed] = useState(false);
     const [loading, setLoading] = useState(true);
 
     // Filters
@@ -41,19 +42,37 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
         fetch(`/api/people/${donorId}`)
             .then(res => res.json())
             .then(data => {
-                // FIXED: API returns 'profile' but frontend expected 'donor'
                 setDonor(data.profile || data.donor);
                 setStats(data.stats);
                 setHistory(data.history || []);
                 setPledges(data.pledges || []);
+                setIsSubscribed(data.isSubscribed || false); // Set initial sub state
             })
             .catch(console.error)
             .finally(() => setLoading(false));
     }, [donorId]);
 
-    // Prepare Chart Data
+    const handleSubscribe = async () => {
+        try {
+            const res = await fetch(`/api/people/${donorId}/subscribe`, { method: 'POST' });
+            const data = await res.json();
+            setIsSubscribed(data.subscribed);
+        } catch (error) {
+            console.error('Subscription failed', error);
+        }
+    };
+
+    // Calculate Recency in Days
+    const getDaysAgo = (dateStr: string | null) => {
+        if (!dateStr) return 'Never';
+        const diff = new Date().getTime() - new Date(dateStr).getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        return days === 0 ? 'Today' : `${days} days ago`;
+    };
+
+    // Prepare Chart Data (Fixed for Recharts)
     const chartData = history.reduce((acc: any[], curr: any) => {
-        const year = new Date(curr.GiftDate).getFullYear();
+        const year = String(new Date(curr.GiftDate).getFullYear()); // Ensure year is string for categorical axis
         const existing = acc.find(x => x.name === year);
         if (existing) {
             existing.amount += Number(curr.GiftAmount);
@@ -61,10 +80,10 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             acc.push({ name: year, amount: Number(curr.GiftAmount) });
         }
         return acc;
-    }, []).sort((a: any, b: any) => a.name - b.name);
+    }, []).sort((a: any, b: any) => Number(a.name) - Number(b.name));
 
 
-    if (loading) return null; // Suspense-like loading, let layout handle background
+    if (loading) return null;
     if (!donor) return (
         <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
@@ -95,7 +114,35 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
 
                     {/* Info */}
                     <div className="flex-1">
-                        <h1 className="text-4xl font-display text-white mb-2">{donor.FirstName} {donor.LastName}</h1>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h1 className="text-4xl font-display text-white mb-2">{donor.FirstName} {donor.LastName}</h1>
+                                {/* Recency Indicators */}
+                                <div className="flex gap-4 text-xs font-bold uppercase tracking-wider mt-1">
+                                    <span className={`${stats.avgGift > 0 && getDaysAgo(history[0]?.GiftDate).includes('days') && parseInt(getDaysAgo(history[0]?.GiftDate)) < 90 ? 'text-emerald-400' : 'text-gray-500'}`}>
+                                        Last Gift: {getDaysAgo(history[0]?.GiftDate)}
+                                    </span>
+                                    <span className="text-gray-600">|</span>
+                                    <span className="text-gray-500">
+                                        Last Contact: {getDaysAgo(stats.lastContact)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Subscription Bell */}
+                            <button
+                                onClick={handleSubscribe}
+                                className={`p-2 rounded-full border transition-colors ${isSubscribed ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-500 hover:text-white'}`}
+                                title={isSubscribed ? "Alerts Enabled" : "Enable Alerts"}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                                    {isSubscribed && <circle cx="17" cy="5" r="3" fill="#34d399" stroke="none" />}
+                                </svg>
+                            </button>
+                        </div>
+
                         <div className="flex flex-wrap gap-6 text-sm text-gray-400 mt-4">
                             <div className="flex items-center gap-2">
                                 <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white">✉️</span>
@@ -295,8 +342,12 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                         <td className="px-6 py-4 text-gray-400">
                                             {h.GiftMethod || 'Check'}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-400">
-                                            {h.MailCode || '-'}
+                                        <td className="px-6 py-4">
+                                            {h.MailCode ? (
+                                                <span className="text-gray-300 font-medium">{h.MailCode}</span>
+                                            ) : (
+                                                <span className="text-gray-600 text-[10px] uppercase tracking-wider font-bold">General</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">

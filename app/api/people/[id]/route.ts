@@ -53,15 +53,29 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const giftCount = history.length;
         const avgGift = giftCount > 0 ? totalGiven / giftCount : 0;
 
+        // 5. Get Last Contact (from Notes)
+        const notesRes = await query(`
+            SELECT MAX("CreatedAt") as "LastContact" FROM "DonorNotes" WHERE "DonorID" = $1
+        `, [id]);
+        const lastContact = notesRes.rows[0]?.LastContact || null;
+
+        // 6. Get Subscription Status
+        const subRes = await query(`
+            SELECT 1 FROM "DonorSubscriptions" WHERE "UserID" = $1 AND "DonorID" = $2
+        `, [session.user.id || (session.user as any).UserID, id]); // Handle both session formats if needed, usually session.user.id is string from next-auth
+        const isSubscribed = subRes.rows.length > 0;
+
         return NextResponse.json({
             profile: donor,
             stats: {
                 totalGiven,
                 giftCount,
-                avgGift
+                avgGift,
+                lastContact
             },
             history: history,
-            pledges: pledges
+            pledges: pledges,
+            isSubscribed
         });
 
     } catch (e: any) {
