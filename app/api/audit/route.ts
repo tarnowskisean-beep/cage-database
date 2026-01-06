@@ -27,9 +27,9 @@ export async function GET(request: Request) {
         if (isAdmin) {
             // Admin sees all
             logsQuery = `
-                SELECT A.*, U."Username" as "Actor" 
+                SELECT A.*, COALESCE(U."Username", A."Actor") as "Actor" 
                 FROM "AuditLogs" A
-                LEFT JOIN "Users" U ON A."UserID" = U."UserID"
+                LEFT JOIN "Users" U ON A."Actor" = U."Email"
                 ORDER BY A."CreatedAt" DESC 
                 LIMIT $1 OFFSET $2
             `;
@@ -41,11 +41,13 @@ export async function GET(request: Request) {
                 return NextResponse.json({ logs: [], total: 0, page: 1, totalPages: 0 });
             }
 
+            // Note: System logs (Actor=SYSTEM) will not be visible to client users unless they map to a user (unlikely).
+            // Currently filtering by User-Client association.
             logsQuery = `
-                SELECT DISTINCT A.*, U."Username" as "Actor"
+                SELECT DISTINCT A.*, COALESCE(U."Username", A."Actor") as "Actor"
                 FROM "AuditLogs" A
-                JOIN "UserClients" UC ON A."UserID" = UC."UserID"
-                LEFT JOIN "Users" U ON A."UserID" = U."UserID"
+                JOIN "Users" U ON A."Actor" = U."Email" 
+                JOIN "UserClients" UC ON U."UserID" = UC."UserID"
                 WHERE UC."ClientID" = ANY($3::int[])
                 ORDER BY A."CreatedAt" DESC 
                 LIMIT $1 OFFSET $2
@@ -53,7 +55,8 @@ export async function GET(request: Request) {
             countQuery = `
                 SELECT COUNT(DISTINCT A."LogID") as total 
                 FROM "AuditLogs" A
-                JOIN "UserClients" UC ON A."UserID" = UC."UserID"
+                JOIN "Users" U ON A."Actor" = U."Email"
+                JOIN "UserClients" UC ON U."UserID" = UC."UserID"
                 WHERE UC."ClientID" = ANY($1::int[])
             `;
             params = [limit, offset, allowedClientIds];
