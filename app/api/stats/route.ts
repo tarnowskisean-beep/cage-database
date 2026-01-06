@@ -116,7 +116,10 @@ export async function GET(request: Request) {
             })(),
 
             // 9. Recent Logs
-            query(`SELECT * FROM "AuditLogs" ORDER BY "CreatedAt" DESC LIMIT 5`)
+            query(`SELECT * FROM "AuditLogs" ORDER BY "CreatedAt" DESC LIMIT 5`),
+
+            // 10. Pending Resolutions
+            query(`SELECT COUNT(*) as count FROM "Donations" WHERE "ResolutionStatus" = 'Pending'`)
         ]);
 
         const totalRevenue = revenueRes.rows[0]?.total || 0;
@@ -127,6 +130,7 @@ export async function GET(request: Request) {
             openBatches: parseInt(openBatchesRes.rows[0]?.count || '0'),
             closedBatches: parseInt(closedBatchesRes.rows[0]?.count || '0'),
             uniqueDonors: parseInt(uniqueDonorsRes.rows[0]?.count || '0'),
+            pendingResolutions: parseInt(pendingResolutionRes.rows[0]?.count || '0'), // Added
 
             // Charts & Tables
             chartData: chartRes.rows.map(row => ({

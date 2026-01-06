@@ -173,6 +173,29 @@ function DashboardContent() {
         </div>
       </header>
 
+      {/* ACTION REQUIRED: Pending Resolutions */}
+      {/* @ts-ignore */}
+      {stats?.pendingResolutions > 0 && (
+        <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-yellow-500/20 rounded-full">
+              <svg className="w-6 h-6 text-yellow-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <div>
+              <h3 className="text-yellow-500 font-bold uppercase tracking-wide text-sm">Action Required</h3>
+              {/* @ts-ignore */}
+              <p className="text-gray-300 text-sm">There are <strong className="text-white">{stats.pendingResolutions} donor identity conflicts</strong> waiting for resolution.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/reconciliation/resolution')}
+            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold uppercase text-xs rounded transition-colors shadow-lg shadow-yellow-500/20"
+          >
+            Review Items &rarr;
+          </button>
+        </div>
+      )}
+
       {/* KPI COMPONENT */}
       <KPIGrid stats={stats} />
 
