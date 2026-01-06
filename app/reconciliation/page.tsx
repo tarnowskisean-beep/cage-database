@@ -111,6 +111,10 @@ export default function ReconciliationStart() {
                     <p className="text-gray-400 mt-2 font-light">Prepare your accounts for close.</p>
                 </div>
                 <div className="flex gap-4">
+                    <Link href="/reconciliation/resolution" className="px-4 py-2 border border-yellow-500/30 text-yellow-500 rounded hover:bg-yellow-500/10 transition-colors text-sm font-medium flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                        Review Pending Items
+                    </Link>
                     <button className="px-4 py-2 border border-white/10 text-gray-400 rounded hover:text-white hover:bg-white/5 transition-colors text-sm font-medium">History by account</button>
                 </div>
             </header>
