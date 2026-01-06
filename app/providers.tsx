@@ -3,9 +3,11 @@
 import { SessionProvider } from "next-auth/react";
 import { SidebarProvider } from "@/app/hooks/useSidebar";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+import { Session } from "next-auth";
+
+export function Providers({ children, session }: { children: React.ReactNode, session?: Session | null }) {
     return (
-        <SessionProvider>
+        <SessionProvider session={session}>
             <SidebarProvider>
                 {children}
             </SidebarProvider>
