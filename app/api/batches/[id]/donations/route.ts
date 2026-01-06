@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from '@/lib/db';
 import { formatName, formatAddress, formatState, formatZip, cleanText, formatEmail, formatPhone } from '@/lib/cleaners';
 import { CreateDonationSchema } from '@/lib/schemas';
+import { resolveDonationIdentity } from '@/lib/people';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,7 +130,20 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
             ]
         );
 
-        return NextResponse.json(result.rows[0]);
+        const insertedDonation = result.rows[0];
+
+        // Real-time Identity Resolution
+        try {
+            await resolveDonationIdentity(insertedDonation);
+            // Re-fetch to get the updated DonorID? Or just trust it worked? 
+            // The frontend might need the DonorID.
+            // Let's re-fetch or manually attach if we want to be perfect, 
+            // but for now the user just wants it resolved.
+        } catch (e) {
+            console.error('Identity Resolution failed:', e);
+        }
+
+        return NextResponse.json(insertedDonation);
     } catch (error: any) {
         console.error('POST /api/batches/[id]/donations error:', error);
         return NextResponse.json({

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { resolveBatchDonations } from '@/lib/people';
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -158,6 +159,15 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
             return { batchId, batchCode };
         });
+
+        // 7. Identity Resolution (Real-time)
+        // Run AFTER transaction ensures all records are visible
+        try {
+            await resolveBatchDonations([result.batchId]);
+        } catch (e) {
+            console.error('Bulk Identity Resolution failed:', e);
+            // We do NOT fail the request, just log it. The data is safe.
+        }
 
         return NextResponse.json({ success: true, batchId: result.batchId, batchCode: result.batchCode });
 
