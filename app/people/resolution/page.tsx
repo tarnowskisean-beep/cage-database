@@ -52,7 +52,7 @@ export default function ResolutionQueue() {
 
     if (loading) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-gray-500 animate-pulse">Loading Queue...</div>;
 
-    return (
+
     return (
         <div className="flex flex-col gap-6">
             <header className="flex justify-between items-end">

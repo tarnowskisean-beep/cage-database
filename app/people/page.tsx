@@ -134,71 +134,71 @@ function PeopleContent() {
                     </button>
                 </div>
             </form>
-        </header>
 
-            {/* Content Area */ }
-    {
-        loading ? (
-            <div className="w-full h-64 animate-pulse glass-panel flex items-center justify-center">
-                <div className="text-gray-500 font-medium text-xs uppercase tracking-widest">Loading network...</div>
-            </div>
-        ) : donors.length === 0 ? (
-            <div className="py-24 text-center border-2 border-dashed border-zinc-900 rounded bg-white/5">
-                <p className="text-gray-500">No Donors Found</p>
-            </div>
-        ) : (
-            <div className="glass-panel p-0 overflow-hidden">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Contact</th>
-                            <th>Location</th>
-                            <th className="text-center">Gifts</th>
-                            <th className="text-right">Lifetime Value</th>
-                            <th className="text-right">Last Gift</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {donors.map(d => (
-                            <tr key={d.DonorID} className="group transition-colors">
-                                <td>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-zinc-800 text-gray-400 flex items-center justify-center font-bold text-xs border border-zinc-700">
-                                            {d.FirstName?.[0]}{d.LastName?.[0]}
-                                        </div>
-                                        <span className="font-semibold text-white group-hover:text-white transition-colors">{d.FirstName} {d.LastName}</span>
-                                    </div>
-                                </td>
-                                <td className="text-gray-500 text-xs">
-                                    <div className="mb-0.5">{d.Email || '-'}</div>
-                                    <div>{d.Phone}</div>
-                                </td>
-                                <td className="text-gray-500">
-                                    {d.City ? `${d.City}, ${d.State}` : '-'}
-                                </td>
-                                <td className="text-center text-gray-300 font-mono font-medium">
-                                    {d.TotalGifts}
-                                </td>
-                                <td className="text-right font-mono text-emerald-500 font-medium">
-                                    ${Number(d.LifetimeValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                </td>
-                                <td className="text-right text-gray-500 text-xs font-mono">
-                                    {d.LastGiftDate ? new Date(d.LastGiftDate).toLocaleDateString() : '-'}
-                                </td>
-                                <td>
-                                    <Link href={`/people/${d.DonorID}`} className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wide">
-                                        View &rarr;
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        )
-    }
+
+            {/* Content Area */}
+            {
+                loading ? (
+                    <div className="w-full h-64 animate-pulse glass-panel flex items-center justify-center">
+                        <div className="text-gray-500 font-medium text-xs uppercase tracking-widest">Loading network...</div>
+                    </div>
+                ) : donors.length === 0 ? (
+                    <div className="py-24 text-center border-2 border-dashed border-zinc-900 rounded bg-white/5">
+                        <p className="text-gray-500">No Donors Found</p>
+                    </div>
+                ) : (
+                    <div className="glass-panel p-0 overflow-hidden">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Location</th>
+                                    <th className="text-center">Gifts</th>
+                                    <th className="text-right">Lifetime Value</th>
+                                    <th className="text-right">Last Gift</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {donors.map(d => (
+                                    <tr key={d.DonorID} className="group transition-colors">
+                                        <td>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-zinc-800 text-gray-400 flex items-center justify-center font-bold text-xs border border-zinc-700">
+                                                    {d.FirstName?.[0]}{d.LastName?.[0]}
+                                                </div>
+                                                <span className="font-semibold text-white group-hover:text-white transition-colors">{d.FirstName} {d.LastName}</span>
+                                            </div>
+                                        </td>
+                                        <td className="text-gray-500 text-xs">
+                                            <div className="mb-0.5">{d.Email || '-'}</div>
+                                            <div>{d.Phone}</div>
+                                        </td>
+                                        <td className="text-gray-500">
+                                            {d.City ? `${d.City}, ${d.State}` : '-'}
+                                        </td>
+                                        <td className="text-center text-gray-300 font-mono font-medium">
+                                            {d.TotalGifts}
+                                        </td>
+                                        <td className="text-right font-mono text-emerald-500 font-medium">
+                                            ${Number(d.LifetimeValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </td>
+                                        <td className="text-right text-gray-500 text-xs font-mono">
+                                            {d.LastGiftDate ? new Date(d.LastGiftDate).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td>
+                                            <Link href={`/people/${d.DonorID}`} className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wide">
+                                                View &rarr;
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )
+            }
         </div >
     );
 }
