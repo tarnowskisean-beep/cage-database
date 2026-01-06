@@ -226,37 +226,10 @@ export default function BatchEntry({ id }: { id: string }) {
             {/* 2. BODY CONTENT (ROW) */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: 'row' }}>
 
-                {/* MAIN SPLIT VIEW (PDF + FORM) */}
+                {/* MAIN CONTENT AREA */}
                 <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-                    {/* LEFT: PDF VIEWER (When available) */}
-                    <div style={{ flex: 1, borderRight: '1px solid var(--color-border)', background: '#1a1a1a', display: 'flex', flexDirection: 'column' }}>
-                        {(() => {
-                            const activeScan = editingId ? (() => {
-                                const r = records.find(rec => rec.DonationID === editingId);
-                                return r && r.ScanDocumentID ? { documentId: r.ScanDocumentID, pageNumber: r.ScanPageNumber } : null;
-                            })() : null;
-
-                            if (activeScan) {
-                                return (
-                                    <iframe
-                                        src={`/api/documents/${activeScan.documentId}#page=${activeScan.pageNumber}`}
-                                        style={{ width: '100%', height: '100%', border: 'none' }}
-                                        title="Active Scan"
-                                    />
-                                );
-                            }
-                            return (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-muted)', flexDirection: 'column', gap: '1rem' }}>
-                                    <div style={{ fontSize: '3rem', opacity: 0.2 }}>📄</div>
-                                    <div>No Active Scan</div>
-                                    <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>Select a record with a linked scan</div>
-                                </div>
-                            );
-                        })()}
-                    </div>
-
-                    {/* MIDDLE: DATA ENTRY FORM */}
+                    {/* DATA ENTRY FORM */}
                     <div style={{ flex: 1, minWidth: '800px', padding: '1.5rem', overflowY: 'auto', background: 'var(--color-bg-base)', borderRight: '1px solid var(--color-border)' }}>
 
                         {/* FORM CONTAINER */}
