@@ -645,48 +645,76 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                 </div>
             </header>
 
-            {/* Filter Toolbar */}
-            <div className="px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-[var(--color-bg-main)]">
-                <div className="flex bg-zinc-900/50 rounded-full p-1 border border-white/5">
-                    {['Payments', 'Deposits', 'All'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f as any)}
-                            className={`
-                                px-6 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all
-                                ${filter === f
-                                    ? 'bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.1)]'
-                                    : 'text-gray-500 hover:text-white hover:bg-white/5'
-                                }
-                            `}
-                        >
-                            {f}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* Split View Container */}
+            <div className="flex flex-1 overflow-hidden h-[calc(100vh-200px)]">
 
-            {/* Main Table */}
-            <div className="bg-zinc-900 border-t border-b border-white/5">
-                <table className="w-full text-left text-xs uppercase tracking-wide">
-                    <thead className="text-gray-500 border-b border-white/5 bg-zinc-900 sticky top-0 z-10">
-                        <tr>
-                            <th className="py-4 px-6 font-semibold w-32">Date</th>
-                            <th className="py-4 px-6 font-semibold w-32">Cleared Date</th>
-                            <th className="py-4 px-6 font-semibold">Type</th>
-                            <th className="py-4 px-6 font-semibold">Ref No</th>
-                            <th className="py-4 px-6 font-semibold">Payee</th>
-                            <th className="py-4 px-6 font-semibold w-1/3">Memo</th>
-                            <th className="py-4 px-6 font-semibold text-right">Payment</th>
-                            <th className="py-4 px-6 font-semibold text-right">Deposit</th>
-                            <th className="py-4 px-6 font-semibold text-center w-24">Status</th>
-                            {(filter === 'Unmatched Bank' || filter === 'Unmatched System') && <th className="py-4 px-6 font-semibold text-right w-48">Actions</th>}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {renderTableBody()}
-                    </tbody>
-                </table>
+                {/* LEFT: Bank Transactions */}
+                <div className="w-1/2 flex flex-col border-r border-white/5 bg-[#09090b]">
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center sticky top-0">
+                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Bank Statement</h2>
+                        <span className="text-xs text-gray-500">{bankTransactions.filter(b => b.Status === 'Unmatched').length} Unmatched</span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {bankTransactions.filter(bt => bt.Status === 'Unmatched').map(bt => (
+                            <div
+                                key={bt.TransactionID}
+                                onClick={() => openMatchModal(bt)}
+                                className="p-4 rounded bg-zinc-900 border border-white/5 hover:border-blue-500/50 cursor-pointer transition-all group relative"
+                            >
+                                <div className="flex justify-between items-start mb-1">
+                                    <span className="font-mono text-gray-300 text-sm">{new Date(bt.Date).toLocaleDateString()}</span>
+                                    <span className={`font-mono font-bold ${bt.Amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {bt.Amount > 0 ? '+' : ''}{bt.Amount.toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="text-white font-medium text-sm mb-1">{bt.Description}</div>
+                                <div className="text-xs text-gray-500 truncate">{bt.Reference || 'No Ref'}</div>
+
+                                {/* Hover Action */}
+                                <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-1 rounded border border-blue-600/30 uppercase font-bold">Match &rarr;</span>
+                                </div>
+                            </div>
+                        ))}
+                        {bankTransactions.filter(bt => bt.Status === 'Unmatched').length === 0 && (
+                            <div className="text-center text-gray-500 py-12 italic">All bank transactions matched.</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* RIGHT: System Items */}
+                <div className="w-1/2 flex flex-col bg-[#09090b]">
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center sticky top-0">
+                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">System Items</h2>
+                        <span className="text-xs text-gray-500">
+                            {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).length} Unmatched
+                        </span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).map(item => (
+                            <div
+                                key={item.id}
+                                className="p-4 rounded bg-zinc-900 border border-white/5 hover:border-gray-600 cursor-not-allowed opacity-80"
+                            >
+                                <div className="flex justify-between items-start mb-1">
+                                    <span className="font-mono text-gray-300 text-sm">{new Date(item.date).toLocaleDateString()}</span>
+                                    <span className={`font-mono font-bold ${item.amount > 0 ? 'text-white' : 'text-gray-400'}`}>
+                                        {Math.abs(item.amount).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="text-white font-medium text-sm mb-1">{item.payee}</div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500 truncate max-w-[200px]">{item.memo}</span>
+                                    <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${item.type === 'Deposit' ? 'bg-emerald-900/30 text-emerald-500' : 'bg-rose-900/30 text-rose-500'
+                                        }`}>{item.type}</span>
+                                </div>
+                            </div>
+                        ))}
+                        {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).length === 0 && (
+                            <div className="text-center text-gray-500 py-12 italic">All system items matched.</div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* Modals */}
@@ -697,21 +725,56 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         <p className="text-gray-400 mb-4 text-sm">Select a system item to match with bank transaction: <strong>{matchTarget?.Description}</strong> (${Math.abs(matchTarget?.Amount).toFixed(2)})</p>
 
                         <div className="max-h-96 overflow-y-auto space-y-2 mb-4 pr-2">
-                            {/* Candidate List: Unmatched System Items */}
-                            {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).map(item => (
-                                <div key={item.id} className="flex justify-between items-center p-3 bg-white/5 rounded border border-white/5 hover:border-emerald-500/50 cursor-pointer group"
-                                    onClick={() => handleManualMatch(item.id, item.type === 'Deposit' ? 'Batch' : 'Donation')}
-                                >
-                                    <div>
-                                        <div className="text-white font-mono text-sm">{item.date.split('T')[0]}</div>
-                                        <div className="text-gray-400 text-xs">{item.payee || item.memo || 'No Description'}</div>
+                            {/* Candidate List: Unmatched System Items with Smart Scoring */}
+                            {(() => {
+                                const candidates = allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id));
+
+                                const scored = candidates.map(item => {
+                                    let score = 0;
+                                    const targetAmount = Math.abs(matchTarget?.Amount || 0);
+                                    const itemAmount = Math.abs(item.amount);
+
+                                    // 1. Amount Match (Highest Priority)
+                                    if (Math.abs(targetAmount - itemAmount) < 0.01) score += 100;
+
+                                    // 2. Date Proximity
+                                    const targetDate = new Date(matchTarget?.Date || new Date());
+                                    const itemDate = new Date(item.date);
+                                    const diffTime = Math.abs(targetDate.getTime() - itemDate.getTime());
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                    if (diffDays <= 3) score += (10 - diffDays); // Max 10 pts for same day
+
+                                    return { item, score };
+                                });
+
+                                // Sort by Score DESC
+                                scored.sort((a, b) => b.score - a.score);
+
+                                return scored.map(({ item, score }) => (
+                                    <div key={item.id} className={`flex justify-between items-center p-3 rounded border cursor-pointer group transition-all
+                                        ${score > 50
+                                            ? 'bg-emerald-900/20 border-emerald-500/50 hover:bg-emerald-900/30'
+                                            : 'bg-white/5 border-white/5 hover:border-emerald-500/50'
+                                        }`}
+                                        onClick={() => handleManualMatch(item.id, item.type === 'Deposit' ? 'Batch' : 'Donation')}
+                                    >
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-white font-mono text-sm">{item.date.split('T')[0]}</div>
+                                                {score > 90 && <span className="text-[9px] bg-emerald-500 text-black px-1 rounded font-bold uppercase">Best Match</span>}
+                                                {score > 50 && score <= 90 && <span className="text-[9px] bg-blue-500 text-black px-1 rounded font-bold uppercase">Likely</span>}
+                                            </div>
+                                            <div className="text-gray-400 text-xs">{item.payee || item.memo || 'No Description'}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-white font-mono font-bold">${item.amount.toFixed(2)}</div>
+                                            <div className="text-[10px] uppercase text-gray-500">{item.type}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-white font-mono font-bold">${item.amount.toFixed(2)}</div>
-                                        <div className="text-[10px] uppercase text-gray-500">{item.type}</div>
-                                    </div>
-                                </div>
-                            ))}
+                                ));
+                            })()}
+
                             {allItems.filter(i => !clearedItems.has(i.id) && !isSystemItemMatched(i.id)).length === 0 && (
                                 <div className="text-center text-gray-500 py-8">No unmatched system items found.</div>
                             )}

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         // Candidates: Status Closed/Submitted, not already matched? (Can't easily check "not matched" without join, but it's fine)
         const batchesRes = await query(`
             SELECT "BatchID", "Date", "PaymentCategory" as "Type", "BatchCode",
-            (SELECT SUM("GiftAmount") FROM "Donations" WHERE "Donations"."BatchID" = "Batches"."BatchID") as "Amount"
+            (SELECT SUM("GiftAmount" - COALESCE("GiftFee", 0)) FROM "Donations" WHERE "Donations"."BatchID" = "Batches"."BatchID") as "Amount"
             FROM "Batches" 
             WHERE "Status" IN ('Closed', 'Submitted')
             AND "Cleared" = false
