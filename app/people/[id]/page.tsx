@@ -15,6 +15,10 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // Modals State
+    const [showEditProfile, setShowEditProfile] = useState(false);
+    const [showAddPledge, setShowAddPledge] = useState(false);
+
     // Filters
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -37,7 +41,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
         return matchDate && matchClient && matchMethod && matchMailCode;
     });
 
-    useEffect(() => {
+    const fetchData = () => {
         if (!donorId) return;
         fetch(`/api/people/${donorId}`)
             .then(res => res.json())
@@ -50,6 +54,10 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             })
             .catch(console.error)
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchData();
     }, [donorId]);
 
     const handleSubscribe = async () => {
@@ -95,7 +103,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     );
 
     return (
-        <div className="max-w-[1600px] mx-auto px-6 py-8">
+        <div className="max-w-[1600px] mx-auto px-6 py-8 relative">
 
             {/* Breadcrumb */}
             <nav className="mb-6">
@@ -164,7 +172,10 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         <a href={`/api/people/${donorId}/export`} target="_blank" className="btn-secondary">
                             Export History
                         </a>
-                        <button className="btn-primary">
+                        <button
+                            onClick={() => setShowEditProfile(true)}
+                            className="btn-primary"
+                        >
                             Edit Profile
                         </button>
                     </div>
@@ -227,9 +238,17 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             </div>
 
             {/* Pledge Tracking Section */}
-            {pledges.length > 0 && (
-                <div className="glass-panel p-6 mb-8">
-                    <h3 className="text-lg font-display text-white mb-4">Pledge Tracking</h3>
+            <div className="glass-panel p-6 mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-display text-white">Pledge Tracking</h3>
+                    <button
+                        onClick={() => setShowAddPledge(true)}
+                        className="text-xs bg-white/5 hover:bg-white/10 text-white px-3 py-1.5 rounded transition-colors uppercase tracking-wider font-bold"
+                    >
+                        + Add Pledge
+                    </button>
+                </div>
+                {pledges.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {pledges.map((pledge: any) => (
                             <div key={pledge.PledgeID} className="bg-white/5 p-4 rounded border border-white/5">
@@ -256,8 +275,11 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                             </div>
                         ))}
                     </div>
-                </div>
-            )}
+                ) : (
+                    <p className="text-gray-500 text-sm italic">No active pledges tracked.</p>
+                )}
+            </div>
+
 
             {/* CRM Notes Section */}
             <div className="glass-panel p-6 mb-8">
@@ -368,10 +390,29 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                 </div>
             </div>
 
+            {/* Modals */}
+            {showEditProfile && (
+                <EditProfileModal
+                    donor={donor}
+                    onClose={() => setShowEditProfile(false)}
+                    onSave={() => { setShowEditProfile(false); fetchData(); }}
+                />
+            )}
+
+            {showAddPledge && (
+                <AddPledgeModal
+                    donorId={donorId}
+                    campaigns={uniqueMailCodes}
+                    onClose={() => setShowAddPledge(false)}
+                    onSave={() => { setShowAddPledge(false); fetchData(); }}
+                />
+            )}
+
         </div>
     );
 }
 
+// ... NotesList and AddNoteForm Components (Unchanged) ...
 function NotesList({ donorId }: { donorId: string }) {
     const [notes, setNotes] = useState<any[]>([]);
 
@@ -445,5 +486,167 @@ function AddNoteForm({ donorId }: { donorId: string }) {
                 Post Note
             </button>
         </form>
+    );
+}
+
+// --- NEW MODALS ---
+
+function EditProfileModal({ donor, onClose, onSave }: any) {
+    const [formData, setFormData] = useState({
+        FirstName: donor.FirstName || '',
+        LastName: donor.LastName || '',
+        Email: donor.Email || '',
+        Phone: donor.Phone || '',
+        Address: donor.Address || '',
+        City: donor.City || '',
+        State: donor.State || '',
+        Zip: donor.Zip || ''
+    });
+    const [saving, setSaving] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            await fetch(`/api/people/${donor.DonorID}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            onSave();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update profile');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 border border-zinc-700 w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden">
+                <div className="p-6 border-b border-zinc-700 flex justify-between items-center bg-zinc-800/50">
+                    <h3 className="text-xl font-display text-white">Edit Profile</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">First Name</label>
+                            <input className="input-field w-full" value={formData.FirstName} onChange={e => setFormData({ ...formData, FirstName: e.target.value })} required />
+                        </div>
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">Last Name</label>
+                            <input className="input-field w-full" value={formData.LastName} onChange={e => setFormData({ ...formData, LastName: e.target.value })} required />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">Email</label>
+                            <input className="input-field w-full" type="email" value={formData.Email} onChange={e => setFormData({ ...formData, Email: e.target.value })} />
+                        </div>
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">Phone</label>
+                            <input className="input-field w-full" value={formData.Phone} onChange={e => setFormData({ ...formData, Phone: e.target.value })} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">Street Address</label>
+                        <input className="input-field w-full" value={formData.Address} onChange={e => setFormData({ ...formData, Address: e.target.value })} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">City</label>
+                            <input className="input-field w-full" value={formData.City} onChange={e => setFormData({ ...formData, City: e.target.value })} />
+                        </div>
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">State</label>
+                            <input className="input-field w-full" value={formData.State} onChange={e => setFormData({ ...formData, State: e.target.value })} />
+                        </div>
+                        <div>
+                            <label className="block text-xs uppercase text-gray-500 mb-1">Zip</label>
+                            <input className="input-field w-full" value={formData.Zip} onChange={e => setFormData({ ...formData, Zip: e.target.value })} />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800 mt-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                        <button type="submit" disabled={saving} className="btn-primary">
+                            {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function AddPledgeModal({ donorId, campaigns, onClose, onSave }: any) {
+    const [amount, setAmount] = useState('');
+    const [campaign, setCampaign] = useState(campaigns[0] || '');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await fetch(`/api/people/${donorId}/pledges`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Amount: amount, MailCode: campaign })
+            });
+            onSave();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to add pledge');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-lg shadow-2xl overflow-hidden">
+                <div className="p-6 border-b border-zinc-700 flex justify-between items-center bg-zinc-800/50">
+                    <h3 className="text-lg font-display text-white">Add Pledge</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">Target Campaign</label>
+                        <select
+                            className="input-field w-full"
+                            value={campaign}
+                            onChange={e => setCampaign(e.target.value)}
+                            required
+                        >
+                            <option value="" disabled>Select a Campaign</option>
+                            {campaigns.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <p className="text-[10px] text-gray-500 mt-1">Pledges track progress against a specific Mail Code.</p>
+                    </div>
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">Pledge Amount</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                            <input
+                                type="number"
+                                className="input-field w-full pl-8"
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                placeholder="0.00"
+                                min="0"
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                        <button type="submit" disabled={submitting} className="btn-primary">
+                            {submitting ? 'Creating...' : 'Create Pledge'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

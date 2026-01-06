@@ -82,3 +82,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
+
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { id } = await params;
+
+    try {
+        const body = await req.json();
+        const { FirstName, LastName, Email, Phone, Address, City, State, Zip } = body;
+
+        await query(`
+            UPDATE "Donors"
+            SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Phone" = $4,
+                "Address" = $5, "City" = $6, "State" = $7, "Zip" = $8,
+                "UpdatedAt" = NOW()
+            WHERE "DonorID" = $9
+        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, id]);
+
+        return NextResponse.json({ success: true });
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}
