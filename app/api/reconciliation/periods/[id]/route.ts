@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 p.*,
                 c."ClientName"
             FROM "ReconciliationPeriods" p
-            JOIN "Clients" c ON p."ClientID" = c."ClientID"
+            LEFT JOIN "Clients" c ON p."ClientID" = c."ClientID"
             WHERE "ReconciliationPeriodID" = $1
         `, [id]);
 

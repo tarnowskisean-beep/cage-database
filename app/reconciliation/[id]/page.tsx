@@ -29,6 +29,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     const [statementLink, setStatementLink] = useState<string>('');
     const [clearedItems, setClearedItems] = useState<Set<string>>(new Set());
     const [submitting, setSubmitting] = useState(false);
+    const [apiError, setApiError] = useState<string | null>(null);
 
     // Fetch Data
     useEffect(() => {
@@ -54,8 +55,10 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                     (p.batches || []).forEach((b: any) => { if (b.cleared) cleared.add(b.id); });
                     (p.payments || []).forEach((t: any) => { if (t.cleared) cleared.add(t.id); });
                     setClearedItems(cleared);
+                    setClearedItems(cleared);
                 } else {
                     console.error("API Error:", p?.error);
+                    setApiError(p?.error || 'Unknown Error');
                 }
             })
             .catch(e => console.error('Fetch error:', e))
@@ -511,7 +514,13 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
 
 
     if (loading) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-gray-500 animate-pulse">Loading Workspace...</div>;
-    if (!period) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-red-500">Period Not Found</div>;
+    if (!period) return (
+        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
+            <div className="text-red-500 font-bold text-xl">Period Not Found</div>
+            <div className="text-gray-500">ID: {periodId}</div>
+            <Link href="/reconciliation" className="text-blue-400 hover:underline">Return to List</Link>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-[var(--color-bg-main)] text-white font-body">
