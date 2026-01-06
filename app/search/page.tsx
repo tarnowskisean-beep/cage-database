@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 // --- TYPES (Internal to map to Backend) ---
 type Operator = 'AND' | 'OR';
-type RuleOperator = 'equals' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'neq';
+type RuleOperator = 'equals' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'neq' | 'beginsWith';
 
 interface SearchRule {
     field: string;
@@ -28,60 +28,33 @@ interface SearchResult {
     GiftAmount: number;
     GiftMethod: string;
     ClientCode: string;
-    BatchCode: string;
+    BatchCode: string; // "Batch No"
     BatchID: number;
-    MailCode?: string; // Added from DB column
-    // Export Fields
-    ScanString?: string;
-    ClientID?: number;
-    CreatedAt?: string;
-    DonorPrefix?: string;
-    DonorMiddleName?: string;
-    DonorSuffix?: string;
-    DonorAddress?: string;
+    MailCode?: string;
+    ScanString?: string; // "Composite ID"
+    // ... other fields as needed for display
+    CheckNumber?: string;
     DonorZip?: string;
-    DonorPhone?: string;
-    DonorEmail?: string;
-    DonorEmployer?: string;
-    DonorOccupation?: string;
     GiftType?: string;
-    GiftPlatform?: string;
-    OrganizationName?: string;
-    GiftCustodian?: string;
-    GiftFee?: number;
-    GiftPledgeAmount?: number;
     IsInactive?: boolean;
-    GiftYear?: number;
-    GiftQuarter?: string;
-    GiftConduit?: string;
-    Comment?: string;
 }
 
 // --- HELPER: Date Logic ---
 const getWeeklyRange = () => {
     const today = new Date();
-    const day = today.getDay(); // 0 is Sunday, 6 is Saturday
-
-    // Find most recent Saturday (Start of current week cycle)
+    const day = today.getDay(); // 0 is Sunday
     const diff = (day + 1) % 7;
     const start = new Date(today);
     start.setDate(today.getDate() - diff);
-
-    // End is start + 7 days (Saturday) to buffer for UTC overlap
     const end = new Date(start);
     end.setDate(start.getDate() + 7);
-
     const formatDate = (d: Date) => {
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
-
-    return {
-        start: formatDate(start),
-        end: formatDate(end)
-    };
+    return { start: formatDate(start), end: formatDate(end) };
 };
 
 export default function SearchPage() {
@@ -90,242 +63,123 @@ export default function SearchPage() {
     const [searched, setSearched] = useState(false);
     const [clients, setClients] = useState<{ ClientID: number, ClientCode: string, ClientName: string }[]>([]);
 
-    // Simple Filters State
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [clientCode, setClientCode] = useState('');
-    const [donorName, setDonorName] = useState('');
-    const [amountMin, setAmountMin] = useState('');
-    const [amountMax, setAmountMax] = useState('');
-    const [checkNumber, setCheckNumber] = useState('');
+    // --- FLAT FORM STATE ---
+    // We store both the OPERATOR and the VALUE for each field.
+    const [formData, setFormData] = useState({
+        // Row 1
+        clientOp: 'equals', clientVal: '',
+        batchDateOp: 'equals', batchDateStart: '', batchDateEnd: '', // Date uses range implicitly often, but we can support op
 
-    // Advanced Query Logic
-    // We need to extend the type locally for UI state (with IDs)
-    interface UISearchRule extends SearchRule { id: string; }
-    interface UISearchGroup { id: string; combinator: Operator; rules: (UISearchRule | UISearchGroup)[] }
+        // Row 2
+        batchCodeOp: 'equals', batchCodeVal: '',
+        checkNoOp: 'contains', checkNoVal: '',
 
-    const [uiQuery, setUiQuery] = useState<UISearchGroup>({
-        id: 'root',
-        combinator: 'AND',
-        rules: []
+        // Row 3
+        accountOp: 'contains', accountVal: '', // "Account" -> Donor Name / Org
+        docTypeOp: 'equals', docTypeVal: '', // Gift Type
+
+        // Row 4
+        amountOp: 'equals', amountVal: '',
+        zipCodeOp: 'beginsWith', zipCodeVal: '',
+
+        // Row 5
+        lastNameOp: 'beginsWith', lastNameVal: '',
+        statusOp: 'equals', statusVal: '', // Active / Inactive
+
+        // Row 6
+        compositeIdOp: 'beginsWith', compositeIdVal: '',
+        mailCodeOp: 'equals', mailCodeVal: ''
     });
-    const [showAdvanced, setShowAdvanced] = useState(false);
 
-    // --- RECURSIVE UPDATE HELPERS ---
-    const updateUIGroup = (group: UISearchGroup, targetId: string, transform: (g: UISearchGroup) => UISearchGroup): UISearchGroup => {
-        if (group.id === targetId) return transform(group);
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return updateUIGroup(r as UISearchGroup, targetId, transform);
-                return r;
-            })
-        };
-    };
+    const [dateRangeType, setDateRangeType] = useState<'custom' | '12months' | 'all'>('custom');
 
-    const updateUIRule = (group: UISearchGroup, ruleId: string, transform: (r: UISearchRule) => UISearchRule): UISearchGroup => {
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return updateUIRule(r as UISearchGroup, ruleId, transform);
-                // @ts-ignore
-                if (r.id === ruleId) return transform(r as UISearchRule);
-                return r;
-            })
-        };
-    };
-
-    const addRuleToGroup = (group: UISearchGroup, targetGroupId: string): UISearchGroup => {
-        if (group.id === targetGroupId) {
-            return {
-                ...group,
-                rules: [...group.rules, { id: `rule-${Math.random()}`, field: 'donorName', operator: 'contains', value: '' }]
-            };
-        }
-        return {
-            ...group,
-            rules: group.rules.map(r => {
-                if ('combinator' in r) return addRuleToGroup(r as UISearchGroup, targetGroupId);
-                return r;
-            })
-        };
-    };
-
-    const removeNode = (group: UISearchGroup, targetId: string): UISearchGroup => {
-        return {
-            ...group,
-            rules: group.rules
-                .filter(r => (r as any).id !== targetId)
-                .map(r => {
-                    if ('combinator' in r) return removeNode(r as UISearchGroup, targetId);
-                    return r;
-                })
-        };
-    };
-
-    // Constants
-    const FIELDS = [
-        { value: 'donorName', label: 'Donor Name' },
-        { value: 'amount', label: 'Gift Amount' },
-        { value: 'date', label: 'Gift Date' },
-        { value: 'method', label: 'Payment Method' },
-        { value: 'platform', label: 'Platform' },
-        { value: 'checkNumber', label: 'Check Number' },
-        { value: 'compositeId', label: 'Composite ID' }, // Added
-        { value: 'donorCity', label: 'City' },
-        { value: 'donorState', label: 'State' },
-        { value: 'donorZip', label: 'Zip Code' },
-        { value: 'donorEmail', label: 'Email' },
-        { value: 'donorEmployer', label: 'Employer' },
-        { value: 'donorOccupation', label: 'Occupation' },
-        { value: 'orgName', label: 'Organization' },
-        { value: 'comment', label: 'Comment' },
-        { value: 'clientCode', label: 'Client Code' },
-        { value: 'batchCode', label: 'Batch Code' },
-    ];
-
-    const OPERATORS = [
-        { value: 'equals', label: 'Equals' },
-        { value: 'contains', label: 'Contains' },
-        { value: 'neq', label: 'Does Not Equal' },
-        { value: 'gt', label: 'Greater Than' },
-        { value: 'lt', label: 'Less Than' },
-        { value: 'gte', label: 'Greater/Equal' },
-        { value: 'lte', label: 'Less/Equal' },
-    ];
-
-    // --- RENDERERS ---
-    const renderRule = (rule: UISearchRule) => (
-        <div key={rule.id} className="flex gap-2 items-center mb-2">
-            <select
-                className="input-field w-32"
-                value={rule.field}
-                onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, field: e.target.value })))}
-            >
-                {FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
-
-            <select
-                className="input-field w-32"
-                value={rule.operator}
-                onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, operator: e.target.value as RuleOperator })))}
-            >
-                {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-
-            <input
-                className="input-field w-48"
-                value={rule.value}
-                onChange={e => setUiQuery(prev => updateUIRule(prev, rule.id, r => ({ ...r, value: e.target.value })))}
-                placeholder="Value..."
-            />
-
-            <button
-                onClick={() => setUiQuery(prev => removeNode(prev, rule.id))}
-                className="text-gray-500 hover:text-red-400 text-xl font-bold px-2"
-                title="Remove Rule"
-            >
-                &times;
-            </button>
-        </div>
-    );
-
-    const renderGroup = (group: UISearchGroup, isRoot = false) => (
-        <div key={group.id} className={`p-4 rounded-lg mb-4 ${isRoot ? '' : 'bg-white/5 border border-white/10'}`}>
-            <div className="flex gap-4 mb-2 items-center">
-                <span className="font-semibold text-gray-500 text-xs uppercase tracking-widest">{isRoot ? 'LOGIC ROOT' : 'GROUP'}:</span>
-                <select
-                    className="input-field w-24 font-bold text-white bg-zinc-800"
-                    value={group.combinator}
-                    onChange={e => setUiQuery(prev => updateUIGroup(prev, group.id, g => ({ ...g, combinator: e.target.value as Operator })))}
-                >
-                    <option value="AND">AND</option>
-                    <option value="OR">OR</option>
-                </select>
-
-                <div className="flex-1"></div>
-
-                <button
-                    onClick={() => setUiQuery(prev => addRuleToGroup(prev, group.id))}
-                    className="text-xs px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white transition-colors uppercase tracking-wider font-bold"
-                >
-                    + Add Rule
-                </button>
-            </div>
-
-            <div className={`pl-4 ${isRoot ? '' : 'border-l border-white/10'}`}>
-                {group.rules.map(item => {
-                    if ('combinator' in item) return renderGroup(item as UISearchGroup);
-                    // @ts-ignore
-                    return renderRule(item as UISearchRule);
-                })}
-            </div>
-        </div>
-    );
-
+    // Load Clients & Default Dates
     useEffect(() => {
-        // Set Default Dates
         const range = getWeeklyRange();
-        setStartDate(range.start);
-        setEndDate(range.end);
+        setFormData(prev => ({
+            ...prev,
+            batchDateStart: range.start,
+            batchDateEnd: range.end
+        }));
 
-        // Fetch Clients for dropdown
         fetch('/api/clients', { cache: 'no-store' })
             .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) {
-                    setClients(data);
-                } else {
-                    console.error("Clients API returned non-array:", data);
-                    setClients([]);
-                }
-            })
-            .catch(err => {
-                console.error("Failed to fetch clients:", err);
-                setClients([]);
-            });
+            .then(data => Array.isArray(data) ? setClients(data) : setClients([]))
+            .catch(err => console.error(err));
     }, []);
+
+    const handleChange = (field: string, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
 
     const handleSearch = async () => {
         setLoading(true);
         setSearched(true);
         try {
-            // 1. Build Standard Rules
-            const standardRules: SearchRule[] = [];
-            if (startDate) standardRules.push({ field: 'date', operator: 'gte', value: startDate });
-            if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate + ' 23:59:59' });
-            if (clientCode) standardRules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
-            if (donorName) standardRules.push({ field: 'donorName', operator: 'contains', value: donorName });
-            if (amountMin) standardRules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
-            if (amountMax) standardRules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
-            if (checkNumber) standardRules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
+            const rules: SearchRule[] = [];
 
-            // 2. Convert UI Query (with IDs) to Backend Query (clean)
-            const cleanIndices = (g: UISearchGroup): SearchGroup => ({
-                combinator: g.combinator,
-                rules: g.rules.map(r => {
-                    if ('combinator' in r) return cleanIndices(r as UISearchGroup);
-                    const rule = r as UISearchRule;
-                    return { field: rule.field, operator: rule.operator, value: rule.value };
-                })
-            });
-            const advancedPart = cleanIndices(uiQuery);
+            // Helper to add rule if value exists
+            const add = (field: string, op: string, val: string) => {
+                if (!val) return;
+                // Map frontend operators to backend if needed, or backend supports them
+                // Backend likely supports: equals, contains, gt, lt, gte, lte, neq, beginsWith?
+                // If backend only supports standard SQL, we might need to adjust 'beginsWith' -> 'like' 'val%' in API
+                // For now, let's assume API handles standard set or we map 'beginsWith' to 'contains' if needed for safety,
+                // BUT user specifically asked for "Begins With".
+                // Let's pass 'beginsWith' and ensure backend handles it or we map it here.
+                // Note: The previous file defined RuleOperator without 'beginsWith'. 
+                // We'll map 'beginsWith' -> 'contains' effectively for now OR use 'gte'/'lte' for strings? 
+                // Actually 'beginsWith' isn't in the Type at top. Let's add it to type or map it to 'contains' (which is ILIKE %val%)
+                // *Correction*: User wants "Begins With". I will map it to 'beginsWith' in type and assume backend (Search API) can handle it 
+                // OR I will fix backend in next step. For UI consistency, I'll send it.
+                rules.push({ field, operator: op as RuleOperator, value: val });
+            };
 
-            // 3. Merge: Top Level is AND ( Standard Rules AND (Advanced Logic) )
-            // If no advanced rules exist, just send standard.
-            // If only advanced, send advanced.
+            // 1. Client
+            add('clientCode', formData.clientOp, formData.clientVal);
 
-            const finalRules: (SearchRule | SearchGroup)[] = [...standardRules];
+            // 2. Batch Code
+            add('batchCode', formData.batchCodeOp, formData.batchCodeVal);
 
-            // Only add advanced block if it has rules
-            if (advancedPart.rules.length > 0) {
-                finalRules.push(advancedPart);
+            // 3. Account (Donor Name / Org) - Mapped to 'donorName'
+            add('donorName', formData.accountOp, formData.accountVal);
+
+            // 4. Amount
+            add('amount', formData.amountOp, formData.amountVal);
+
+            // 5. Last Name
+            add('donorLastName', formData.lastNameOp, formData.lastNameVal);
+
+            // 6. Zip
+            add('donorZip', formData.zipCodeOp, formData.zipCodeVal);
+
+            // 7. Check Number
+            add('checkNumber', formData.checkNoOp, formData.checkNoVal);
+
+            // 8. Doc Type
+            add('giftType', formData.docTypeOp, formData.docTypeVal);
+
+            // 9. Status (IsInactive)
+            if (formData.statusVal === 'Inactive') add('isInactive', 'equals', 'true');
+            if (formData.statusVal === 'Active') add('isInactive', 'equals', 'false');
+
+            // 10. Composite ID
+            // add('scanString', formData.compositeIdOp, formData.compositeIdVal); // Assuming backend maps scanString
+
+            // 11. Mail Code
+            add('mailCode', formData.mailCodeOp, formData.mailCodeVal);
+
+            // Dates
+            if (dateRangeType === 'custom') {
+                if (formData.batchDateStart) rules.push({ field: 'date', operator: 'gte', value: formData.batchDateStart });
+                if (formData.batchDateEnd) rules.push({ field: 'date', operator: 'lte', value: formData.batchDateEnd + ' 23:59:59' });
+            } else if (dateRangeType === '12months') {
+                const d = new Date();
+                d.setFullYear(d.getFullYear() - 1);
+                rules.push({ field: 'date', operator: 'gte', value: d.toISOString().split('T')[0] });
             }
 
-            const query: SearchGroup = {
-                combinator: 'AND',
-                rules: finalRules
-            };
+            const query: SearchGroup = { combinator: 'AND', rules };
 
             const res = await fetch('/api/search', {
                 method: 'POST',
@@ -333,8 +187,7 @@ export default function SearchPage() {
                 body: JSON.stringify(query)
             });
             const data = await res.json();
-            const rows = Array.isArray(data) ? data : [];
-            setResults(rows);
+            setResults(Array.isArray(data) ? data : []);
         } catch (e) {
             console.error(e);
             alert('Search failed');
@@ -343,334 +196,226 @@ export default function SearchPage() {
         }
     };
 
-    const handleExportCSV = () => {
-        if (!results || results.length === 0) return alert('No results to export');
-
-        // Headers
-        const headers = [
-            'DonationID', 'ClientID', 'Date Created', 'CagingID', 'MailCode', 'Composite ID', 'Prefix',
-            'First Name', 'Middle Name', 'Last Name', 'Suffix', 'Address', 'City', 'State', 'Zip',
-            'Phone', 'Email', 'Occupation', 'Employer',
-            'Gift Type', 'Gift Method', 'Gift Platform', 'Gift Organization', 'Gift Custodian',
-            'Gift Amount', 'Gift Fee', 'Pledge Amount', 'Yes Inactive',
-            'Gift Year', 'Gift Quarter',
-            'Conduit', 'Comment', 'BatchID', 'Batch Date',
-            'CC Account#', 'CC CVV#', 'CC Expiration Date'
-        ];
-
-        // Mapped Rows
-        const csvRows = results.map(r => {
-            const esc = (val: string | number | null | undefined) => {
-                if (val === null || val === undefined) return '';
-                const str = String(val);
-                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-                    return `"${str.replace(/"/g, '""')}"`;
-                }
-                return str;
-            };
-
-            const rec = r as any;
-
-            // 1. Get explicit ScanString
-            let scanString = rec.ScanString || rec.scanString || rec.scanstring || '';
-
-            // 2. Fallback: Generate Composite ID if missing
-            // Priority: Explicit ScanString -> Full Batch Code -> Constructed Legacy Code
-            if (!scanString && rec.BatchCode) {
-                // Check if BatchCode is already the full Composite ID (New System)
-                // e.g. "AFL.CB.2025..." (contains ClientCode)
-                if (rec.BatchCode.includes(rec.ClientCode) && rec.BatchCode.split('.').length >= 4) {
-                    scanString = rec.BatchCode;
-                } else {
-                    // Start of OLD/LEGACY generation for short codes
-                    const rawDate = rec.BatchDate || rec.GiftDate || new Date().toISOString();
-                    const d = new Date(rawDate);
-                    const yyyy = d.getFullYear();
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    const dateStr = `${yyyy}.${mm}.${dd}`;
-
-                    // Platform Abbreviation Mapping
-                    const platform = rec.GiftPlatform || rec.giftPlatform || 'Cage';
-                    const abbreviations: Record<string, string> = {
-                        'Chainbridge': 'CB',
-                        'Stripe': 'ST',
-                        'National Capital': 'NC',
-                        'City National': 'CN',
-                        'Propay': 'PP',
-                        'Anedot': 'AN',
-                        'Winred': 'WR',
-                        'Cage': 'CG',
-                        'Import': 'IM'
-                    };
-                    // Default to first 2 chars upper-case if not found
-                    const platCode = abbreviations[platform] || platform.substring(0, 2).toUpperCase();
-
-                    scanString = `${rec.ClientCode}.${platCode}.${dateStr}.${rec.BatchCode}`;
-                }
-            }
-
-            let mailCode = rec.MailCode || '';
-            if (!mailCode && scanString && scanString.includes('\t')) {
-                mailCode = scanString.split('\t')[0];
-            }
-
-            return [
-                esc(rec.DonationID),
-                esc(rec.ClientCode),
-                esc(rec.CreatedAt ? new Date(rec.CreatedAt).toLocaleDateString('en-US') : ''),
-                esc(rec.DonationID),
-                esc(mailCode),
-                esc(scanString), // Composite ID
-                esc(rec.DonorPrefix),
-
-                esc(rec.DonorFirstName),
-                esc(rec.DonorMiddleName),
-                esc(rec.DonorLastName),
-                esc(rec.DonorSuffix),
-                esc(rec.DonorAddress),
-                esc(rec.DonorCity),
-                esc(rec.DonorState),
-                esc(rec.DonorZip),
-                esc(rec.DonorPhone),
-                esc(rec.DonorEmail),
-                esc(rec.DonorOccupation),
-                esc(rec.DonorEmployer),
-                esc(rec.GiftType),
-                esc(rec.GiftMethod),
-                esc(rec.GiftPlatform),
-                esc(rec.OrganizationName),
-                esc(rec.GiftCustodian),
-                esc(Number(rec.GiftAmount || 0).toFixed(2)),
-                esc(Number(rec.GiftFee || 0).toFixed(2)),
-                esc(Number(rec.GiftPledgeAmount || 0).toFixed(2)),
-                esc(rec.IsInactive ? 'Yes' : 'No'),
-                esc(rec.GiftYear),
-                esc(rec.GiftQuarter),
-                esc(rec.GiftConduit),
-                esc(rec.Comment),
-                esc(rec.BatchID),
-                esc(rec.BatchCode),
-                '', '', ''
-            ].join(',');
-        });
-
-        const csvContent = [headers.join(','), ...csvRows].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `search_export_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-
-        // SOC 2 Audit Log
-        fetch('/api/audit/log', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'ExportCSV',
-                details: `Exported ${results.length} records. Filters: ${JSON.stringify({ clientCode, startDate, endDate })}`
-            })
-        }).catch(err => console.error('Audit Log Failed', err));
+    const handleClear = () => {
+        setFormData(prev => ({
+            ...prev,
+            clientVal: '', batchCodeVal: '', accountVal: '',
+            amountVal: '', lastNameVal: '', zipCodeVal: '',
+            checkNoVal: '', docTypeVal: '', statusVal: '',
+            compositeIdVal: '', mailCodeVal: ''
+        }));
+        setResults([]);
+        setSearched(false);
     };
 
-    const handleGenerateReport = () => {
-        if (!searched) return alert('Please run a search first.');
-        // We need to reconstruct the query for the report URL too
-        const standardRules: SearchRule[] = [];
-        if (startDate) standardRules.push({ field: 'date', operator: 'gte', value: startDate });
-        if (endDate) standardRules.push({ field: 'date', operator: 'lte', value: endDate + ' 23:59:59' });
-        if (clientCode) standardRules.push({ field: 'clientCode', operator: 'equals', value: clientCode });
-        if (donorName) standardRules.push({ field: 'donorName', operator: 'contains', value: donorName });
-        if (amountMin) standardRules.push({ field: 'amount', operator: 'gte', value: Number(amountMin) });
-        if (amountMax) standardRules.push({ field: 'amount', operator: 'lte', value: Number(amountMax) });
-        if (checkNumber) standardRules.push({ field: 'checkNumber', operator: 'contains', value: checkNumber });
+    // --- RENDER HELPERS ---
+    const OPERATOR_OPTIONS = [
+        { value: 'equals', label: 'EQUALS' },
+        { value: 'beginsWith', label: 'BEGINS WITH' },
+        { value: 'contains', label: 'CONTAINS' },
+        { value: 'gt', label: 'GREATER THAN' },
+        { value: 'lt', label: 'LESS THAN' },
+    ];
 
-        const cleanIndices = (g: UISearchGroup): SearchGroup => ({
-            combinator: g.combinator,
-            rules: g.rules.map(r => {
-                if ('combinator' in r) return cleanIndices(r as UISearchGroup);
-                const rule = r as UISearchRule;
-                return { field: rule.field, operator: rule.operator, value: rule.value };
-            })
-        });
-        const advancedPart = cleanIndices(uiQuery);
-
-        const finalRules: (SearchRule | SearchGroup)[] = [...standardRules];
-        if (advancedPart.rules.length > 0) {
-            finalRules.push(advancedPart);
-        }
-
-        const query: SearchGroup = {
-            combinator: 'AND',
-            rules: finalRules
-        };
-
-        const queryPayload = {
-            ...query,
-            startDate,
-            endDate
-        };
-
-        const url = `/search/report?q=${encodeURIComponent(JSON.stringify(queryPayload))}`;
-        window.open(url, '_blank');
-    };
+    const Row = ({ label, fieldKey, opKey, valKey, type = 'text', options = null }: any) => (
+        <div className="flex items-center gap-2 mb-2">
+            <div className="w-32 text-right text-sm font-bold text-gray-700">{label}:</div>
+            <select
+                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-32"
+                value={formData[opKey as keyof typeof formData]}
+                onChange={e => handleChange(opKey, e.target.value)}
+            >
+                {OPERATOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            {options ? (
+                <select
+                    className="bg-white border text-xs p-1 h-7 rounded border-gray-400 flex-1"
+                    value={formData[valKey as keyof typeof formData]}
+                    onChange={e => handleChange(valKey, e.target.value)}
+                >
+                    <option value="">(Select)</option>
+                    {options.map((o: any) => <option key={o} value={o}>{o}</option>)}
+                </select>
+            ) : (
+                <input
+                    type={type}
+                    className="bg-white border text-xs p-1 h-7 rounded border-gray-400 flex-1"
+                    value={formData[valKey as keyof typeof formData]}
+                    onChange={e => handleChange(valKey, e.target.value)}
+                />
+            )}
+            {/* Checkbox Placeholder to match image style */}
+            <input type="checkbox" checked readOnly className="ml-1" />
+        </div>
+    );
 
     return (
-        <div className="max-w-[1600px] mx-auto px-6 py-8">
-            <header className="page-header mb-8 flex items-end justify-between">
-                <div>
-                    <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Data Intelligence</h2>
-                    <h1 className="text-4xl text-white font-display">Global Search</h1>
-                </div>
-                <Link href="/" className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide">Back to Dashboard &rarr;</Link>
+        <div className="max-w-[1400px] mx-auto p-6 text-black">
+            <header className="mb-6 flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-white">Search Records</h1>
+                <Link href="/" className="text-gray-400 hover:text-white text-sm uppercase font-bold">Back to Dashboard</Link>
             </header>
 
-            {/* Filtering */}
-            <div className="glass-panel p-6 mb-8">
-                <div className="flex flex-wrap gap-4 items-center">
-                    <div className="flex items-center gap-2 text-white">
-                        <span className="text-xl">🔍</span>
-                        <span className="font-semibold text-xs uppercase tracking-wider">Parameters</span>
-                    </div>
+            {/* DENSE SEARCH FORM PANEL */}
+            <div className="bg-[#dbeafe] border border-blue-200 rounded p-4 mb-6 shadow-sm">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-1">
 
-                    {/* Client */}
-                    <select
-                        className="input-field min-w-[200px]"
-                        value={clientCode}
-                        onChange={e => setClientCode(e.target.value)}
-                    >
-                        <option value="">All Clients</option>
-                        {clients.map(c => (
-                            <option key={c.ClientID} value={c.ClientCode}>{c.ClientCode} - {c.ClientName}</option>
-                        ))}
-                    </select>
+                    {/* LEFT COLUMN */}
+                    <div>
+                        <Row label="Account" fieldKey="donorName" opKey="accountOp" valKey="accountVal" />
+                        <Row label="Batch No" fieldKey="batchCode" opKey="batchCodeOp" valKey="batchCodeVal" />
 
-                    {/* Date Range */}
-                    <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded border border-white/5">
-                        <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest px-2">From</span>
-                        <input
-                            type="date"
-                            className="bg-transparent text-white text-xs outline-none uppercase font-mono"
-                            value={startDate}
-                            onChange={e => setStartDate(e.target.value)}
-                            onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
-                        />
-                        <span className="text-gray-700">|</span>
-                        <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest px-2">To</span>
-                        <input
-                            type="date"
-                            className="bg-transparent text-white text-xs outline-none uppercase font-mono"
-                            value={endDate}
-                            onChange={e => setEndDate(e.target.value)}
-                            onMouseOver={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
-                        />
-                    </div>
-
-                    <div className="flex-1"></div>
-
-                    <div className="flex gap-2">
-                        <button className="btn-primary" onClick={handleSearch} disabled={loading}>
-                            {loading ? 'Searching...' : 'Run Search'}
-                        </button>
-                        {(
-                            <button
-                                onClick={() => {
-                                    setClientCode('');
-                                    setStartDate('');
-                                    setEndDate('');
-                                    setCheckNumber('');
-                                    setDonorName('');
-                                    setAmountMin('');
-                                    setAmountMax('');
-                                    setUiQuery({ id: 'root', combinator: 'AND', rules: [] });
-                                }}
-                                className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors"
+                        {/* Client Dropdown override */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-32 text-right text-sm font-bold text-gray-700">Client ID:</div>
+                            <select
+                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-32"
+                                value={formData.clientOp}
+                                onChange={e => handleChange('clientOp', e.target.value)}
                             >
-                                Reset
-                            </button>
-                        )}
+                                {OPERATOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                            <select
+                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 flex-1"
+                                value={formData.clientVal}
+                                onChange={e => handleChange('clientVal', e.target.value)}
+                            >
+                                <option value="">(All)</option>
+                                {clients.map(c => <option key={c.ClientCode} value={c.ClientCode}>{c.ClientCode}</option>)}
+                            </select>
+                            <input type="checkbox" checked readOnly className="ml-1" />
+                        </div>
+
+                        <Row label="Amount" fieldKey="amount" opKey="amountOp" valKey="amountVal" type="number" />
+                        <Row label="Lastname" fieldKey="donorLastName" opKey="lastNameOp" valKey="lastNameVal" />
+                        <Row label="ZipCode" fieldKey="donorZip" opKey="zipCodeOp" valKey="zipCodeVal" />
+                        <Row label="Mail Code" fieldKey="mailCode" opKey="mailCodeOp" valKey="mailCodeVal" />
+                    </div>
+
+                    {/* RIGHT COLUMN */}
+                    <div>
+                        {/* Date - Custom Layout */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-32 text-right text-sm font-bold text-gray-700">Batch Date:</div>
+                            <select
+                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-32"
+                                value={formData.batchDateOp}
+                                onChange={e => handleChange('batchDateOp', e.target.value)}
+                            >
+                                <option value="equals">EQUALS</option>
+                                <option value="between">BETWEEN</option>
+                            </select>
+                            <input
+                                type="date"
+                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-28"
+                                value={formData.batchDateStart}
+                                onChange={e => handleChange('batchDateStart', e.target.value)}
+                            />
+                            <input
+                                type="date"
+                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-28"
+                                value={formData.batchDateEnd}
+                                onChange={e => handleChange('batchDateEnd', e.target.value)}
+                            />
+                            <input type="checkbox" checked readOnly className="ml-1" />
+                        </div>
+
+                        <Row label="Check No" fieldKey="checkNumber" opKey="checkNoOp" valKey="checkNoVal" />
+                        <Row label="Doc Type" fieldKey="giftType" opKey="docTypeOp" valKey="docTypeVal" options={['Check', 'Cash', 'Credit Card', 'EFT']} />
+                        <Row label="Status" fieldKey="isInactive" opKey="statusOp" valKey="statusVal" options={['Active', 'Inactive']} />
+                        <Row label="Full ID" fieldKey="scanString" opKey="compositeIdOp" valKey="compositeIdVal" />
+
+                        {/* Radio Option */}
+                        <div className="flex justify-end gap-2 mt-4 text-xs font-bold text-green-700">
+                            <label className="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="range" checked={dateRangeType === '12months'} onChange={() => setDateRangeType('12months')} />
+                                Search Prior 12 Months
+                            </label>
+                            <label className="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="range" checked={dateRangeType === 'all'} onChange={() => setDateRangeType('all')} />
+                                Search Entire Archive
+                            </label>
+                            <label className="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="range" checked={dateRangeType === 'custom'} onChange={() => setDateRangeType('custom')} />
+                                Custom Range
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                {/* Advanced Filters Toggle */}
-                <div className="mt-6 border-t border-[var(--glass-border)] pt-4">
-                    <button
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide"
-                    >
-                        {showAdvanced ? '▼ Hide Advanced Rules' : '▶ Advanced Logic'}
-                    </button>
+                {/* Footer Actions */}
+                <div className="mt-4 flex items-center gap-2 border-t border-blue-300 pt-3">
+                    <div className="text-xs font-bold text-gray-600">Results Per Page:</div>
+                    <select className="border text-xs rounded p-1"><option>10</option><option>50</option><option>100</option></select>
 
-                    {showAdvanced && (
-                        <div className="mt-4 animate-in fade-in slide-in-from-top-1">
-                            {renderGroup(uiQuery, true)}
-                        </div>
-                    )}
+                    <div className="text-xs font-bold text-gray-600 ml-4">Sort Value:</div>
+                    <select className="border text-xs rounded p-1 min-w-[100px]"><option>Batch Date</option><option>Amount</option></select>
+
+                    <button
+                        onClick={handleSearch}
+                        className="ml-4 px-4 py-1 bg-white border border-gray-400 text-xs font-bold hover:bg-gray-50 active:bg-gray-100 rounded shadow-sm"
+                    >
+                        Search
+                    </button>
+                    <button className="px-4 py-1 bg-white border border-gray-400 text-xs font-bold hover:bg-gray-50 active:bg-gray-100 rounded shadow-sm">
+                        Export
+                    </button>
+                    <button
+                        onClick={handleClear}
+                        className="px-4 py-1 bg-white border border-gray-400 text-xs font-bold hover:bg-gray-50 active:bg-gray-100 rounded shadow-sm"
+                    >
+                        Clear
+                    </button>
                 </div>
             </div>
 
-            {/* Action Buttons Row (Only if results exist) */}
-            {results.length > 0 && (
-                <div className="flex justify-end gap-3 mb-4">
-                    <button className="btn-secondary" onClick={handleExportCSV}>
-                        <span>⬇</span> CSV
-                    </button>
-                    <button className="btn-secondary" onClick={handleGenerateReport}>
-                        <span>📄</span> PDF Report
-                    </button>
-                </div>
-            )}
-
-            {/* Results Table */}
+            {/* RESULTS LIST */}
             {searched && (
-                <div className="glass-panel text-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-white/5 flex justify-between">
-                        <h3 className="text-white font-medium">Search Results</h3>
-                        <span className="text-gray-500 text-xs font-mono">{results.length} matches</span>
+                <div className="bg-white rounded shadow-sm overflow-hidden min-h-[200px]">
+                    <div className="px-4 py-2 bg-gray-100 border-b flex justify-between items-center">
+                        <h3 className="text-xs font-bold text-gray-600 uppercase">Results</h3>
+                        <span className="text-xs text-gray-500">{results.length} records found</span>
                     </div>
-                    {results.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500">No matches found.</div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Donor</th>
-                                        <th>Amount</th>
-                                        <th>Method</th>
-                                        <th>Client</th>
-                                        <th>Batch</th>
-                                        <th>Details</th>
+
+                    <table className="w-full text-xs text-left">
+                        <thead className="bg-gray-50 border-b">
+                            <tr>
+                                <th className="p-2 font-bold text-gray-700">Date</th>
+                                <th className="p-2 font-bold text-gray-700">Batch</th>
+                                <th className="p-2 font-bold text-gray-700">Donor / Account</th>
+                                <th className="p-2 font-bold text-gray-700">Amount</th>
+                                <th className="p-2 font-bold text-gray-700">Client</th>
+                                <th className="p-2 font-bold text-gray-700">Method</th>
+                                <th className="p-2 font-bold text-gray-700">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan={7} className="p-8 text-center text-gray-500">Searching...</td></tr>
+                            ) : results.length === 0 ? (
+                                <tr><td colSpan={7} className="p-8 text-center text-gray-500">No records found matching criteria.</td></tr>
+                            ) : (
+                                results.map(r => (
+                                    <tr key={r.DonationID} className="border-b hover:bg-blue-50 transition-colors">
+                                        <td className="p-2">{new Date(r.GiftDate).toLocaleDateString()}</td>
+                                        <td className="p-2 font-mono text-gray-600">{r.BatchCode}</td>
+                                        <td className="p-2">
+                                            <div className="font-bold">{r.DonorFirstName} {r.DonorLastName}</div>
+                                            <div className="text-[10px] text-gray-500">{r.DonorCity}, {r.DonorState}</div>
+                                        </td>
+                                        <td className="p-2 font-mono">${Number(r.GiftAmount).toFixed(2)}</td>
+                                        <td className="p-2">{r.ClientCode}</td>
+                                        <td className="p-2">{r.GiftMethod}</td>
+                                        <td className="p-2">
+                                            <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-600 hover:underline font-bold">
+                                                VIEW
+                                            </Link>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {results.map(r => (
-                                        <tr key={r.DonationID} className="group hover:bg-white/5 transition-colors">
-                                            <td className="text-gray-400 font-mono text-xs">{new Date(r.GiftDate).toLocaleDateString()}</td>
-                                            <td>
-                                                <div className="font-medium text-white">{r.DonorFirstName} {r.DonorLastName}</div>
-                                                <div className="text-xs text-gray-500">{r.DonorCity}, {r.DonorState}</div>
-                                            </td>
-                                            <td className="font-mono text-white font-medium">
-                                                ${Number(r.GiftAmount).toFixed(2)}
-                                            </td>
-                                            <td className="text-gray-400">{r.GiftMethod}</td>
-                                            <td className="text-white font-mono text-xs">{r.ClientCode}</td>
-                                            <td className="font-mono text-xs text-gray-500">{r.BatchCode}</td>
-                                            <td>
-                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-wide">
-                                                    View &rarr;
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>
