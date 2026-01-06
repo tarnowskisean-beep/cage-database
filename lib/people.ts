@@ -45,42 +45,60 @@ export async function resolveDonationIdentity(donation: any, dbClient?: any): Pr
     // "Jon" matches "Jonathan" if they live in the same Zip code.
     if (!donorId && first && last && zip && zip.length >= 5) {
         // We use similarity() from pg_trgm. Threshold 0.4 implies decent similarity.
-        const fuzzyNameMatch = await runQuery(`
+        const fuzzyNameMatches = await runQuery(`
             SELECT "DonorID", similarity("FirstName", $1) as score
             FROM "Donors"
             WHERE LOWER("LastName") = LOWER($2)
             AND "Zip" = $3
             AND similarity("FirstName", $1) > 0.3
             ORDER BY score DESC
-            LIMIT 1
+            LIMIT 5
         `, [first, last, zip]);
 
-        if (fuzzyNameMatch.rows.length > 0) {
-            console.log(`💡 Fuzzy Name Match: "${first} ${last}" -> ID ${fuzzyNameMatch.rows[0].DonorID} (Score: ${fuzzyNameMatch.rows[0].score})`);
-            donorId = fuzzyNameMatch.rows[0].DonorID;
+        if (fuzzyNameMatches.rows.length > 0) {
+            console.log(`💡 Fuzzy Name Potential Matches Found: ${fuzzyNameMatches.rows.length}`);
+            // AMBIGUOUS: Do not auto-link. Queue for resolution.
+            await runQuery('UPDATE "Donations" SET "ResolutionStatus" = \'Pending\' WHERE "DonationID" = $1', [donation.DonationID]);
+
+            for (const m of fuzzyNameMatches.rows) {
+                await runQuery(`
+                    INSERT INTO "DonationResolutionCandidates" ("DonationID", "DonorID", "Score", "Reason")
+                    VALUES ($1, $2, $3, 'Fuzzy Name Match')
+                `, [donation.DonationID, m.DonorID, m.score]);
+            }
+            return 0; // Return 0 to indicate no immediate link
         }
     }
 
     // TIER 4: Fuzzy Address (Exact Last + Similar Address)
     // "123 Main St" vs "123 Main Street"
     if (!donorId && last && address && address.length > 5) {
-        const fuzzyAddrMatch = await runQuery(`
+        const fuzzyAddrMatches = await runQuery(`
             SELECT "DonorID", similarity("Address", $1) as score
             FROM "Donors"
             WHERE LOWER("LastName") = LOWER($2)
             AND similarity("Address", $1) > 0.6
             ORDER BY score DESC
-            LIMIT 1
+            LIMIT 5
         `, [address, last]);
 
-        if (fuzzyAddrMatch.rows.length > 0) {
-            console.log(`💡 Fuzzy Address Match: "${address}" -> ID ${fuzzyAddrMatch.rows[0].DonorID} (Score: ${fuzzyAddrMatch.rows[0].score})`);
-            donorId = fuzzyAddrMatch.rows[0].DonorID;
+        if (fuzzyAddrMatches.rows.length > 0) {
+            console.log(`💡 Fuzzy Address Potential Matches Found: ${fuzzyAddrMatches.rows.length}`);
+            // AMBIGUOUS: Do not auto-link. Queue for resolution.
+            await runQuery('UPDATE "Donations" SET "ResolutionStatus" = \'Pending\' WHERE "DonationID" = $1', [donation.DonationID]);
+
+            for (const m of fuzzyAddrMatches.rows) {
+                await runQuery(`
+                    INSERT INTO "DonationResolutionCandidates" ("DonationID", "DonorID", "Score", "Reason")
+                    VALUES ($1, $2, $3, 'Fuzzy Address Match')
+                `, [donation.DonationID, m.DonorID, m.score]);
+            }
+            return 0;
         }
     }
 
     // TIER 5: Create New
-    // Only create if we have at least a Name or Email
+    // ONLY if no ambiguous matches were found
     if (!donorId && ((first && last) || email)) {
         const newDonor = await runQuery(`
             INSERT INTO "Donors" 
@@ -98,11 +116,14 @@ export async function resolveDonationIdentity(donation: any, dbClient?: any): Pr
             donation.DonorZip || null
         ]);
         donorId = newDonor.rows[0].DonorID;
+
+        // Mark as Resolved since we just created it
+        await runQuery('UPDATE "Donations" SET "ResolutionStatus" = \'Resolved\' WHERE "DonationID" = $1', [donation.DonationID]);
     }
 
     // Update Donation Record if we found/created a donor
     if (donorId) {
-        await runQuery('UPDATE "Donations" SET "DonorID" = $1 WHERE "DonationID" = $2', [donorId, donation.DonationID]);
+        await runQuery('UPDATE "Donations" SET "DonorID" = $1, "ResolutionStatus" = \'Resolved\' WHERE "DonationID" = $2', [donorId, donation.DonationID]);
     }
 
     return donorId || 0;

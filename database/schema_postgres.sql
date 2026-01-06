@@ -81,7 +81,18 @@ CREATE TABLE IF NOT EXISTS "Donations" (
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW(),
     "CheckNumber" TEXT, -- Added explicitly for PG schema
     "ScanString" TEXT,   -- Added explicitly for PG schema
-    "MailCode" TEXT     -- Campaigns
+    "MailCode" TEXT,    -- Campaigns
+    "ResolutionStatus" TEXT DEFAULT 'Resolved' CHECK ("ResolutionStatus" IN ('Resolved', 'Pending'))
+);
+
+-- DonationResolutionCandidates Table
+CREATE TABLE IF NOT EXISTS "DonationResolutionCandidates" (
+    "CandidateID" SERIAL PRIMARY KEY,
+    "DonationID" INT NOT NULL REFERENCES "Donations"("DonationID"),
+    "DonorID" INT NOT NULL REFERENCES "Donors"("DonorID"),
+    "Score" DECIMAL(5, 4),
+    "Reason" TEXT,
+    "CreatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Pledges Table
