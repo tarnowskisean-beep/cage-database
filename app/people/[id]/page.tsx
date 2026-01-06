@@ -88,7 +88,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
         <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
                 <h2 className="text-2xl font-display text-white mb-2">Donor Not Found</h2>
-                <p className="text-gray-500 mb-4">The requested donor profile could not be located.</p>
+                <p className="text-gray-400 mb-4">The requested donor profile could not be located.</p>
                 <Link href="/people" className="btn-secondary">Return to Directory</Link>
             </div>
         </div>
@@ -99,7 +99,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
 
             {/* Breadcrumb */}
             <nav className="mb-6">
-                <Link href="/people" className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+                <Link href="/people" className="text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide flex items-center gap-2">
                     &larr; Back to Directory
                 </Link>
             </nav>
@@ -119,11 +119,11 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 <h1 className="text-4xl font-display text-white mb-2">{donor.FirstName} {donor.LastName}</h1>
                                 {/* Recency Indicators */}
                                 <div className="flex gap-4 text-xs font-bold uppercase tracking-wider mt-1">
-                                    <span className={`${stats.avgGift > 0 && getDaysAgo(history[0]?.GiftDate).includes('days') && parseInt(getDaysAgo(history[0]?.GiftDate)) < 90 ? 'text-emerald-400' : 'text-gray-500'}`}>
+                                    <span className={`${stats.avgGift > 0 && getDaysAgo(history[0]?.GiftDate).includes('days') && parseInt(getDaysAgo(history[0]?.GiftDate)) < 90 ? 'text-emerald-400' : 'text-gray-400'}`}>
                                         Last Gift: {getDaysAgo(history[0]?.GiftDate)}
                                     </span>
                                     <span className="text-gray-600">|</span>
-                                    <span className="text-gray-500">
+                                    <span className="text-gray-400">
                                         Last Contact: {getDaysAgo(stats.lastContact)}
                                     </span>
                                 </div>
@@ -132,7 +132,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                             {/* Subscription Bell */}
                             <button
                                 onClick={handleSubscribe}
-                                className={`p-2 rounded-full border transition-colors ${isSubscribed ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-500 hover:text-white'}`}
+                                className={`p-2 rounded-full border transition-colors ${isSubscribed ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
                                 title={isSubscribed ? "Alerts Enabled" : "Enable Alerts"}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -174,7 +174,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                 {/* Impact Card */}
                 <div className="glass-panel p-8 relative overflow-hidden group">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1 relative z-10">Lifetime Value</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1 relative z-10">Lifetime Value</p>
                     <p className="text-5xl font-display text-white mt-2 relative z-10 font-medium">
                         ${Number(stats.totalGiven || 0).toLocaleString()}
                     </p>
@@ -191,11 +191,11 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                     <div className="grid grid-cols-2 gap-8 text-center divide-x divide-white/5">
                         <div>
                             <p className="text-3xl font-display text-white font-medium">{stats.giftCount}</p>
-                            <p className="text-xs text-gray-500 uppercase tracking-widest mt-2 font-bold">Total Gifts</p>
+                            <p className="text-xs text-gray-400 uppercase tracking-widest mt-2 font-bold">Total Gifts</p>
                         </div>
                         <div>
                             <p className="text-3xl font-display text-white font-medium">${Number(stats.avgGift || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                            <p className="text-xs text-gray-500 uppercase tracking-widest mt-2 font-bold">Avg Gift</p>
+                            <p className="text-xs text-gray-400 uppercase tracking-widest mt-2 font-bold">Avg Gift</p>
                         </div>
                     </div>
                 </div>
@@ -203,11 +203,14 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                 {/* Chart Card */}
                 <div className="glass-panel p-6 flex flex-col justify-center">
                     <div className="mb-4 flex justify-between items-center">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Yearly Giving</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">Yearly Giving</p>
                     </div>
                     <div className="h-32 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
+                                <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                                 <Tooltip
                                     cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', fontSize: '12px', color: '#fff' }}
@@ -233,7 +236,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
                                         <p className="text-sm font-medium text-white">{pledge.MailCode}</p>
-                                        <p className="text-xs text-gray-500 uppercase tracking-widest">Campaign</p>
+                                        <p className="text-xs text-gray-400 uppercase tracking-widest">Campaign</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-mono text-white">${Number(pledge.donated).toLocaleString()} / ${Number(pledge.Amount).toLocaleString()}</p>
@@ -280,7 +283,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                             value={startDate}
                             onChange={e => setStartDate(e.target.value)}
                         />
-                        <span className="text-gray-500 self-center">-</span>
+                        <span className="text-gray-400 self-center">-</span>
                         <input
                             type="date"
                             className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
@@ -328,7 +331,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         <tbody>
                             {filteredHistory.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-8 py-12 text-center text-gray-500 italic">No donation history matches filters.</td>
+                                    <td colSpan={6} className="px-8 py-12 text-center text-gray-400 italic">No donation history matches filters.</td>
                                 </tr>
                             ) : (
                                 filteredHistory.map((h: any) => (
@@ -386,14 +389,14 @@ function NotesList({ donorId }: { donorId: string }) {
         return () => clearInterval(interval);
     }, [donorId]);
 
-    if (notes.length === 0) return <p className="text-gray-500 text-xs uppercase tracking-widest py-2">No notes recorded yet.</p>;
+    if (notes.length === 0) return <p className="text-gray-400 text-xs uppercase tracking-widest py-2">No notes recorded yet.</p>;
 
     return (
         <div className="space-y-3">
             {notes.map(note => (
                 <div key={note.NoteID} className="bg-white/5 p-4 rounded border border-white/5 hover:border-white/10 transition-colors">
                     <p className="text-gray-200 text-sm">{note.Content}</p>
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5 text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5 text-[10px] text-gray-400 uppercase tracking-wider font-bold">
                         <span>{note.AuthorName}</span>
                         <span>{new Date(note.CreatedAt).toLocaleString()}</span>
                     </div>
