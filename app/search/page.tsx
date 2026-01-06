@@ -219,9 +219,9 @@ export default function SearchPage() {
 
     const Row = ({ label, fieldKey, opKey, valKey, type = 'text', options = null }: any) => (
         <div className="flex items-center gap-2 mb-2">
-            <div className="w-32 text-right text-sm font-bold text-gray-700">{label}:</div>
+            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">{label}:</div>
             <select
-                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-32"
+                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
                 value={formData[opKey as keyof typeof formData]}
                 onChange={e => handleChange(opKey, e.target.value)}
             >
@@ -229,36 +229,39 @@ export default function SearchPage() {
             </select>
             {options ? (
                 <select
-                    className="bg-white border text-xs p-1 h-7 rounded border-gray-400 flex-1"
+                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none"
                     value={formData[valKey as keyof typeof formData]}
                     onChange={e => handleChange(valKey, e.target.value)}
                 >
-                    <option value="">(Select)</option>
-                    {options.map((o: any) => <option key={o} value={o}>{o}</option>)}
+                    <option value="" className="text-black">(Select)</option>
+                    {options.map((o: any) => <option key={o} value={o} className="text-black">{o}</option>)}
                 </select>
             ) : (
                 <input
                     type={type}
-                    className="bg-white border text-xs p-1 h-7 rounded border-gray-400 flex-1"
+                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none placeholder-gray-600"
                     value={formData[valKey as keyof typeof formData]}
                     onChange={e => handleChange(valKey, e.target.value)}
                 />
             )}
-            {/* Checkbox Placeholder to match image style */}
-            <input type="checkbox" checked readOnly className="ml-1" />
+            {/* Checkbox Placeholder */}
+            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
         </div>
     );
 
     return (
-        <div className="max-w-[1400px] mx-auto p-6 text-black">
-            <header className="mb-6 flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-white">Search Records</h1>
-                <Link href="/" className="text-gray-400 hover:text-white text-sm uppercase font-bold">Back to Dashboard</Link>
+        <div className="max-w-[1400px] mx-auto px-6 py-8">
+            <header className="page-header mb-8 flex items-end justify-between">
+                <div>
+                    <h2 className="text-sm font-medium tracking-wide text-gray-400 uppercase mb-2">Data Intelligence</h2>
+                    <h1 className="text-4xl text-white font-display">Global Search</h1>
+                </div>
+                <Link href="/" className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide">Back to Dashboard &rarr;</Link>
             </header>
 
             {/* DENSE SEARCH FORM PANEL */}
-            <div className="bg-[#dbeafe] border border-blue-200 rounded p-4 mb-6 shadow-sm">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+            <div className="glass-panel p-6 mb-8">
+                <div className="grid grid-cols-2 gap-x-12 gap-y-1">
 
                     {/* LEFT COLUMN */}
                     <div>
@@ -267,23 +270,23 @@ export default function SearchPage() {
 
                         {/* Client Dropdown override */}
                         <div className="flex items-center gap-2 mb-2">
-                            <div className="w-32 text-right text-sm font-bold text-gray-700">Client ID:</div>
+                            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Client ID:</div>
                             <select
-                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-32"
+                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
                                 value={formData.clientOp}
                                 onChange={e => handleChange('clientOp', e.target.value)}
                             >
                                 {OPERATOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <select
-                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 flex-1"
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none"
                                 value={formData.clientVal}
                                 onChange={e => handleChange('clientVal', e.target.value)}
                             >
-                                <option value="">(All)</option>
-                                {clients.map(c => <option key={c.ClientCode} value={c.ClientCode}>{c.ClientCode}</option>)}
+                                <option value="" className="text-black">(All)</option>
+                                {clients.map(c => <option key={c.ClientCode} value={c.ClientCode} className="text-black">{c.ClientCode}</option>)}
                             </select>
-                            <input type="checkbox" checked readOnly className="ml-1" />
+                            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
                         </div>
 
                         <Row label="Amount" fieldKey="amount" opKey="amountOp" valKey="amountVal" type="number" />
@@ -296,9 +299,9 @@ export default function SearchPage() {
                     <div>
                         {/* Date - Custom Layout */}
                         <div className="flex items-center gap-2 mb-2">
-                            <div className="w-32 text-right text-sm font-bold text-gray-700">Batch Date:</div>
+                            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Batch Date:</div>
                             <select
-                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-32"
+                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
                                 value={formData.batchDateOp}
                                 onChange={e => handleChange('batchDateOp', e.target.value)}
                             >
@@ -307,17 +310,17 @@ export default function SearchPage() {
                             </select>
                             <input
                                 type="date"
-                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-28"
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded w-28 focus:border-blue-500 focus:outline-none uppercase font-mono"
                                 value={formData.batchDateStart}
                                 onChange={e => handleChange('batchDateStart', e.target.value)}
                             />
                             <input
                                 type="date"
-                                className="bg-white border text-xs p-1 h-7 rounded border-gray-400 w-28"
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded w-28 focus:border-blue-500 focus:outline-none uppercase font-mono"
                                 value={formData.batchDateEnd}
                                 onChange={e => handleChange('batchDateEnd', e.target.value)}
                             />
-                            <input type="checkbox" checked readOnly className="ml-1" />
+                            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
                         </div>
 
                         <Row label="Check No" fieldKey="checkNumber" opKey="checkNoOp" valKey="checkNoVal" />
@@ -326,17 +329,17 @@ export default function SearchPage() {
                         <Row label="Full ID" fieldKey="scanString" opKey="compositeIdOp" valKey="compositeIdVal" />
 
                         {/* Radio Option */}
-                        <div className="flex justify-end gap-2 mt-4 text-xs font-bold text-green-700">
-                            <label className="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="range" checked={dateRangeType === '12months'} onChange={() => setDateRangeType('12months')} />
+                        <div className="flex justify-end gap-4 mt-4 text-xs font-bold text-gray-400">
+                            <label className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+                                <input type="radio" name="range" checked={dateRangeType === '12months'} onChange={() => setDateRangeType('12months')} className="accent-blue-500" />
                                 Search Prior 12 Months
                             </label>
-                            <label className="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="range" checked={dateRangeType === 'all'} onChange={() => setDateRangeType('all')} />
+                            <label className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+                                <input type="radio" name="range" checked={dateRangeType === 'all'} onChange={() => setDateRangeType('all')} className="accent-blue-500" />
                                 Search Entire Archive
                             </label>
-                            <label className="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="range" checked={dateRangeType === 'custom'} onChange={() => setDateRangeType('custom')} />
+                            <label className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+                                <input type="radio" name="range" checked={dateRangeType === 'custom'} onChange={() => setDateRangeType('custom')} className="accent-blue-500" />
                                 Custom Range
                             </label>
                         </div>
@@ -344,25 +347,31 @@ export default function SearchPage() {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="mt-4 flex items-center gap-2 border-t border-blue-300 pt-3">
-                    <div className="text-xs font-bold text-gray-600">Results Per Page:</div>
-                    <select className="border text-xs rounded p-1"><option>10</option><option>50</option><option>100</option></select>
+                <div className="mt-8 flex items-center gap-4 border-t border-white/10 pt-4 justify-end">
+                    <div className="flex items-center gap-2">
+                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Results:</div>
+                        <select className="bg-zinc-900 border border-white/10 text-white text-xs rounded p-1"><option>10</option><option>50</option><option>100</option></select>
+                    </div>
 
-                    <div className="text-xs font-bold text-gray-600 ml-4">Sort Value:</div>
-                    <select className="border text-xs rounded p-1 min-w-[100px]"><option>Batch Date</option><option>Amount</option></select>
+                    <div className="flex items-center gap-2">
+                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Sort:</div>
+                        <select className="bg-zinc-900 border border-white/10 text-white text-xs rounded p-1 min-w-[100px]"><option>Batch Date</option><option>Amount</option></select>
+                    </div>
+
+                    <div className="h-6 w-px bg-white/10 mx-2"></div>
 
                     <button
                         onClick={handleSearch}
-                        className="ml-4 px-4 py-1 bg-white border border-gray-400 text-xs font-bold hover:bg-gray-50 active:bg-gray-100 rounded shadow-sm"
+                        className="btn-primary py-1 px-6 text-xs"
                     >
                         Search
                     </button>
-                    <button className="px-4 py-1 bg-white border border-gray-400 text-xs font-bold hover:bg-gray-50 active:bg-gray-100 rounded shadow-sm">
+                    <button className="btn-secondary py-1 px-6 text-xs">
                         Export
                     </button>
                     <button
                         onClick={handleClear}
-                        className="px-4 py-1 bg-white border border-gray-400 text-xs font-bold hover:bg-gray-50 active:bg-gray-100 rounded shadow-sm"
+                        className="text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors px-4"
                     >
                         Clear
                     </button>
@@ -371,22 +380,22 @@ export default function SearchPage() {
 
             {/* RESULTS LIST */}
             {searched && (
-                <div className="bg-white rounded shadow-sm overflow-hidden min-h-[200px]">
-                    <div className="px-4 py-2 bg-gray-100 border-b flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-gray-600 uppercase">Results</h3>
-                        <span className="text-xs text-gray-500">{results.length} records found</span>
+                <div className="glass-panel text-sm overflow-hidden min-h-[200px]">
+                    <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Results</h3>
+                        <span className="text-xs text-gray-500 font-mono">{results.length} records found</span>
                     </div>
 
                     <table className="w-full text-xs text-left">
-                        <thead className="bg-gray-50 border-b">
+                        <thead className="bg-white/5 border-b border-white/10">
                             <tr>
-                                <th className="p-2 font-bold text-gray-700">Date</th>
-                                <th className="p-2 font-bold text-gray-700">Batch</th>
-                                <th className="p-2 font-bold text-gray-700">Donor / Account</th>
-                                <th className="p-2 font-bold text-gray-700">Amount</th>
-                                <th className="p-2 font-bold text-gray-700">Client</th>
-                                <th className="p-2 font-bold text-gray-700">Method</th>
-                                <th className="p-2 font-bold text-gray-700">Action</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Batch</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Donor / Account</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Amount</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Client</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Method</th>
+                                <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -396,19 +405,19 @@ export default function SearchPage() {
                                 <tr><td colSpan={7} className="p-8 text-center text-gray-500">No records found matching criteria.</td></tr>
                             ) : (
                                 results.map(r => (
-                                    <tr key={r.DonationID} className="border-b hover:bg-blue-50 transition-colors">
-                                        <td className="p-2">{new Date(r.GiftDate).toLocaleDateString()}</td>
-                                        <td className="p-2 font-mono text-gray-600">{r.BatchCode}</td>
-                                        <td className="p-2">
-                                            <div className="font-bold">{r.DonorFirstName} {r.DonorLastName}</div>
+                                    <tr key={r.DonationID} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                                        <td className="p-3 text-gray-400 font-mono">{new Date(r.GiftDate).toLocaleDateString()}</td>
+                                        <td className="p-3 font-mono text-gray-500 group-hover:text-gray-300">{r.BatchCode}</td>
+                                        <td className="p-3">
+                                            <div className="font-bold text-white">{r.DonorFirstName} {r.DonorLastName}</div>
                                             <div className="text-[10px] text-gray-500">{r.DonorCity}, {r.DonorState}</div>
                                         </td>
-                                        <td className="p-2 font-mono">${Number(r.GiftAmount).toFixed(2)}</td>
-                                        <td className="p-2">{r.ClientCode}</td>
-                                        <td className="p-2">{r.GiftMethod}</td>
-                                        <td className="p-2">
-                                            <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-600 hover:underline font-bold">
-                                                VIEW
+                                        <td className="p-3 font-mono text-white">${Number(r.GiftAmount).toFixed(2)}</td>
+                                        <td className="p-3 text-gray-400">{r.ClientCode}</td>
+                                        <td className="p-3 text-gray-400">{r.GiftMethod}</td>
+                                        <td className="p-3">
+                                            <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-400 hover:text-blue-300 font-bold uppercase text-[10px] tracking-wider">
+                                                VIEW &rarr;
                                             </Link>
                                         </td>
                                     </tr>
