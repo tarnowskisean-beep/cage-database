@@ -25,9 +25,10 @@ export async function GET(
         // For now, we assume authenticated users can view.
 
         const result = await query(
-            `SELECT "FileName", "DocumentType", "StorageKey" 
-             FROM "BatchDocuments" 
-             WHERE "BatchDocumentID" = $1`,
+            `SELECT d."FileName", d."DocumentType", d."StorageKey", b."ClientID"
+             FROM "BatchDocuments" d
+             JOIN "Batches" b ON d."BatchID" = b."BatchID"
+             WHERE d."BatchDocumentID" = $1`,
             [id]
         );
 
@@ -36,6 +37,15 @@ export async function GET(
         }
 
         const doc = result.rows[0];
+
+        // SOC 2: Access Control Check
+        if ((session.user as any).role === 'ClientUser') {
+            const allowedIds: number[] = (session.user as any).allowedClientIds || [];
+            if (!allowedIds.includes(doc.ClientID)) {
+                await logAudit('VIEW_DOCUMENT_DENIED', 'BATCH_DOCUMENT', id, `Denied access to ${doc.FileName}`, username);
+                return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+            }
+        }
 
         // SOC 2: Audit Log
         await logAudit('VIEW_DOCUMENT', 'BATCH_DOCUMENT', id, `Viewed ${doc.FileName}`, username);
