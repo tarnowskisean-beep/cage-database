@@ -121,10 +121,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             });
         }
 
+
+        const bankTransactionsRes = await query(`
+            SELECT * FROM "ReconciliationBankTransactions"
+            WHERE "ReconciliationPeriodID" = $1
+            ORDER BY "Date" ASC
+        `, [id]);
+
+        const bankTransactions = bankTransactionsRes.rows.map(bt => ({
+            ...bt,
+            // Convert types if needed
+            Amount: parseFloat(bt.Amount)
+        }));
+
         const result = {
             ...period,
             batches,
-            payments
+            payments,
+            bankTransactions
         };
 
         return NextResponse.json(result);

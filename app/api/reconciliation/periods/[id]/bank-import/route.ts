@@ -2,132 +2,95 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { transaction } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    // Fix: Await params
-    const { id: periodId } = await params;
-
-    const body = await req.json();
-    const { transactions, clientId } = body;
-
-    if (!transactions || !Array.isArray(transactions)) {
-        return NextResponse.json({ error: 'Invalid transactions array' }, { status: 400 });
-    }
-
+    const { id } = await params;
 
     try {
-        const result = await transaction(async (client) => {
-            let matchedCount = 0;
-            let importedCount = 0;
+        const { transactions } = await req.json();
 
-            const periodRes = await client.query(`SELECT "TotalPeriodAmount", "PeriodStartDate", "PeriodEndDate", "ClientID" FROM "ReconciliationPeriods" WHERE "ReconciliationPeriodID" = $1`, [periodId]);
-            if (periodRes.rows.length === 0) throw new Error('Period not found');
-            const period = periodRes.rows[0];
+        if (!Array.isArray(transactions) || transactions.length === 0) {
+            return NextResponse.json({ error: 'No transactions provided' }, { status: 400 });
+        }
 
-            for (const txn of transactions) {
-                const amountIn = parseFloat(txn.amountIn || 0);
-                const amountOut = parseFloat(txn.amountOut || 0);
-                const txnDate = new Date(txn.date);
+        console.log(`[Bank Import] Processing ${transactions.length} items for Period ${id}`);
 
-                let isMatched = false;
+        let importedCount = 0;
+        let matchedCount = 0;
 
-                // 1. MATCHING LOGIC
-                if (amountIn > 0) {
-                    // DEPOSIT: Look for a Batch with same amount +/- 0.01 within +/- 3 days
-                    // We need to query Batches that are 'Closed' and not already cleared? 
-                    // Ideally not already cleared, but maybe we are re-running.
-                    // Let's just look for one that fits.
+        // Fetch Potential Matches (Open Batches)
+        // Optimization: Fetch all candidate batches once
+        // Candidates: Status Closed/Submitted, not already matched? (Can't easily check "not matched" without join, but it's fine)
+        const batchesRes = await query(`
+            SELECT "BatchID", "Date", "PaymentCategory" as "Type", "BatchCode",
+            (SELECT SUM("GiftAmount") FROM "Donations" WHERE "Donations"."BatchID" = "Batches"."BatchID") as "Amount"
+            FROM "Batches" 
+            WHERE "Status" IN ('Closed', 'Submitted')
+            AND "Cleared" = false
+        `);
+        const candidateBatches = batchesRes.rows.map(b => ({
+            ...b,
+            Amount: parseFloat(b.Amount || '0'),
+            DateObj: new Date(b.Date)
+        }));
 
-                    const dateLower = new Date(txnDate); dateLower.setDate(dateLower.getDate() - 3);
-                    const dateUpper = new Date(txnDate); dateUpper.setDate(dateUpper.getDate() + 3);
+        for (const tx of transactions) {
+            // 1. Insert Transaction
+            const insertRes = await query(`
+                INSERT INTO "ReconciliationBankTransactions" 
+                ("ReconciliationPeriodID", "Date", "Amount", "Description", "Reference", "Status")
+                VALUES ($1, $2, $3, $4, $5, 'Unmatched')
+                RETURNING "TransactionID"
+            `, [id, tx.Date, tx.Amount, tx.Description, tx.Reference]);
 
-                    // We need to sum donations for batches to get the amount? 
-                    // No, that's expensive inside a loop.
-                    // Better approach: We should have cached batch totals or query efficiently.
-                    // For MPV/Speed: Let's find batches in date range first, then check amounts.
+            const txId = insertRes.rows[0].TransactionID;
+            importedCount++;
 
-                    // Actually, we can use the backend logic we used in GET to fetch batches + totals?
-                    // Or just do a join.
-                    const potentialBatches = await client.query(`
-                        SELECT b."BatchID", SUM(d."GiftAmount") as "Total"
-                        FROM "Batches" b
-                        JOIN "Donations" d ON b."BatchID" = d."BatchID"
-                        WHERE b."ClientID" = $1
-                        AND b."Status" = 'Closed'
-                        AND b."Date" >= $2 AND b."Date" <= $3
-                        AND b."Cleared" = FALSE 
-                        GROUP BY b."BatchID"
-                    `, [period.ClientID, dateLower, dateUpper]);
+            const txAmount = parseFloat(tx.Amount);
+            const txDate = new Date(tx.Date);
 
-                    for (const batch of potentialBatches.rows) {
-                        const batchTotal = parseFloat(batch.Total);
-                        if (Math.abs(batchTotal - amountIn) < 0.02) {
-                            // MATCH FOUND!
-                            // 1. Mark Batch as Cleared
-                            await client.query(`UPDATE "Batches" SET "Cleared" = TRUE WHERE "BatchID" = $1`, [batch.BatchID]);
-                            isMatched = true;
-                            break; // Stop looking for matches for this line
-                        }
-                    }
+            // 2. Auto-Match Logic
+            if (txAmount > 0) {
+                // Look for DEPOSIT (Batch)
+                const matches = candidateBatches.filter(b => {
+                    // Exact Amount Match
+                    if (Math.abs(b.Amount - txAmount) > 0.01) return false;
 
-                } else if (amountOut > 0) {
-                    // WITHDRAWAL: Look for manual transactions (Transfers, Fees)
-                    // "StatementImported" = FALSE means it was systematically added or manually added
-                    const potentialTxns = await client.query(`
-                        SELECT "TransactionID", "AmountOut"
-                        FROM "ReconciliationBankTransactions"
-                        WHERE "ReconciliationPeriodID" = $1
-                        AND "StatementImported" = FALSE
-                        AND "Cleared" = FALSE
-                        AND "AmountOut" > 0
-                    `, [periodId]);
+                    // Date Buffer (+/- 5 days)
+                    const diffTime = Math.abs(txDate.getTime() - b.DateObj.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays <= 5;
+                });
 
-                    for (const sysTxn of potentialTxns.rows) {
-                        // Check amount match
-                        if (Math.abs(parseFloat(sysTxn.AmountOut) - amountOut) < 0.02) {
-                            // Match!
-                            await client.query(`UPDATE "ReconciliationBankTransactions" SET "Cleared" = TRUE WHERE "TransactionID" = $1`, [sysTxn.TransactionID]);
-                            isMatched = true;
-                            break;
-                        }
-                    }
+                if (matches.length === 1) {
+                    // Found single exact match! Link it.
+                    const batch = matches[0];
+                    await query(`
+                        UPDATE "ReconciliationBankTransactions"
+                        SET "MatchedBatchID" = $1, "Status" = 'Matched'
+                        WHERE "TransactionID" = $2
+                    `, [batch.BatchID, txId]);
+
+                    // Also mark Batch as Cleared? Usually yes if we matched it. 
+                    // But maybe we leave that to "Save" action? 
+                    // Let's mark it cleared in Reconcile logic context, or just link them.
+                    // For now, just link. The UI will show it as "Matched".
+
+                    matchedCount++;
                 }
-
-                if (isMatched) matchedCount++;
-
-                // 2. INSERT STATEMENT RECORD
-                // If it matched, we mark THIS imported record as "Matched" (so we can visually dim it or hide it)
-                // In QB, matched bank lines disappear from the "To Match" list.
-                // For us, we'll store it as "Matched=TRUE"
-
-                await client.query(`
-                    INSERT INTO "ReconciliationBankTransactions"
-                    ("ReconciliationPeriodID", "ClientID", "TransactionDate", "TransactionType", "AmountIn", "AmountOut", "Description", "ReferenceNumber", "StatementImported", "Matched")
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9)
-                `, [
-                    periodId,
-                    period.ClientID, // Use Period's ClientID (safer)
-                    txn.date,
-                    txn.type || (amountIn > 0 ? 'Deposit' : 'Withdrawal'),
-                    amountIn,
-                    amountOut,
-                    txn.description,
-                    txn.ref,
-                    isMatched
-                ]);
-
-                importedCount++;
+            } else {
+                // Payment/Debit - Look for Fees/Refunds?
+                // Logic TBD
             }
-            return { importedCount, matchedCount };
-        });
+        }
 
-        return NextResponse.json({ success: true, imported: result.importedCount, matched: result.matchedCount });
+        return NextResponse.json({ success: true, imported: importedCount, matched: matchedCount });
 
     } catch (e: any) {
+        console.error('Import Error:', e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }

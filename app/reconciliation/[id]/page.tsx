@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Papa from 'papaparse';
 
 export default function ReconciliationDetail({ params }: { params: Promise<{ id: string }> }) {
     const [periodId, setPeriodId] = useState<string>('');
@@ -20,6 +21,8 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     const [period, setPeriod] = useState<any>(null);
     const [moneyIn, setMoneyIn] = useState<any[]>([]);
     const [moneyOut, setMoneyOut] = useState<any[]>([]);
+    const [bankTransactions, setBankTransactions] = useState<any[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Reconciliation State
     const [statementEndingBalance, setStatementEndingBalance] = useState<string>('');
@@ -44,6 +47,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                     // API returns 'batches' and 'payments' (mapped to moneyIn/moneyOut)
                     setMoneyIn(p.batches || []);
                     setMoneyOut(p.payments || []);
+                    setBankTransactions(p.bankTransactions || []);
 
                     // Initialize cleared set from boolean flags on items
                     const cleared = new Set<string>();
@@ -102,7 +106,84 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
     };
 
 
-    const [filter, setFilter] = useState<'All' | 'Payments' | 'Deposits'>('All');
+    const [filter, setFilter] = useState<'All' | 'Payments' | 'Deposits' | 'Matched' | 'Unmatched Bank' | 'Unmatched System'>('All');
+
+    // Import Handler
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: false, // We will manually handle the weird header row 3
+            complete: async (results) => {
+                const rows = results.data as string[][];
+                // User said Header on Row 3 (Index 2), Data from Row 4 (Index 3)
+                // Let's inspect Row 2 to confirm headers or just assume fixed format
+                // Format: Account Number(0), Account Type(1), Date(2), Check/Ref(3), Description(4), Debit(5), Credit(6), Balance(7)
+
+                const transactions = rows.slice(3).map(row => {
+                    if (!row[2]) return null; // Skip empty date
+
+                    // Parse Amount: Credit is positive, Debit (if exists) is negative
+                    const credit = row[6] ? parseFloat(row[6].replace(/[^0-9.-]+/g, '')) : 0;
+                    const debit = row[5] ? parseFloat(row[5].replace(/[^0-9.-]+/g, '')) : 0; // Assuming Debit column has values
+                    // Note: User image shows Debit column empty for credits, assuming filled for debits
+                    // If Debit has value, treat as negative? Or just subtract?
+                    // Let's assume strict columns: if Credit has value use it, else if Debit use -Debit
+
+                    let amount = 0;
+                    if (row[6] && row[6].trim()) amount = credit;
+                    else if (row[5] && row[5].trim()) amount = -Math.abs(debit); // Ensure negative
+
+                    if (amount === 0) return null; // Skip zero rows if any
+
+                    return {
+                        Date: row[2], // Send raw date string to backend or parse? Backend handles it well usually. 
+                        // But let's standardise to YYYY-MM-DD if possible. 
+                        // User date: 1/5/26 -> 2026-01-05
+                        Description: row[4],
+                        Reference: row[3],
+                        Amount: amount
+                    };
+                }).filter(Boolean);
+
+                if (transactions.length === 0) {
+                    alert('No valid transactions found in file.');
+                    return;
+                }
+
+                // Upload
+                try {
+                    const res = await fetch(`/api/reconciliation/periods/${periodId}/bank-import`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ transactions })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Imported ${data.imported} transactions. Auto-matched ${data.matched}.`);
+                        // Refetch
+                        setLoading(true); // Trigger effect
+                        const p = await fetch(`/api/reconciliation/periods/${periodId}`).then(r => r.json());
+                        setPeriod(p);
+                        setMoneyIn(p.batches || []);
+                        setMoneyOut(p.payments || []);
+                        setBankTransactions(p.bankTransactions || []);
+                        setLoading(false);
+                        setFilter('Unmatched Bank'); // Switch view
+                    } else {
+                        alert('Import failed: ' + data.error);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Upload error');
+                }
+            }
+        });
+
+        // Reset input
+        e.target.value = '';
+    };
 
     // Calculations
     const totalPayments = moneyOut.reduce((acc, i) => acc + Math.abs(Number(i.amount)), 0);
@@ -177,6 +258,120 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
         }
     };
 
+    // Helper to check if a system item is matched to a bank transaction
+    const isSystemItemMatched = (itemId: string | number) => {
+        return bankTransactions.some(bt =>
+            (bt.MatchedBatchID && String(bt.MatchedBatchID) === String(itemId)) ||
+            (bt.MatchedDonationID && itemId.toString().startsWith('REF-') && itemId.toString().includes(String(bt.MatchedDonationID)))
+        );
+    };
+
+    const renderSystemRow = (item: any) => {
+        const isMsatched = isSystemItemMatched(item.id);
+        const isCleared = clearedItems.has(item.id) || isMsatched;
+
+        return (
+            <tr
+                key={`${item.type}-${item.id}`}
+                className={`
+                    group transition-colors
+                    ${isCleared ? 'bg-emerald-900/10' : 'hover:bg-white/5'}
+                `}
+                onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')}
+            >
+                <td className="py-4 px-6 font-mono text-gray-300">{new Date(item.date).toLocaleDateString()}</td>
+                <td className="py-4 px-6 font-mono text-gray-400">
+                    {item.clearedDate ? new Date(item.clearedDate).toLocaleDateString() : '-'}
+                </td>
+                <td className="py-4 px-6">
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold border ${item.type === 'Deposit'
+                        ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50'
+                        : 'bg-rose-900/30 text-rose-400 border-rose-900/50'
+                        }`}>
+                        {item.type}
+                    </span>
+                </td>
+                <td className="py-4 px-6 text-gray-300">{item.ref}</td>
+                <td className="py-4 px-6 text-white font-medium">{item.payee}</td>
+                <td className="py-4 px-6 text-gray-400 truncate max-w-xs" title={item.memo}>{item.memo}</td>
+                <td className="py-4 px-6 text-right font-mono text-gray-300">
+                    {item.isPayment ? Math.abs(item.amount).toFixed(2) : ''}
+                </td>
+                <td className="py-4 px-6 text-right font-mono text-white">
+                    {!item.isPayment ? item.amount.toFixed(2) : ''}
+                </td>
+                <td className="py-4 px-6 text-center">
+                    <div className={`
+                        w-5 h-5 mx-auto rounded-full border flex items-center justify-center transition-all
+                        ${isCleared
+                            ? 'bg-emerald-500 border-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                            : 'border-white/20 group-hover:border-white/50'
+                        }
+                    `}>
+                        {isCleared && (
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        )}
+                    </div>
+                </td>
+            </tr>
+        );
+    }
+
+    const renderTableBody = () => {
+        if (loading) return <tr><td colSpan={9} className="py-8 text-center text-gray-500">Loading period data...</td></tr>;
+
+        // View: Bank Transactions (Matched or Unmatched)
+        if (filter === 'Matched' || filter === 'Unmatched Bank') {
+            const targetStatus = filter === 'Matched' ? 'Matched' : 'Unmatched';
+            const displayItems = bankTransactions.filter(bt => bt.Status === targetStatus);
+
+            if (displayItems.length === 0) return <tr><td colSpan={9} className="py-8 text-center text-gray-500">No {filter.toLowerCase()} transactions found.</td></tr>;
+
+            return displayItems.map(bt => (
+                <tr key={bt.TransactionID} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-4 px-6 font-mono text-gray-300">{new Date(bt.Date).toLocaleDateString()}</td>
+                    <td className="py-4 px-6 font-mono text-gray-400">-</td>
+                    <td className="py-4 px-6">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold border ${bt.Amount > 0
+                            ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50'
+                            : 'bg-rose-900/30 text-rose-400 border-rose-900/50'
+                            }`}>
+                            {bt.Amount > 0 ? 'Bank Deposit' : 'Bank Debit'}
+                        </span>
+                    </td>
+                    <td className="py-4 px-6 text-gray-300">{bt.Reference || '-'}</td>
+                    <td className="py-4 px-6 text-white font-medium">Bank Transaction</td>
+                    <td className="py-4 px-6 text-gray-400 truncate max-w-xs">{bt.Description}</td>
+                    <td className="py-4 px-6 text-right font-mono text-gray-300">
+                        {bt.Amount < 0 ? Math.abs(bt.Amount).toFixed(2) : ''}
+                    </td>
+                    <td className="py-4 px-6 text-right font-mono text-white">
+                        {bt.Amount > 0 ? bt.Amount.toFixed(2) : ''}
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${bt.Status === 'Matched' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                            {bt.Status}
+                        </span>
+                    </td>
+                </tr>
+            ));
+        }
+
+        // View: System Items (Unmatched System or All)
+        if (filter === 'Unmatched System') {
+            const displayItems = allItems.filter(i => !isSystemItemMatched(i.id));
+            if (displayItems.length === 0) return <tr><td colSpan={9} className="py-8 text-center text-gray-500">All system items are matched!</td></tr>;
+            return displayItems.map(item => renderSystemRow(item));
+        }
+
+        // View: All/Payments/Deposits (Legacy/Mixed View)
+        return filteredItems.map(item => renderSystemRow(item));
+    };
+
+
     if (loading) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-gray-500 animate-pulse">Loading Workspace...</div>;
     if (!period) return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-red-500">Period Not Found</div>;
 
@@ -192,6 +387,19 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         <p className="text-xs text-gray-400 mt-1">Statement ending date: <strong className="text-gray-200">{new Date(period.PeriodEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
                     </div>
                     <div className="flex gap-3">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleFileUpload}
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded transition-colors text-sm border border-white/10"
+                        >
+                            Import Bank CSV
+                        </button>
                         <div className="flex rounded-md shadow-sm">
                             <button
                                 onClick={handleFinish}
@@ -311,65 +519,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                        {loading ? (
-                            <tr><td colSpan={9} className="py-8 text-center text-gray-500">Loading period data...</td></tr>
-                        ) : allItems.length === 0 ? (
-                            <tr><td colSpan={9} className="py-8 text-center text-gray-500">No transactions found for this period</td></tr>
-                        ) : (
-                            filteredItems.map(item => { // Changed from allItems.map to filteredItems.map
-                                const isCleared = clearedItems.has(item.id); // Use state for cleared status
-                                // For alternating row colors or hover effects if needed
-                                return (
-                                    <tr
-                                        key={`${item.type}-${item.id}`}
-                                        className={`
-                                            group transition-colors
-                                            ${isCleared ? 'bg-emerald-900/10' : 'hover:bg-white/5'}
-                                        `}
-                                        onClick={() => toggleClear(item.id, item.isPayment ? 'transaction' : 'batch')} // Use toggleClear
-                                    >
-                                        <td className="py-4 px-6 font-mono text-gray-300">
-                                            {new Date(item.date).toLocaleDateString()}
-                                        </td>
-                                        <td className="py-4 px-6 font-mono text-gray-400">
-                                            {item.clearedDate ? new Date(item.clearedDate).toLocaleDateString() : '-'}
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold border ${item.type === 'Deposit'
-                                                ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50'
-                                                : 'bg-rose-900/30 text-rose-400 border-rose-900/50'
-                                                }`}>
-                                                {item.type}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 text-gray-300">{item.ref}</td>
-                                        <td className="py-4 px-6 text-white font-medium">{item.payee}</td>
-                                        <td className="py-4 px-6 text-gray-400 truncate max-w-xs" title={item.memo}>{item.memo}</td>
-                                        <td className="py-4 px-6 text-right font-mono text-gray-300">
-                                            {item.isPayment ? item.amount.toFixed(2) : ''}
-                                        </td>
-                                        <td className="py-4 px-6 text-right font-mono text-white">
-                                            {!item.isPayment ? item.amount.toFixed(2) : ''}
-                                        </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <div className={`
-                                                w-5 h-5 mx-auto rounded-full border flex items-center justify-center transition-all
-                                                ${isCleared
-                                                    ? 'bg-emerald-500 border-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                                                    : 'border-white/20 group-hover:border-white/50'
-                                                }
-                                            `}>
-                                                {isCleared && (
-                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
+                        {renderTableBody()}
                     </tbody>
                 </table>
             </div>

@@ -580,19 +580,30 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
     );
 }
 
+
 function AddPledgeModal({ donorId, campaigns, onClose, onSave }: any) {
     const [amount, setAmount] = useState('');
+    const [isNewCampaign, setIsNewCampaign] = useState(false);
     const [campaign, setCampaign] = useState(campaigns[0] || '');
+    const [customCampaign, setCustomCampaign] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
+        const finalCampaign = isNewCampaign ? customCampaign : campaign;
+
+        if (!finalCampaign) {
+            alert('Please select or enter a campaign');
+            setSubmitting(false);
+            return;
+        }
+
         try {
             await fetch(`/api/people/${donorId}/pledges`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Amount: amount, MailCode: campaign })
+                body: JSON.stringify({ Amount: amount, MailCode: finalCampaign })
             });
             onSave();
         } catch (error) {
@@ -612,16 +623,38 @@ function AddPledgeModal({ donorId, campaigns, onClose, onSave }: any) {
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-xs uppercase text-gray-500 mb-1">Target Campaign</label>
-                        <select
-                            className="input-field w-full"
-                            value={campaign}
-                            onChange={e => setCampaign(e.target.value)}
-                            required
-                        >
-                            <option value="" disabled>Select a Campaign</option>
-                            {campaigns.map((c: string) => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-xs uppercase text-gray-500">Target Campaign</label>
+                            <button
+                                type="button"
+                                onClick={() => setIsNewCampaign(!isNewCampaign)}
+                                className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold uppercase tracking-wide"
+                            >
+                                {isNewCampaign ? 'Select Existing' : '+ Enter New'}
+                            </button>
+                        </div>
+
+                        {isNewCampaign ? (
+                            <input
+                                type="text"
+                                className="input-field w-full"
+                                value={customCampaign}
+                                onChange={e => setCustomCampaign(e.target.value)}
+                                placeholder="Enter campaign code (e.g. FALL24)"
+                                required={isNewCampaign}
+                                autoFocus
+                            />
+                        ) : (
+                            <select
+                                className="input-field w-full"
+                                value={campaign}
+                                onChange={e => setCampaign(e.target.value)}
+                                required={!isNewCampaign}
+                            >
+                                <option value="" disabled>Select a Campaign</option>
+                                {campaigns.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        )}
                         <p className="text-[10px] text-gray-500 mt-1">Pledges track progress against a specific Mail Code.</p>
                     </div>
                     <div>
@@ -630,11 +663,12 @@ function AddPledgeModal({ donorId, campaigns, onClose, onSave }: any) {
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                             <input
                                 type="number"
-                                className="input-field w-full pl-8"
+                                className="input-field w-full pl-8 font-mono text-white placeholder-gray-600"
                                 value={amount}
                                 onChange={e => setAmount(e.target.value)}
                                 placeholder="0.00"
                                 min="0"
+                                step="any"
                                 required
                             />
                         </div>
@@ -650,3 +684,4 @@ function AddPledgeModal({ donorId, campaigns, onClose, onSave }: any) {
         </div>
     );
 }
+
