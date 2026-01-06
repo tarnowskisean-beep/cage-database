@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         if (isAdmin) {
             // Admin sees all
             logsQuery = `
-                SELECT A.*, U."Username" as "ActorName" 
+                SELECT A.*, U."Username" as "Actor" 
                 FROM "AuditLogs" A
                 LEFT JOIN "Users" U ON A."UserID" = U."UserID"
                 ORDER BY A."CreatedAt" DESC 
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
             }
 
             logsQuery = `
-                SELECT DISTINCT A.*, U."Username" as "ActorName"
+                SELECT DISTINCT A.*, U."Username" as "Actor"
                 FROM "AuditLogs" A
                 JOIN "UserClients" UC ON A."UserID" = UC."UserID"
                 LEFT JOIN "Users" U ON A."UserID" = U."UserID"
