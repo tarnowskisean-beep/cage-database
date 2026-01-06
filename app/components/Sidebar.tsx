@@ -77,16 +77,7 @@ export default function Sidebar() {
             <nav className="flex-1 overflow-y-auto py-6 space-y-1 custom-scrollbar">
                 <ul className="space-y-1">
                     {/* Admin/Clerk specific tabs */}
-                    {session?.user?.role !== 'ClientUser' && (
-                        <>
-                            <NavItem href="/" icon="📊" label="Dashboard" active={pathname === '/'} collapsed={isCollapsed} />
-                            <NavItem href="/clients" icon="🏢" label="Clients" active={pathname === '/clients'} collapsed={isCollapsed} />
-                            <NavItem href="/batches" icon="📦" label="Batches" active={pathname.startsWith('/batches')} collapsed={isCollapsed} />
-                            <NavItem href="/import" icon="📥" label="Import Revenue" active={pathname.startsWith('/import')} collapsed={isCollapsed} />
-                            <NavItem href="/reconciliation" icon="⚖️" label="Reconciliation" active={pathname === '/reconciliation'} collapsed={isCollapsed} />
-                            <NavItem href="/journal" icon="📒" label="Journal Entries" active={pathname.startsWith('/journal')} collapsed={isCollapsed} />
-                        </>
-                    )}
+
 
                     {/* Dashboard/Search/People are allowed for ClientUser (Except original Dashboard link above was Admin only, need to fix) */}
                     {/* Actually, plan said ClientUser sees Dashboard. Let's restructure. */}
