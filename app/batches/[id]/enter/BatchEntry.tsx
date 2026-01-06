@@ -595,6 +595,5 @@ export default function BatchEntry({ id }: { id: string }) {
             </div>
 
         </div>
-        </div >
     );
 }
