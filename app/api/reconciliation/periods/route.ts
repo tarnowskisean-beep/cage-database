@@ -4,13 +4,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { query } from '@/lib/db';
 
-// GET /api/reconciliation/periods?clientId=1
+// GET /api/reconciliation/periods?clientId=1&accountId=2
 export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get('clientId');
+    const accountId = searchParams.get('accountId');
     const start = searchParams.get('start');
     const end = searchParams.get('end');
 
@@ -28,6 +29,10 @@ export async function GET(req: NextRequest) {
         if (clientId) {
             params.push(clientId);
             sql += ` AND p."ClientID" = $${params.length}`;
+        }
+        if (accountId) {
+            params.push(accountId);
+            sql += ` AND p."AccountID" = $${params.length}`;
         }
         if (start) {
             params.push(start);
@@ -56,9 +61,9 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { clientId, startDate, endDate } = body;
+        const { clientId, accountId, startDate, endDate } = body;
 
-        if (!clientId || !startDate || !endDate) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+        if (!clientId || !accountId || !startDate || !endDate) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
         const end = new Date(endDate);
         const transferDateKey = new Date(end);
@@ -67,10 +72,10 @@ export async function POST(req: NextRequest) {
 
         const res = await query(`
             INSERT INTO "ReconciliationPeriods" 
-            ("ClientID", "PeriodStartDate", "PeriodEndDate", "ScheduledTransferDate", "Status", "CreatedBy")
-            VALUES ($1, $2, $3, $4, 'Open', $5)
+            ("ClientID", "AccountID", "PeriodStartDate", "PeriodEndDate", "ScheduledTransferDate", "Status", "CreatedBy")
+            VALUES ($1, $2, $3, $4, $5, 'Open', $6)
             RETURNING "ReconciliationPeriodID"
-        `, [clientId, startDate, endDate, transferDate, userId]);
+        `, [clientId, accountId, startDate, endDate, transferDate, userId]);
 
         const periodId = res.rows[0].ReconciliationPeriodID;
 

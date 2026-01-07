@@ -15,9 +15,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const periodRes = await query(`
             SELECT 
                 p.*,
-                c."ClientName"
+                c."ClientName",
+                c."ClientCode",
+                a."AccountName",
+                a."BankName",
+                a."AccountType"
             FROM "ReconciliationPeriods" p
             LEFT JOIN "Clients" c ON p."ClientID" = c."ClientID"
+            LEFT JOIN "ClientBankAccounts" a ON p."AccountID" = a."AccountID"
             WHERE "ReconciliationPeriodID" = $1
         `, [id]);
 
@@ -35,6 +40,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // FIX: We need to query Batches by Date Range of the Period? Or add a Link Column.
         // Spec said "Any batch dated in this week".
         // Let's query Batches by Date Range + Status=Closed.
+        // We now have AccountID to filter by.
 
 
 
@@ -46,9 +52,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             SELECT "DonationID", "GiftDate", "GiftAmount", "TransactionType", "DonorID", "BatchID", "GiftPlatform"
             FROM "Donations"
             WHERE "ClientID" = $1
+            AND ("AccountID" = $4 OR "AccountID" IS NULL) 
             AND "GiftDate" >= $2 AND "GiftDate" <= $3
             AND "TransactionType" IN ('Refund', 'Chargeback', 'Void')
-        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
+        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate, period.AccountID]);
 
         // B. Fees (Associated with Donations in this period)
         // Note: Fees usually happen same day as gift.
@@ -56,9 +63,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             SELECT "DonationID", "GiftDate", "GiftFee", "TransactionType", "GiftPlatform"
             FROM "Donations"
             WHERE "ClientID" = $1
+            AND ("AccountID" = $4 OR "AccountID" IS NULL)
             AND "GiftDate" >= $2 AND "GiftDate" <= $3
             AND "GiftFee" > 0
-        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
+        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate, period.AccountID]);
 
         const payments = [];
 
@@ -96,10 +104,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             SELECT "BatchID", "Date", "BatchCode", "PaymentCategory", "Cleared", "EntryMode", "Description", "DefaultGiftPlatform"
             FROM "Batches"
             WHERE "ClientID" = $1 
+            AND ("AccountID" = $4 OR "AccountID" IS NULL)
             AND "Date" >= $2 AND "Date" <= $3
             AND "Status" IN ('Closed', 'Submitted')
             ORDER BY "Date" ASC
-        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate]);
+        `, [period.ClientID, period.PeriodStartDate, period.PeriodEndDate, period.AccountID]);
 
         const batches = [];
         for (const b of batchesRes.rows) {

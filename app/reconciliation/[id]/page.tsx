@@ -546,7 +546,7 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-white font-display flex items-center gap-3">
-                            {period.ClientCode || 'Account'} <span className="text-gray-600 font-light text-xl">|</span> Reconcile
+                            {period.ClientCode} <span className="text-gray-600 font-light text-xl">|</span> {period.AccountName || 'Main Operating'} <span className="text-gray-600 font-light text-xl">|</span> Reconcile
                         </h1>
                         <p className="text-xs text-gray-400 mt-1">Statement ending date: <strong className="text-gray-200">{new Date(period.PeriodEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
                     </div>

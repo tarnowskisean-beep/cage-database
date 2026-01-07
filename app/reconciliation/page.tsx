@@ -8,8 +8,10 @@ import { useRouter } from 'next/navigation';
 export default function ReconciliationStart() {
     const router = useRouter();
     const [clients, setClients] = useState<any[]>([]);
+    const [accounts, setAccounts] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         clientId: '',
+        accountId: '',
         endingDate: new Date().toISOString().slice(0, 10),
         endingBalance: '',
         beginningBalance: '0.00'
@@ -30,16 +32,36 @@ export default function ReconciliationStart() {
         }).catch(console.error);
     }, []);
 
-    // Fetch Last Statement Info & History
+    // Fetch Accounts when Client Changes
     useEffect(() => {
-        if (!formData.clientId) return;
+        if (!formData.clientId) {
+            setAccounts([]);
+            return;
+        }
+
+        fetch(`/api/clients/accounts?clientId=${formData.clientId}`)
+            .then(res => res.json())
+            .then(data => {
+                setAccounts(data || []);
+                if (data && data.length > 0) {
+                    setFormData(prev => ({ ...prev, accountId: data[0].AccountID }));
+                } else {
+                    setFormData(prev => ({ ...prev, accountId: '' }));
+                }
+            })
+            .catch(console.error);
+    }, [formData.clientId]);
+
+    // Fetch Last Statement Info & History (Depends on AccountID now)
+    useEffect(() => {
+        if (!formData.accountId) return;
 
         // Reset defaults
         setLastStatementDate(null);
         setStatementHistory([]);
         setFormData(prev => ({ ...prev, beginningBalance: '0.00' }));
 
-        fetch(`/api/reconciliation/periods?clientId=${formData.clientId}`, { cache: 'no-store' })
+        fetch(`/api/reconciliation/periods?clientId=${formData.clientId}&accountId=${formData.accountId}`, { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
                 const history = Array.isArray(data) ? data : [];
@@ -50,17 +72,17 @@ export default function ReconciliationStart() {
                     const d = new Date(last.PeriodEndDate);
                     setLastStatementDate(d.toLocaleDateString());
 
-                    // Auto-set the beginning balance from last period's ending if available?
-                    // For now, we'll leave it as manual or mock 100.00 if user preferred, 
-                    // but typically it comes from the last reconciled balance.
-                    // setFormData(prev => ({ ...prev, beginningBalance: last.EndingBalance || '0.00' }));
+                    // Auto-set beginning balance from last ending balance?
+                    if (last.EndingBalance) {
+                        setFormData(prev => ({ ...prev, beginningBalance: last.EndingBalance }));
+                    }
                 } else {
                     setLastStatementDate('No prior statements');
                 }
             })
             .catch(console.error);
 
-    }, [formData.clientId]);
+    }, [formData.clientId, formData.accountId]);
 
     const handleStart = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,6 +97,7 @@ export default function ReconciliationStart() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     clientId: formData.clientId,
+                    accountId: formData.accountId,
                     startDate: startDate,
                     endDate: formData.endingDate,
                     statementEndingBalance: parseFloat(formData.endingBalance)
@@ -125,8 +148,8 @@ export default function ReconciliationStart() {
 
                     <div className="flex gap-4 items-end">
                         <div className="w-full max-w-md">
-                            <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Account</label>
-                            <div className="relative">
+                            <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Client</label>
+                            <div className="relative mb-4">
                                 <select
                                     className="w-full bg-[#18181b] border border-white/10 rounded-lg px-4 py-3 text-white focus:border-white/30 focus:ring-1 focus:ring-white/20 outline-none transition-all appearance-none cursor-pointer hover:bg-[#27272a]"
                                     value={formData.clientId}
@@ -135,6 +158,26 @@ export default function ReconciliationStart() {
                                     {clients.map(c => (
                                         <option key={c.ClientID} value={c.ClientID}>
                                             {c.ClientCode} {c.ClientName}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+                                </div>
+                            </div>
+
+                            <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Bank Account</label>
+                            <div className="relative">
+                                <select
+                                    className="w-full bg-[#18181b] border border-white/10 rounded-lg px-4 py-3 text-white focus:border-white/30 focus:ring-1 focus:ring-white/20 outline-none transition-all appearance-none cursor-pointer hover:bg-[#27272a]"
+                                    value={formData.accountId}
+                                    onChange={e => setFormData({ ...formData, accountId: e.target.value })}
+                                    disabled={accounts.length === 0}
+                                >
+                                    {accounts.length === 0 && <option>Loading accounts...</option>}
+                                    {accounts.map(a => (
+                                        <option key={a.AccountID} value={a.AccountID}>
+                                            {a.AccountName} ({a.BankName} - {a.AccountType})
                                         </option>
                                     ))}
                                 </select>
