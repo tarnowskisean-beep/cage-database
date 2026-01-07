@@ -65,36 +65,32 @@ export default function SearchPage() {
     const [accounts, setAccounts] = useState<{ AccountID: number, AccountName: string }[]>([]);
 
     // --- FLAT FORM STATE ---
-    // We store both the OPERATOR and the VALUE for each field.
     const [formData, setFormData] = useState({
-        // Row 1
-        clientOp: 'equals', clientVal: '',
-        batchDateOp: 'equals', batchDateStart: '', batchDateEnd: '', // Date uses range implicitly often, but we can support op
+        // Row 1 (Priority)
+        lastNameOp: 'beginsWith', lastNameVal: '',
+        amountOp: 'equals', amountVal: '',
+        batchDateOp: 'equals', batchDateStart: '', batchDateEnd: '',
 
         // Row 2
+        zipCodeOp: 'beginsWith', zipCodeVal: '',
+        cityOp: 'beginsWith', cityVal: '', // NEW: City Field
+        clientOp: 'equals', clientVal: '',
+
+        // Row 3 (Secondary)
+        accountOp: 'contains', accountVal: '',
         batchCodeOp: 'equals', batchCodeVal: '',
         checkNoOp: 'contains', checkNoVal: '',
 
-        // Row 3
-        accountOp: 'contains', accountVal: '', // "Account" -> AccountID via dropdown
-        docTypeOp: 'equals', docTypeVal: '', // Gift Type
-
         // Row 4
-        amountOp: 'equals', amountVal: '',
-        zipCodeOp: 'beginsWith', zipCodeVal: '',
-
-        // Row 5
-        lastNameOp: 'beginsWith', lastNameVal: '',
-        statusOp: 'equals', statusVal: '', // Active / Inactive
-
-        // Row 6
+        docTypeOp: 'equals', docTypeVal: '',
+        statusOp: 'equals', statusVal: '',
         compositeIdOp: 'beginsWith', compositeIdVal: '',
         mailCodeOp: 'equals', mailCodeVal: ''
     });
 
     const [dateRangeType, setDateRangeType] = useState<'custom' | '12months' | 'all'>('custom');
 
-    // Load Clients & Default Dates
+    // Load Clients
     useEffect(() => {
         const range = getWeeklyRange();
         setFormData(prev => ({
@@ -109,26 +105,37 @@ export default function SearchPage() {
             .catch(err => console.error(err));
     }, []);
 
-    // Load Accounts when Client Selected
+    // Load Accounts
     useEffect(() => {
         if (formData.clientVal) {
-            // Find Client ID from Code
             const client = clients.find(c => c.ClientCode === formData.clientVal);
             if (client) {
                 fetch(`/api/clients/${client.ClientID}/accounts`)
                     .then(res => res.json())
                     .then(data => setAccounts(Array.isArray(data) ? data : []))
                     .catch(console.error);
-            } else {
-                setAccounts([]);
-            }
-        } else {
-            setAccounts([]);
-        }
+            } else { setAccounts([]); }
+        } else { setAccounts([]); }
     }, [formData.clientVal, clients]);
 
     const handleChange = (field: string, value: string) => {
+        // SMART DATE LOGIC
+        if (field === 'batchDateStart' || field === 'batchDateEnd') {
+            // Very simple check: if matching M/D/YY format, convert to YYYY-MM-DD
+            if (value.match(/^\d{1,2}\/\d{1,2}\/\d{2}$/)) {
+                const parts = value.split('/');
+                const y = parseInt(parts[2]) + 2000;
+                const m = parts[0].padStart(2, '0');
+                const d = parts[1].padStart(2, '0');
+                value = `${y}-${m}-${d}`;
+            }
+        }
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    // Keystroke Handler
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') handleSearch();
     };
 
     const handleSearch = async () => {
@@ -136,57 +143,27 @@ export default function SearchPage() {
         setSearched(true);
         try {
             const rules: SearchRule[] = [];
-
-            // Helper to add rule if value exists
             const add = (field: string, op: string, val: string) => {
                 if (!val) return;
-                // Map frontend operators to backend if needed, or backend supports them
-                // Backend likely supports: equals, contains, gt, lt, gte, lte, neq, beginsWith?
-                // If backend only supports standard SQL, we might need to adjust 'beginsWith' -> 'like' 'val%' in API
-                // For now, let's assume API handles standard set or we map 'beginsWith' to 'contains' if needed for safety,
-                // BUT user specifically asked for "Begins With".
-                // Let's pass 'beginsWith' and ensure backend handles it or we map it here.
-                // Note: The previous file defined RuleOperator without 'beginsWith'. 
-                // We'll map 'beginsWith' -> 'contains' effectively for now OR use 'gte'/'lte' for strings? 
-                // Actually 'beginsWith' isn't in the Type at top. Let's add it to type or map it to 'contains' (which is ILIKE %val%)
-                // *Correction*: User wants "Begins With". I will map it to 'beginsWith' in type and assume backend (Search API) can handle it 
-                // OR I will fix backend in next step. For UI consistency, I'll send it.
                 rules.push({ field, operator: op as RuleOperator, value: val });
             };
 
-            // 1. Client
-            add('clientCode', formData.clientOp, formData.clientVal);
-
-            // 2. Batch Code
-            add('batchCode', formData.batchCodeOp, formData.batchCodeVal);
-
-            // 3. Account ID
-            add('accountId', formData.accountOp, formData.accountVal);
-
-            // 4. Amount
-            add('amount', formData.amountOp, formData.amountVal);
-
-            // 5. Last Name
+            // PRIORITY FIELDS
             add('donorLastName', formData.lastNameOp, formData.lastNameVal);
-
-            // 6. Zip
+            add('amount', formData.amountOp, formData.amountVal);
             add('donorZip', formData.zipCodeOp, formData.zipCodeVal);
+            add('donorCity', formData.cityOp, formData.cityVal); // Mapped
 
-            // 7. Check Number
+            // SECONDARY FIELDS
+            add('clientCode', formData.clientOp, formData.clientVal);
+            add('batchCode', formData.batchCodeOp, formData.batchCodeVal);
+            add('accountId', formData.accountOp, formData.accountVal);
             add('checkNumber', formData.checkNoOp, formData.checkNoVal);
-
-            // 8. Doc Type
             add('giftType', formData.docTypeOp, formData.docTypeVal);
+            add('mailCode', formData.mailCodeOp, formData.mailCodeVal);
 
-            // 9. Status (IsInactive)
             if (formData.statusVal === 'Inactive') add('isInactive', 'equals', 'true');
             if (formData.statusVal === 'Active') add('isInactive', 'equals', 'false');
-
-            // 10. Composite ID
-            // add('scanString', formData.compositeIdOp, formData.compositeIdVal); // Assuming backend maps scanString
-
-            // 11. Mail Code
-            add('mailCode', formData.mailCodeOp, formData.mailCodeVal);
 
             // Dates
             if (dateRangeType === 'custom') {
@@ -219,7 +196,7 @@ export default function SearchPage() {
         setFormData(prev => ({
             ...prev,
             clientVal: '', batchCodeVal: '', accountVal: '',
-            amountVal: '', lastNameVal: '', zipCodeVal: '',
+            amountVal: '', lastNameVal: '', zipCodeVal: '', cityVal: '',
             checkNoVal: '', docTypeVal: '', statusVal: '',
             compositeIdVal: '', mailCodeVal: ''
         }));
@@ -260,17 +237,19 @@ export default function SearchPage() {
     const handleExportClick = () => setShowExportModal(true);
 
     const handleExportCSV = () => {
-        const headers = ['Date', 'Batch', 'Donor', 'Amount', 'Client', 'Method', 'ScanString'];
+        // ADDED: Comment, CheckNumber
+        const headers = ['Date', 'Batch', 'CheckNumber', 'Donor', 'Amount', 'Client', 'Method', 'Comment'];
         const csvContent = [
             headers.join(','),
             ...results.map(r => [
                 new Date(r.GiftDate).toLocaleDateString(),
                 r.BatchCode,
+                r.CheckNumber || '',
                 `"${r.DonorFirstName} ${r.DonorLastName}"`,
                 r.GiftAmount,
                 r.ClientCode,
                 r.GiftMethod,
-                r.ScanString || ''
+                `"${(r as any).Comment || ''}"` // Cast for Comment
             ].join(','))
         ].join('\n');
 
@@ -284,7 +263,6 @@ export default function SearchPage() {
     };
 
     const handleViewReport = () => {
-        // Construct query object to pass to report page
         const rules: any[] = [];
         if (formData.batchDateStart) rules.push({ field: 'date', operator: 'gte', value: formData.batchDateStart });
         if (formData.batchDateEnd) rules.push({ field: 'date', operator: 'lte', value: formData.batchDateEnd });
@@ -304,28 +282,31 @@ export default function SearchPage() {
 
     // --- RENDER HELPERS ---
     const OPERATOR_OPTIONS = [
-        { value: 'equals', label: 'EQUALS' },
-        { value: 'beginsWith', label: 'BEGINS WITH' },
-        { value: 'contains', label: 'CONTAINS' },
-        { value: 'gt', label: 'GREATER THAN' },
-        { value: 'lt', label: 'LESS THAN' },
+        { value: 'equals', label: '=' },
+        { value: 'beginsWith', label: 'Begins With' },
+        { value: 'contains', label: 'Contains' },
+        { value: 'gt', label: '>' },
+        { value: 'lt', label: '<' },
     ];
 
+    // UPDATED STYLE: Purple Accents
     const Row = ({ label, fieldKey, opKey, valKey, type = 'text', options = null }: any) => (
         <div className="flex items-center gap-2 mb-2">
-            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">{label}:</div>
+            <div className="w-24 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">{label}:</div>
             <select
-                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
+                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-8 rounded w-28 focus:border-purple-500 focus:outline-none"
                 value={formData[opKey as keyof typeof formData]}
                 onChange={e => handleChange(opKey, e.target.value)}
+                tabIndex={-1} // Skip tabbing operators
             >
                 {OPERATOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             {options ? (
                 <select
-                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none"
+                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-8 rounded flex-1 focus:border-purple-500 focus:outline-none"
                     value={formData[valKey as keyof typeof formData]}
                     onChange={e => handleChange(valKey, e.target.value)}
+                    onKeyDown={handleKeyDown}
                 >
                     <option value="" className="text-black">(Select)</option>
                     {options.map((o: any) => <option key={o} value={o} className="text-black">{o}</option>)}
@@ -333,13 +314,12 @@ export default function SearchPage() {
             ) : (
                 <input
                     type={type}
-                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none placeholder-gray-600"
+                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-8 rounded flex-1 focus:border-purple-500 focus:outline-none placeholder-gray-600"
                     value={formData[valKey as keyof typeof formData]}
                     onChange={e => handleChange(valKey, e.target.value)}
+                    onKeyDown={handleKeyDown}
                 />
             )}
-            {/* Checkbox Placeholder */}
-            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
         </div>
     );
 
@@ -354,24 +334,88 @@ export default function SearchPage() {
             </header>
 
             {/* DENSE SEARCH FORM PANEL */}
-            <div className="glass-panel p-6 mb-8">
+            <div className="glass-panel p-6 mb-8 border-t-4 border-purple-500/50">
                 <div className="grid grid-cols-2 gap-x-12 gap-y-1">
 
-                    {/* LEFT COLUMN */}
+                    {/* LEFT COLUMN: PRIORITY FIELDS */}
                     <div>
+                        <div className="mb-4 pb-2 border-b border-white/5 text-xs font-bold text-purple-400 uppercase flex items-center gap-2">
+                            <span>🔍 Primary Criteria</span>
+                        </div>
+                        <Row label="Last Name" fieldKey="donorLastName" opKey="lastNameOp" valKey="lastNameVal" />
+                        <Row label="Amount" fieldKey="amount" opKey="amountOp" valKey="amountVal" type="number" />
+                        <Row label="ZipCode" fieldKey="donorZip" opKey="zipCodeOp" valKey="zipCodeVal" />
+                        <Row label="City" fieldKey="donorCity" opKey="cityOp" valKey="cityVal" />
 
-                        {/* Account Dropdown (Dynamic) */}
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Account:</div>
+                        <div className="flex items-center gap-2 mb-2 mt-4">
+                            <div className="w-24 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Start Date:</div>
                             <select
-                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
-                                value={formData.accountOp}
-                                onChange={e => handleChange('accountOp', e.target.value)}
+                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-8 rounded w-28 focus:border-purple-500 focus:outline-none"
+                                value={formData.batchDateOp}
+                                onChange={e => handleChange('batchDateOp', e.target.value)}
+                                tabIndex={-1}
                             >
-                                <option value="equals">EQUALS</option>
+                                <option value="equals">=</option>
+                                <option value="between">Between</option>
+                            </select>
+                            <input
+                                placeholder="mm/dd/yy"
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-8 rounded w-32 focus:border-purple-500 focus:outline-none uppercase font-mono"
+                                value={formData.batchDateStart}
+                                onChange={e => handleChange('batchDateStart', e.target.value)}
+                                onKeyDown={handleKeyDown}
+                            />
+                            {formData.batchDateOp === 'between' && (
+                                <input
+                                    placeholder="End Date"
+                                    className="bg-white/5 border border-white/10 text-white text-xs p-1 h-8 rounded w-32 focus:border-purple-500 focus:outline-none uppercase font-mono"
+                                    value={formData.batchDateEnd}
+                                    onChange={e => handleChange('batchDateEnd', e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: SECONDARY */}
+                    <div>
+                        <div className="mb-4 pb-2 border-b border-white/5 text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                            <span>⚙️ Advanced Filters</span>
+                        </div>
+                        {/* Client Dropdown override */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-24 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Client ID:</div>
+                            <select
+                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-8 rounded w-28 focus:border-purple-500 focus:outline-none"
+                                value={formData.clientOp}
+                                onChange={e => handleChange('clientOp', e.target.value)}
+                                tabIndex={-1}
+                            >
+                                {OPERATOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <select
-                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-8 rounded flex-1 focus:border-purple-500 focus:outline-none"
+                                value={formData.clientVal}
+                                onChange={e => handleChange('clientVal', e.target.value)}
+                            >
+                                <option value="" className="text-black">(All)</option>
+                                {clients.map(c => <option key={c.ClientCode} value={c.ClientCode} className="text-black">{c.ClientCode}</option>)}
+                            </select>
+                        </div>
+
+                        {/* Account Dropdown */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-24 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Account:</div>
+                            <select
+                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-8 rounded w-28 focus:border-purple-500 focus:outline-none"
+                                value={formData.accountOp}
+                                onChange={e => handleChange('accountOp', e.target.value)}
+                                tabIndex={-1}
+                            >
+                                <option value="equals">=</option>
+                            </select>
+                            <select
+                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-8 rounded flex-1 focus:border-purple-500 focus:outline-none disabled:opacity-50"
                                 value={formData.accountVal}
                                 onChange={e => handleChange('accountVal', e.target.value)}
                                 disabled={!formData.clientVal || accounts.length === 0}
@@ -383,85 +427,13 @@ export default function SearchPage() {
                                     <option key={a.AccountID} value={a.AccountID} className="text-black">{a.AccountName}</option>
                                 ))}
                             </select>
-                            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
                         </div>
+
                         <Row label="Batch No" fieldKey="batchCode" opKey="batchCodeOp" valKey="batchCodeVal" />
-
-                        {/* Client Dropdown override */}
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Client ID:</div>
-                            <select
-                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
-                                value={formData.clientOp}
-                                onChange={e => handleChange('clientOp', e.target.value)}
-                            >
-                                {OPERATOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                            </select>
-                            <select
-                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded flex-1 focus:border-blue-500 focus:outline-none"
-                                value={formData.clientVal}
-                                onChange={e => handleChange('clientVal', e.target.value)}
-                            >
-                                <option value="" className="text-black">(All)</option>
-                                {clients.map(c => <option key={c.ClientCode} value={c.ClientCode} className="text-black">{c.ClientCode}</option>)}
-                            </select>
-                            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
-                        </div>
-
-                        <Row label="Amount" fieldKey="amount" opKey="amountOp" valKey="amountVal" type="number" />
-                        <Row label="Lastname" fieldKey="donorLastName" opKey="lastNameOp" valKey="lastNameVal" />
-                        <Row label="ZipCode" fieldKey="donorZip" opKey="zipCodeOp" valKey="zipCodeVal" />
-                        <Row label="Mail Code" fieldKey="mailCode" opKey="mailCodeOp" valKey="mailCodeVal" />
-                    </div>
-
-                    {/* RIGHT COLUMN */}
-                    <div>
-                        {/* Date - Custom Layout */}
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-32 text-right text-xs font-bold text-gray-400 uppercase tracking-wide">Batch Date:</div>
-                            <select
-                                className="bg-zinc-900 border border-white/10 text-white text-xs p-1 h-7 rounded w-32 focus:border-blue-500 focus:outline-none"
-                                value={formData.batchDateOp}
-                                onChange={e => handleChange('batchDateOp', e.target.value)}
-                            >
-                                <option value="equals">EQUALS</option>
-                                <option value="between">BETWEEN</option>
-                            </select>
-                            <input
-                                type="date"
-                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded w-28 focus:border-blue-500 focus:outline-none uppercase font-mono"
-                                value={formData.batchDateStart}
-                                onChange={e => handleChange('batchDateStart', e.target.value)}
-                            />
-                            <input
-                                type="date"
-                                className="bg-white/5 border border-white/10 text-white text-xs p-1 h-7 rounded w-28 focus:border-blue-500 focus:outline-none uppercase font-mono"
-                                value={formData.batchDateEnd}
-                                onChange={e => handleChange('batchDateEnd', e.target.value)}
-                            />
-                            <input type="checkbox" checked readOnly className="ml-1 accent-blue-500" />
-                        </div>
-
                         <Row label="Check No" fieldKey="checkNumber" opKey="checkNoOp" valKey="checkNoVal" />
                         <Row label="Doc Type" fieldKey="giftType" opKey="docTypeOp" valKey="docTypeVal" options={['Check', 'Cash', 'Credit Card', 'EFT']} />
                         <Row label="Status" fieldKey="isInactive" opKey="statusOp" valKey="statusVal" options={['Active', 'Inactive']} />
-                        <Row label="Full ID" fieldKey="scanString" opKey="compositeIdOp" valKey="compositeIdVal" />
-
-                        {/* Radio Option */}
-                        <div className="flex justify-end gap-4 mt-4 text-xs font-bold text-gray-400">
-                            <label className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                                <input type="radio" name="range" checked={dateRangeType === '12months'} onChange={() => setDateRangeType('12months')} className="accent-blue-500" />
-                                Search Prior 12 Months
-                            </label>
-                            <label className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                                <input type="radio" name="range" checked={dateRangeType === 'all'} onChange={() => setDateRangeType('all')} className="accent-blue-500" />
-                                Search Entire Archive
-                            </label>
-                            <label className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                                <input type="radio" name="range" checked={dateRangeType === 'custom'} onChange={() => setDateRangeType('custom')} className="accent-blue-500" />
-                                Custom Range
-                            </label>
-                        </div>
+                        <Row label="Mail Code" fieldKey="mailCode" opKey="mailCodeOp" valKey="mailCodeVal" />
                     </div>
                 </div>
 
@@ -498,13 +470,13 @@ export default function SearchPage() {
 
                     <button
                         onClick={handleSearch}
-                        className="btn-primary py-1 px-6 text-xs"
+                        className="btn-primary py-2 px-8 text-sm bg-purple-600 hover:bg-purple-500 text-white border-0 shadow-lg shadow-purple-900/20"
                     >
-                        Search
+                        Search (Enter)
                     </button>
                     <button
                         onClick={handleExportClick}
-                        className="btn-secondary py-1 px-6 text-xs"
+                        className="btn-secondary py-2 px-6 text-sm"
                         disabled={results.length === 0}
                     >
                         Export
@@ -520,10 +492,10 @@ export default function SearchPage() {
 
             {/* RESULTS LIST */}
             {searched && (
-                <div className="glass-panel text-sm overflow-hidden min-h-[400px] flex flex-col mb-12">
+                <div className="glass-panel text-sm overflow-hidden min-h-[400px] flex flex-col mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
                         <div className="flex items-center gap-4">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Results</h3>
+                            <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest">Results</h3>
                             <span className="text-xs text-gray-500 font-mono">{results.length} records found</span>
                         </div>
                         {/* Pagination Indicators */}
@@ -556,6 +528,7 @@ export default function SearchPage() {
                                 <tr>
                                     <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Date</th>
                                     <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Batch</th>
+                                    <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Check #</th>
                                     <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Donor / Account</th>
                                     <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Amount</th>
                                     <th className="p-3 font-bold text-gray-400 uppercase tracking-wider">Client</th>
@@ -565,23 +538,25 @@ export default function SearchPage() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">Searching...</td></tr>
+                                    <tr><td colSpan={8} className="p-8 text-center text-gray-500">Searching...</td></tr>
                                 ) : results.length === 0 ? (
-                                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">No records found matching criteria.</td></tr>
+                                    <tr><td colSpan={8} className="p-8 text-center text-gray-500">No records found matching criteria.</td></tr>
                                 ) : (
                                     paginatedResults().map(r => (
                                         <tr key={r.DonationID} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
                                             <td className="p-3 text-gray-400 font-mono">{new Date(r.GiftDate).toLocaleDateString()}</td>
                                             <td className="p-3 font-mono text-gray-500 group-hover:text-gray-300">{r.BatchCode}</td>
+                                            <td className="p-3 font-mono text-gray-400">{r.CheckNumber || '-'}</td>
                                             <td className="p-3">
                                                 <div className="font-bold text-white">{r.DonorFirstName} {r.DonorLastName}</div>
                                                 <div className="text-[10px] text-gray-500">{r.DonorCity}, {r.DonorState}</div>
+                                                {(r as any).Comment && <div className="text-[10px] text-purple-400 italic max-w-[200px] truncate">{`"${(r as any).Comment}"`}</div>}
                                             </td>
                                             <td className="p-3 font-mono text-white">${Number(r.GiftAmount).toFixed(2)}</td>
                                             <td className="p-3 text-gray-400">{r.ClientCode}</td>
                                             <td className="p-3 text-gray-400">{r.GiftMethod}</td>
                                             <td className="p-3">
-                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-blue-400 hover:text-blue-300 font-bold uppercase text-[10px] tracking-wider">
+                                                <Link href={`/batches/${r.BatchID}/enter`} className="text-purple-400 hover:text-purple-300 font-bold uppercase text-[10px] tracking-wider">
                                                     VIEW &rarr;
                                                 </Link>
                                             </td>
@@ -604,7 +579,7 @@ export default function SearchPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 onClick={handleExportCSV}
-                                className="flex flex-col items-center justify-center gap-3 p-6 rounded border border-white/10 bg-white/5 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-6 rounded border border-white/10 bg-white/5 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all group"
                             >
                                 <span className="text-3xl">📄</span>
                                 <span className="text-sm font-bold text-gray-300 group-hover:text-white">Download CSV</span>
@@ -612,7 +587,7 @@ export default function SearchPage() {
 
                             <button
                                 onClick={handleViewReport}
-                                className="flex flex-col items-center justify-center gap-3 p-6 rounded border border-white/10 bg-white/5 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-6 rounded border border-white/10 bg-white/5 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all group"
                             >
                                 <span className="text-3xl">📊</span>
                                 <span className="text-sm font-bold text-gray-300 group-hover:text-white">PDF Report</span>

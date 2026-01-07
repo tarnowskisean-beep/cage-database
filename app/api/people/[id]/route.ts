@@ -24,6 +24,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         if (donorRes.rows.length === 0) return NextResponse.json({ error: 'Donor not found' }, { status: 404 });
         const donor = donorRes.rows[0];
 
+        // Generate Signed URL for Profile Picture if exists
+        if (donor.ProfilePicture && process.env.GCS_BUCKET_NAME && process.env.GDRIVE_CREDENTIALS) {
+            try {
+                // Reuse Storage instance logic? Or import it? 
+                // For now, inline to avoid large refactors, but ideally should be a lib function.
+                const { Storage } = await import('@google-cloud/storage');
+                const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
+                const storage = new Storage({
+                    projectId: credentials.project_id,
+                    credentials,
+                });
+                const [signedUrl] = await storage
+                    .bucket(process.env.GCS_BUCKET_NAME)
+                    .file(donor.ProfilePicture)
+                    .getSignedUrl({
+                        version: 'v4',
+                        action: 'read',
+                        expires: Date.now() + 60 * 60 * 1000, // 1 hour
+                    });
+                donor.ProfilePictureUrl = signedUrl;
+            } catch (e) {
+                console.error('Error signing profile picture URL', e);
+            }
+        }
+
         // 2. Get Donation History
         const historyRes = await query(`
             SELECT 
@@ -104,16 +129,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     try {
         const body = await req.json();
-        const { FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID } = body;
+        const { FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID, ProfilePicture } = body;
 
         await query(`
             UPDATE "Donors"
             SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Phone" = $4,
                 "Address" = $5, "City" = $6, "State" = $7, "Zip" = $8,
                 "Bio" = $9, "AssignedStafferID" = $10,
+                "ProfilePicture" = COALESCE($12, "ProfilePicture"),
                 "UpdatedAt" = NOW()
             WHERE "DonorID" = $11
-        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID || null, id]);
+        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID || null, id, ProfilePicture]);
 
         return NextResponse.json({ success: true });
     } catch (e: any) {

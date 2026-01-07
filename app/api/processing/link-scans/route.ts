@@ -113,10 +113,12 @@ export async function POST(request: Request) {
             1. Donor Name (fuzzy)
             2. Amount (exact)
             3. Page Number where this donation appears (1-indexed).
+            4. Check Number (if visible/applicable)
+            5. Memo line or Handwritten notes (capture exactly as written)
 
             Return ONLY a valid JSON array of objects:
             [
-                { "name": "John Doe", "amount": 100.00, "page": 1 },
+                { "name": "John Doe", "amount": 100.00, "page": 1, "check_number": "1234", "memo": "In memory of X" },
                 ...
             ]
         `;
@@ -165,12 +167,19 @@ export async function POST(request: Request) {
                     const isNameMatch = dbParts.some((part: string) => part.length > 2 && extName.includes(part));
 
                     if (isNameMatch) {
-                        // UPDATE
+                        // UPDATE with Check Number and Memo
                         await query(
                             `UPDATE "Donations" 
-                              SET "ScanDocumentID" = $1, "ScanPageNumber" = $2 
-                              WHERE "DonationID" = $3`,
-                            [documentId, extracted.page, donation.DonationID]
+                              SET "ScanDocumentID" = $1, 
+                                  "ScanPageNumber" = $2,
+                                  "SecondaryID" = COALESCE(NULLIF($3, ''), "SecondaryID"),
+                                  "CheckNumber" = COALESCE(NULLIF($3, ''), "CheckNumber"),
+                                  "Comment" = CASE 
+                                      WHEN "Comment" IS NULL OR "Comment" = '' THEN $4 
+                                      ELSE "Comment" || ' | ' || $4 
+                                  END
+                              WHERE "DonationID" = $5`,
+                            [documentId, extracted.page, extracted.check_number || null, extracted.memo || null, donation.DonationID]
                         );
                         matchCount++;
                         break; // Don't match same extraction to multiple checks (simplistic)

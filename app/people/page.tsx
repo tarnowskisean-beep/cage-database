@@ -13,11 +13,14 @@ function PeopleContent() {
     const initialCity = searchParams.get('city') || '';
     const initialClientId = searchParams.get('clientId') || '';
 
+    const initialCampaign = searchParams.get('campaign') || '';
+
     // Local state for input to avoid re-fetching on every keystroke
     const [searchTerm, setSearchTerm] = useState(q);
     const [minAmount, setMinAmount] = useState(initialMin);
     const [city, setCity] = useState(initialCity);
     const [clientId, setClientId] = useState(initialClientId);
+    const [campaign, setCampaign] = useState(initialCampaign);
     const [assignedToMe, setAssignedToMe] = useState(false);
 
     const [donors, setDonors] = useState<any[]>([]);
@@ -36,6 +39,7 @@ function PeopleContent() {
         if (initialMin) params.set('min', initialMin);
         if (initialCity) params.set('city', initialCity);
         if (initialClientId) params.set('clientId', initialClientId);
+        if (initialCampaign) params.set('campaign', initialCampaign);
         if (assignedToMe) params.set('assignedTo', 'me');
 
         fetch(`/api/people?${params.toString()}`)
@@ -47,7 +51,7 @@ function PeopleContent() {
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [q, initialMin, initialCity, initialClientId, assignedToMe]);
+    }, [q, initialMin, initialCity, initialClientId, initialCampaign, assignedToMe]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,6 +60,7 @@ function PeopleContent() {
         if (minAmount) params.set('min', minAmount);
         if (city) params.set('city', city);
         if (clientId) params.set('clientId', clientId);
+        if (campaign) params.set('campaign', campaign);
         if (assignedToMe) params.set('assignedTo', 'me');
 
         router.push(`/people?${params.toString()}`);
@@ -139,6 +144,18 @@ function PeopleContent() {
                     >
                         My Donors
                     </button>
+
+
+                    {/* Campaign Filter */}
+                    <div className="relative flex-1 md:w-32 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                        <input
+                            type="text"
+                            placeholder="Campaign"
+                            className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 pl-3 py-2"
+                            value={campaign}
+                            onChange={e => setCampaign(e.target.value)}
+                        />
+                    </div>
 
                     {/* Submit Button (Icon) */}
                     <button type="submit" className="px-4 bg-white text-black rounded hover:bg-gray-200 transition-colors flex items-center justify-center">

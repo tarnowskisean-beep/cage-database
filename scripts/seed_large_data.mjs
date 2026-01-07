@@ -176,6 +176,49 @@ async function main() {
             ]);
         }
 
+        // 7. Create Notes
+        console.log('Creating Notes...');
+        for (let i = 0; i < 200; i++) {
+            const donorId = faker.helpers.arrayElement(donorIds);
+            // Check if table exists first or wrap in try/catch if uncertain, but usually it exists.
+            // Based on API route, cols are DonorID, AuthorName, Content.
+            try {
+                await db.query(`
+                    INSERT INTO "DonorNotes" ("DonorID", "AuthorName", "Content", "CreatedAt")
+                    VALUES ($1, $2, $3, $4)
+                `, [
+                    donorId,
+                    faker.person.fullName(), // Author Name
+                    faker.lorem.paragraph(),
+                    faker.date.recent()
+                ]);
+            } catch (e) {
+                // Ignore if table missing (unlikely)
+                console.warn("Failed to insert note:", e.message);
+            }
+        }
+
+        // 8. Create Files (Dummy)
+        console.log('Creating Files...');
+        for (let i = 0; i < 50; i++) {
+            const donorId = faker.helpers.arrayElement(donorIds);
+            try {
+                await db.query(`
+                    INSERT INTO "DonorFiles" ("DonorID", "FileName", "StorageKey", "FileSize", "MimeType", "UploadedBy")
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                `, [
+                    donorId,
+                    faker.system.fileName(),
+                    `dummy/path/${faker.system.fileName()}`,
+                    faker.number.int({ min: 1024, max: 5000000 }), // logical bytes
+                    'application/pdf',
+                    adminUser
+                ]);
+            } catch (e) {
+                console.warn("Failed to insert file:", e.message);
+            }
+        }
+
         console.log('✅ Seeding Complete!');
 
     } catch (e) {

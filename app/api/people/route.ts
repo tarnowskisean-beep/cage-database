@@ -88,6 +88,39 @@ export async function GET(req: NextRequest) {
             paramIdx++;
         }
 
+        const campaignParam = searchParams.get('campaign');
+        if (campaignParam) {
+            params.push(campaignParam);
+            // We need to filter the SUM/COUNT based on the campaign, or just filter the donors who HAVE given to this campaign?
+            // "Filter a group of donors who give to X campaign and give over $300 [to that campaign? or total?]"
+            // Usually simpler to filter donors who have at least one gift to X, and THEN check totals. 
+            // BUT if we want "gave > $300 TO campaign X", we need to filter the JOIN or the WHERE inside aggregate.
+            // Let's assume filter the donors where ANY donation matches, and the totals reflect THAT match or Global?
+            // The prompt says "give to X campaign AND give over $300". This implies the $300 is aggregate.
+            // Let's filter the LEFT JOIN to only include relevant donations if campaign is selected?
+            // No, that would mess up "Lifetime Value" if we want their TOTAL value but only if they gave to X.
+            // PROBABLY: Users expect "Show me everyone who gave to X", and "Total Giving" usually means Total.
+            // BUT "Give > $300" in this context likely means "Give > $300 TO THIS CAMPAIGN".
+            // Let's try to filter the JOIN. Then LTV = LTV *for that campaign*.
+            // This is usually what segmentation means.
+        }
+
+        // RE-WRITING QUERY CONSTRUCTION TO HANDLE FILTERS IN JOIN
+        // If we want LTV to be "Total Giving *Matching Filters*", we put filters in the ON or WHERE of the JOIN/Subquery.
+        // Current query: LEFT JOIN "Donations" don ON d."DonorID" = don."DonorID" WHERE ...
+        // If we add `AND don."MailCode" = $Campaign` to WHERE, it filters Rows. Inner Join-like behavior for Aggregates.
+        // If a donor didn't give to campaign, they vanish (TotalGifts=0, LTV=null -> likely filtered out if we use Inner Join or Having > 0).
+
+        // Let's stick to the current structure but add the condition to WHERE. 
+        // Since it's a LEFT JOIN, adding a WHERE clause on the right table turns it into an INNER JOIN effectively 
+        // (unless we allow NULLs, but we want to filter by specific value).
+
+        if (campaignParam) {
+            params.push(campaignParam);
+            sql += ` AND don."MailCode" = $${paramIdx}`;
+            paramIdx++;
+        }
+
         const assignedTo = searchParams.get('assignedTo');
         if (assignedTo === 'me') {
             // @ts-ignore

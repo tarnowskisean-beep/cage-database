@@ -373,6 +373,14 @@ export default function BatchEntry({ id }: { id: string }) {
                                     </Select>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Check Number</Label>
+                                    <Input
+                                        value={formData.checkNumber}
+                                        onChange={handleChange('checkNumber')}
+                                        placeholder="(Auto-captured by AI)"
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Yes Inactive</Label>
                                     <Select value={formData.isInactive} onChange={handleChange('isInactive')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
                                         {YES_NO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}

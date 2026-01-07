@@ -38,6 +38,7 @@ export function generateJournalRows(donations: any[], template: Template) {
                 .replace(/{DonorName}/g, `${donation.FirstName || ''} ${donation.LastName || ''}`.trim())
                 .replace(/{PaymentMethod}/g, donation.GiftMethod || '')
                 .replace(/{CheckNumber}/g, donation.CheckNumber || '')
+                .replace(/{Comment}/g, donation.Comment || '')
                 .replace(/{Platform}/g, donation.GiftPlatform || '')
                 .replace(/{TransactionType}/g, donation.TransactionType || '')
                 .replace(/{Fund}/g, '') // Placeholder for future

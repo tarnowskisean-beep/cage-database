@@ -81,12 +81,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 metadata: { contentType: file.type }
             });
 
-            await query(`
+            const fileRes = await query(`
                 INSERT INTO "DonorFiles" ("DonorID", "FileName", "StorageKey", "FileSize", "MimeType", "UploadedBy")
                 VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING "FileID", "StorageKey"
             `, [id, filename, storageKey, file.size, file.type, userId]);
 
-            return NextResponse.json({ success: true });
+            return NextResponse.json({ success: true, file: fileRes.rows[0] });
         } else {
             // Fallback for dev without GCS? Or error?
             // If local, maybe just error out or pretend

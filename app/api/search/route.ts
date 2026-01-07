@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 // Types for our Query Builder
 type Operator = 'AND' | 'OR';
-type RuleOperator = 'equals' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'neq';
+type RuleOperator = 'equals' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'neq' | 'beginsWith';
 
 interface SearchRule {
     field: string;
@@ -86,6 +86,9 @@ function buildWhereClause(group: SearchGroup, params: (string | number | boolean
                 case 'lte':
                     params.push(r.value);
                     return `${dbField} <= $${paramIndex}`;
+                case 'beginsWith':
+                    params.push(`${r.value}%`);
+                    return `${dbField} ILIKE $${paramIndex}`;
                 default:
                     return '1=1';
             }

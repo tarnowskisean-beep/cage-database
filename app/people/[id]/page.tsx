@@ -121,8 +121,13 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             <div className="glass-panel p-8 mb-8 relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
                     {/* Avatar */}
-                    <div className="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 text-white flex items-center justify-center font-display text-3xl shadow-lg shrink-0">
-                        {donor.FirstName?.[0]}{donor.LastName?.[0]}
+                    <div className="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 text-white flex items-center justify-center font-display text-3xl shadow-lg shrink-0 overflow-hidden relative">
+                        {donor.ProfilePictureUrl ? (
+                            <img src={donor.ProfilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                            <span>{donor.FirstName?.[0]}{donor.LastName?.[0]}</span>
+                        )}
+                        {/* Camera Icon Overlay (Optional, could link to edit) */}
                     </div>
 
                     {/* Info */}
@@ -409,7 +414,26 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-300">
-                                            {h.Designation || '-'}
+                                            {/* Designation Editable Cell */}
+                                            <div className="group/edit relative flex items-center gap-2">
+                                                <span>{h.Designation || '-'}</span>
+                                                <button
+                                                    onClick={() => {
+                                                        const newVal = prompt("Update Designation:", h.Designation || '');
+                                                        if (newVal !== null && newVal !== h.Designation) {
+                                                            fetch(`/api/donations/${h.DonationID}`, {
+                                                                method: 'PUT',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ Designation: newVal })
+                                                            }).then(() => fetchData());
+                                                        }
+                                                    }}
+                                                    className="opacity-0 group-hover/edit:opacity-100 text-gray-500 hover:text-white transition-opacity"
+                                                    title="Edit Designation"
+                                                >
+                                                    ✎
+                                                </button>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">
@@ -577,10 +601,30 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
         e.preventDefault();
         setSaving(true);
         try {
+            let profilePicKey = donor.ProfilePicture;
+
+            // Handle Profile Picture Upload if new file selected
+            const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+            if (fileInput?.files?.[0]) {
+                const file = fileInput.files[0];
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('type', 'ProfilePicture');
+
+                const uploadRes = await fetch(`/api/people/${donor.DonorID}/files`, { method: 'POST', body: fd });
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.file && uploadData.file.StorageKey) {
+                        profilePicKey = uploadData.file.StorageKey;
+                    }
+                }
+            }
+
+            // Submit Profile Data
             await fetch(`/api/people/${donor.DonorID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, ProfilePicture: profilePicKey })
             });
             onSave();
         } catch (error) {
@@ -609,6 +653,18 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
                             <input className="input-field w-full" value={formData.LastName} onChange={e => setFormData({ ...formData, LastName: e.target.value })} required />
                         </div>
                     </div>
+
+                    {/* Profile Picture Input */}
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">Profile Picture</label>
+                        <input
+                            type="file"
+                            id="avatar-upload"
+                            accept="image/*"
+                            className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
+                        />
+                    </div>
+
                     {/* Bio & Assigned Staffer */}
                     <div>
                         <label className="block text-xs uppercase text-gray-500 mb-1">Bio</label>
