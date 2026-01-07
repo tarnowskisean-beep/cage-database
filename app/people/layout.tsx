@@ -3,9 +3,22 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function PeopleLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const [stats, setStats] = useState({ review: 0, acknowledgements: 0 });
+
+    useEffect(() => {
+        fetch('/api/people/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data && typeof data.review === 'number') {
+                    setStats(data);
+                }
+            })
+            .catch(console.error);
+    }, [pathname]); // Re-fetch on navigation (e.g. after resolving item)
 
     return (
         <div className="max-w-[1600px] mx-auto px-6 py-8">
@@ -32,6 +45,11 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                             }`}
                     >
                         Client Review queue
+                        {stats.review > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${pathname === '/people/resolution' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-yellow-900/30 text-yellow-600 group-hover:text-yellow-500'}`}>
+                                {stats.review}
+                            </span>
+                        )}
                     </Link>
                     <Link
                         href="/people/acknowledgements"
@@ -41,6 +59,11 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                             }`}
                     >
                         Acknowledgements
+                        {stats.acknowledgements > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${pathname === '/people/acknowledgements' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-900/30 text-emerald-600 group-hover:text-emerald-500'}`}>
+                                {stats.acknowledgements}
+                            </span>
+                        )}
                     </Link>
                 </div>
             </header>

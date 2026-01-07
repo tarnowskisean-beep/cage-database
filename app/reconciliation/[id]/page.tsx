@@ -671,7 +671,18 @@ export default function ReconciliationDetail({ params }: { params: Promise<{ id:
                                 <div className="text-xs text-gray-500 truncate">{bt.Reference || 'No Ref'}</div>
 
                                 {/* Hover Action */}
-                                <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    {bt.Amount > 0 && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openCreateBatchModal(bt);
+                                            }}
+                                            className="text-[10px] bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded border border-emerald-600/30 uppercase font-bold hover:bg-emerald-600/40"
+                                        >
+                                            + Batch
+                                        </button>
+                                    )}
                                     <span className="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-1 rounded border border-blue-600/30 uppercase font-bold">Match &rarr;</span>
                                 </div>
                             </div>

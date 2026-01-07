@@ -414,6 +414,11 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
             data.append('code', formData.code);
             data.append('clientType', formData.clientType);
             data.append('status', formData.status);
+            if (!client) {
+                // If creating, include initial bank account
+                // Backend parses this JSON string from the FormData
+                data.append('initialAccount', JSON.stringify(newAccount));
+            }
             if (logoFile) data.append('logo', logoFile);
 
             const res = await fetch(url, {
@@ -509,6 +514,46 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                             />
                         </div>
                     </div>
+
+                    {/* New Client: Initial Bank Account */}
+                    {!client && (
+                        <div className="border-t border-white/10 pt-6">
+                            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Primary Bank Account (Required)</h3>
+                            <div className="grid grid-cols-2 gap-3 p-4 bg-zinc-900 border border-emerald-500/30 rounded">
+                                <input
+                                    placeholder="Account Name (e.g. Main Operating)"
+                                    className="input-field text-xs"
+                                    value={newAccount.accountName}
+                                    onChange={e => setNewAccount({ ...newAccount, accountName: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    placeholder="Bank Name (e.g. Chase)"
+                                    className="input-field text-xs"
+                                    value={newAccount.bankName}
+                                    onChange={e => setNewAccount({ ...newAccount, bankName: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    placeholder="Account Number (Last 4)"
+                                    className="input-field text-xs"
+                                    value={newAccount.accountNumber}
+                                    onChange={e => setNewAccount({ ...newAccount, accountNumber: e.target.value })}
+                                />
+                                <select
+                                    className="input-field text-xs cursor-pointer"
+                                    value={newAccount.accountType}
+                                    onChange={e => setNewAccount({ ...newAccount, accountType: e.target.value })}
+                                >
+                                    <option value="Operating">Operating</option>
+                                    <option value="Payroll">Payroll</option>
+                                    <option value="Savings">Savings</option>
+                                    <option value="Foundation">Foundation</option>
+                                    <option value="PAC">PAC</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Bank Accounts Section - Only consistent if client exists */}
                     {client && (
