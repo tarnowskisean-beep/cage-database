@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const userId = session.user.id;
 
     try {
-        const { templateId, startDate, endDate, clientId } = await req.json();
+        const { templateId, startDate, endDate, clientId, accountId } = await req.json();
 
         if (!templateId) return NextResponse.json({ error: 'Template required' }, { status: 400 });
 
@@ -41,12 +41,17 @@ export async function POST(req: NextRequest) {
             params.push(startDate);
         }
         if (endDate) {
+            // Append end of day time to cover the full date
             sql += ` AND d."Date" <= $${pIdx++}`;
             params.push(endDate);
         }
         if (clientId && clientId !== 'All') {
             sql += ` AND d."ClientID" = $${pIdx++}`;
             params.push(clientId);
+        }
+        if (accountId) {
+            sql += ` AND b."AccountID" = $${pIdx++}`;
+            params.push(accountId);
         }
 
         sql += ` ORDER BY d."Date" ASC`;
@@ -69,7 +74,7 @@ export async function POST(req: NextRequest) {
         `, [
             templateId,
             userId,
-            JSON.stringify({ startDate, endDate, clientId })
+            JSON.stringify({ startDate, endDate, clientId, accountId })
         ]);
 
         // 6. Return CSV

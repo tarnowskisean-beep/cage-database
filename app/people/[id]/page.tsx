@@ -389,6 +389,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 <th className="px-6 py-4">Client</th>
                                 <th className="px-6 py-4">Method</th>
                                 <th className="px-6 py-4">Campaign</th>
+                                <th className="px-6 py-4">Account</th>
                                 <th className="px-6 py-4">Designation</th>
                                 <th className="px-6 py-4 text-center">Batch</th>
                                 <th className="px-6 py-4 text-center">Ack</th>
@@ -418,6 +419,9 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                             ) : (
                                                 <span className="text-gray-600 text-[10px] uppercase tracking-wider font-bold">General</span>
                                             )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-400">
+                                            {h.AccountName || '-'}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-300">
                                             {/* Designation Editable Cell */}

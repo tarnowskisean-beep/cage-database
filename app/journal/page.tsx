@@ -12,6 +12,8 @@ export default function JournalPage() {
     // Filters
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [selectedClient, setSelectedClient] = useState('All');
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [selectedAccount, setSelectedAccount] = useState('');
     const [startDate, setStartDate] = useState(() => {
         const d = new Date();
         d.setDate(1); // 1st of month
@@ -31,6 +33,22 @@ export default function JournalPage() {
         fetch('/api/settings/export-templates').then(r => r.json()).then(setTemplates).catch(console.error);
         fetch('/api/clients').then(r => r.json()).then(setClients).catch(console.error);
     }, []);
+
+    // Load Accounts when Client Selected
+    useEffect(() => {
+        if (selectedClient && selectedClient !== 'All') {
+            fetch(`/api/clients/accounts?clientId=${selectedClient}`)
+                .then(res => res.json())
+                .then(data => {
+                    setAccounts(Array.isArray(data) ? data : []);
+                    setSelectedAccount(''); // Reset when client changes
+                })
+                .catch(err => console.error(err));
+        } else {
+            setAccounts([]);
+            setSelectedAccount('');
+        }
+    }, [selectedClient]);
 
     const handleSearch = async () => {
         if (!selectedTemplate) {
@@ -139,6 +157,22 @@ export default function JournalPage() {
                     >
                         <option value="All">All Clients</option>
                         {clients.map(c => <option key={c.ClientID} value={c.ClientID}>{c.ClientCode}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-xs uppercase text-gray-500 mb-1">Account</label>
+                    <select
+                        className="input-field bg-zinc-900/50 border-white/10 w-[150px]"
+                        value={selectedAccount}
+                        onChange={e => setSelectedAccount(e.target.value)}
+                        disabled={selectedClient === 'All' || accounts.length === 0}
+                    >
+                        <option value="">All Accounts</option>
+                        {accounts.map(a => (
+                            <option key={a.AccountID} value={a.AccountID}>
+                                {a.AccountName} ({a.AccountType})
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>

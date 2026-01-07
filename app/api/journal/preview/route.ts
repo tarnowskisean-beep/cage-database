@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { templateId, startDate, endDate, clientId } = await req.json();
+        const { templateId, startDate, endDate, clientId, accountId } = await req.json();
 
         if (!templateId) return NextResponse.json({ error: 'Template required' }, { status: 400 });
 
@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
         if (clientId && clientId !== 'All') {
             sql += ` AND d."ClientID" = $${pIdx++}`;
             params.push(clientId);
+        }
+        if (body.accountId) {
+            sql += ` AND b."AccountID" = $${pIdx++}`;
+            params.push(body.accountId);
         }
 
         sql += ` ORDER BY d."Date" ASC LIMIT 5000`; // Safety limit

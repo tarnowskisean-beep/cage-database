@@ -55,6 +55,8 @@ export default function ImportPage() {
     const [stagingRows, setStagingRows] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [selectedClientId, setSelectedClientId] = useState<number | ''>('');
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [selectedAccountId, setSelectedAccountId] = useState<string>('');
 
     // Quick Map State
     const [missingRules, setMissingRules] = useState(false);
@@ -84,7 +86,10 @@ export default function ImportPage() {
             const res = await fetch(`/api/import/commit/${sessionId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clientId: selectedClientId })
+                body: JSON.stringify({
+                    clientId: selectedClientId,
+                    accountId: selectedAccountId
+                })
             });
             const data = await res.json();
 
@@ -153,6 +158,28 @@ export default function ImportPage() {
             setLoading(false);
         }
     };
+
+    // Load Accounts when Client Selected
+    useEffect(() => {
+        if (selectedClientId) {
+            fetch(`/api/clients/accounts?clientId=${selectedClientId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const validAccounts = Array.isArray(data) ? data : [];
+                    setAccounts(validAccounts);
+                    // Default to first account
+                    if (validAccounts.length > 0) {
+                        setSelectedAccountId(validAccounts[0].AccountID.toString());
+                    } else {
+                        setSelectedAccountId('');
+                    }
+                })
+                .catch(err => console.error(err));
+        } else {
+            setAccounts([]);
+            setSelectedAccountId('');
+        }
+    }, [selectedClientId]);
 
     // Check for existing rules when entering Step 2
     useEffect(() => {
@@ -562,6 +589,25 @@ export default function ImportPage() {
                                                 <option key={c.ClientID} value={c.ClientID}>{c.ClientCode} - {c.ClientName}</option>
                                             ))}
                                         </select>
+                                        </select>
+                                    </div>
+
+                                    {/* Account Selector */}
+                                    <div className="flex flex-col">
+                                        <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Bank Account</label>
+                                        <select
+                                            className="input-field bg-zinc-800 border-white/10 min-w-[200px]"
+                                            value={selectedAccountId}
+                                            onChange={e => setSelectedAccountId(e.target.value)}
+                                            disabled={!selectedClientId || accounts.length === 0}
+                                        >
+                                            <option value="">{accounts.length === 0 && selectedClientId ? 'No Accounts Found' : 'Select Account...'}</option>
+                                            {accounts.map(a => (
+                                                <option key={a.AccountID} value={a.AccountID}>
+                                                    {a.AccountName} ({a.AccountType})
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <button
@@ -623,10 +669,11 @@ export default function ImportPage() {
                                 </div>
                             </div>
                         </div>
-                    )}
-                </div>
             )}
         </div>
+    )
+}
+        </div >
     );
 }
 

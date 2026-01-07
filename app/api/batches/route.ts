@@ -60,17 +60,19 @@ export async function GET(request: Request) {
     const result = await query(`
       SELECT
         b."BatchID", b."BatchCode", b."EntryMode", b."PaymentCategory", b."Status", b."Date", b."CreatedAt",
-        b."ImportSessionID", b."Description",
+        b."ImportSessionID", b."Description", b."AccountID",
         c."ClientCode", c."ClientName",
+        a."AccountName",
         u."Username" as "CreatedBy",
         COUNT(d."DonationID")::int as "ItemCount",
         COALESCE(SUM(d."GiftAmount"), 0) as "TotalAmount"
       FROM "Batches" b
       JOIN "Clients" c ON b."ClientID" = c."ClientID"
+      LEFT JOIN "ClientBankAccounts" a ON b."AccountID" = a."AccountID"
       JOIN "Users" u ON b."CreatedBy" = u."UserID"
       LEFT JOIN "Donations" d ON b."BatchID" = d."BatchID"
       ${whereClause}
-      GROUP BY b."BatchID", c."ClientCode", c."ClientName", u."Username"
+      GROUP BY b."BatchID", c."ClientCode", c."ClientName", a."AccountName", u."Username"
       ORDER BY b."CreatedAt" DESC
     `, params);
 
@@ -161,9 +163,9 @@ export async function POST(request: Request) {
             INSERT INTO "Batches"(
                 "BatchCode", "ClientID", "EntryMode", "PaymentCategory", "ZerosType", "CreatedBy", "Status", "Date",
                 "DefaultGiftMethod", "DefaultGiftPlatform", "DefaultTransactionType", "DefaultGiftYear", "DefaultGiftQuarter",
-                "DefaultGiftType", "Description"
+                "DefaultGiftType", "Description", "AccountID"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13, $14)
+            VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING "BatchID", "BatchCode"
         `, [
         batchCode,
@@ -179,7 +181,8 @@ export async function POST(request: Request) {
         data.defaultGiftYear || new Date().getFullYear(),
         data.defaultGiftQuarter || 'Q1',
         data.defaultGiftType || 'Individual/Trust/IRA',
-        data.description || null
+        data.description || null,
+        data.accountId ? parseInt(data.accountId) : null
       ]);
 
       return insertRes.rows[0];

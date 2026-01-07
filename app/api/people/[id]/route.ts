@@ -52,12 +52,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // 2. Get Donation History
         const historyRes = await query(`
             SELECT 
-                "DonationID", "GiftDate", "GiftAmount", "GiftMethod", "GiftPlatform", 
-                "BatchID", "CheckNumber", "CampaignID",
-                "Designation", "ThankYouSentAt", "TaxReceiptSentAt",
-                c."ClientName", c."ClientCode"
+                d."DonationID", d."GiftDate", d."GiftAmount", d."GiftMethod", d."GiftPlatform", 
+                d."BatchID", d."CheckNumber", d."CampaignID",
+                d."Designation", d."ThankYouSentAt", d."TaxReceiptSentAt",
+                c."ClientName", c."ClientCode",
+                a."AccountName"
             FROM "Donations" d
             LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
+            LEFT JOIN "Batches" b ON d."BatchID" = b."BatchID"
+            LEFT JOIN "ClientBankAccounts" a ON b."AccountID" = a."AccountID"
             WHERE "DonorID" = $1
             ORDER BY "GiftDate" DESC
         `, [id]);

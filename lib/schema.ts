@@ -15,6 +15,8 @@ export const CreateBatchSchema = z.object({
     defaultGiftYear: z.number().int().optional(),
     defaultGiftQuarter: z.string().optional(),
     defaultGiftType: z.string().optional(),
+
+    accountId: z.string().optional(), // For Account Selection
 });
 
 export type CreateBatchInput = z.infer<typeof CreateBatchSchema>;

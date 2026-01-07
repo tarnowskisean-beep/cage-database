@@ -314,7 +314,7 @@ function ImportFinderModal({ client, onClose }: { client: any, onClose: () => vo
     );
 }
 
-// Client Modal with Logo & Status Support
+// Client Modal with Logo & Status Support & Bank Accounts
 function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () => void, onSuccess: () => void }) {
     const [formData, setFormData] = useState({
         name: client?.ClientName || '',
@@ -325,6 +325,71 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(client?.LogoURL || null);
     const [uploading, setUploading] = useState(false);
+
+    // Bank Account Management
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [loadingAccounts, setLoadingAccounts] = useState(false);
+    const [newAccount, setNewAccount] = useState({
+        accountName: '',
+        bankName: '',
+        accountNumber: '',
+        routingNumber: '',
+        accountType: 'Operating'
+    });
+    const [showAddAccount, setShowAddAccount] = useState(false);
+
+    useEffect(() => {
+        if (client) {
+            setLoadingAccounts(true);
+            fetch(`/api/clients/accounts?clientId=${client.ClientID}`)
+                .then(res => res.json())
+                .then(data => setAccounts(Array.isArray(data) ? data : []))
+                .catch(err => console.error("Failed to load accounts", err))
+                .finally(() => setLoadingAccounts(false));
+        }
+    }, [client]);
+
+    const handleAddAccount = async () => {
+        if (!newAccount.accountName) return alert("Account Name is required");
+
+        try {
+            const res = await fetch('/api/clients/accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clientId: client.ClientID,
+                    ...newAccount
+                })
+            });
+            if (res.ok) {
+                const created = await res.json();
+                setAccounts([...accounts, created]);
+                setNewAccount({ accountName: '', bankName: '', accountNumber: '', routingNumber: '', accountType: 'Operating' });
+                setShowAddAccount(false);
+            } else {
+                alert("Failed to create account");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error creating account");
+        }
+    };
+
+    const handleDeactivateAccount = async (accountId: number) => {
+        if (!confirm("Are you sure you want to deactivate this account?")) return;
+        try {
+            const res = await fetch(`/api/clients/accounts/${accountId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                setAccounts(accounts.filter(a => a.AccountID !== accountId));
+            } else {
+                alert("Failed to deactivate");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -370,7 +435,7 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]">
-            <div className="glass-panel w-full max-w-lg p-8 border border-white/10 bg-[#09090b]">
+            <div className="glass-panel w-full max-w-2xl p-8 border border-white/10 bg-[#09090b] max-h-[90vh] overflow-y-auto">
                 <h2 className="text-2xl font-display text-white mb-6">
                     {client ? 'Edit Client' : 'New Client'}
                 </h2>
@@ -445,6 +510,106 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                         </div>
                     </div>
 
+                    {/* Bank Accounts Section - Only consistent if client exists */}
+                    {client && (
+                        <div className="border-t border-white/10 pt-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bank Accounts</h3>
+                                {!showAddAccount && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddAccount(true)}
+                                        className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded uppercase font-bold transition-colors"
+                                    >
+                                        + Add Account
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Account List */}
+                            <div className="space-y-2 mb-4">
+                                {loadingAccounts ? (
+                                    <div className="text-xs text-gray-500 italic">Loading accounts...</div>
+                                ) : accounts.length === 0 ? (
+                                    <div className="text-xs text-gray-500 italic p-4 bg-white/5 rounded border border-white/5 text-center">No bank accounts linked to this client.</div>
+                                ) : (
+                                    accounts.map(acc => (
+                                        <div key={acc.AccountID} className="flex justify-between items-center p-3 bg-zinc-900 border border-white/5 rounded group hover:border-white/10 transition-colors">
+                                            <div>
+                                                <div className="text-sm text-white font-medium flex items-center gap-2">
+                                                    {acc.AccountName}
+                                                    <span className="text-[10px] bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded uppercase">{acc.AccountType}</span>
+                                                </div>
+                                                <div className="text-xs text-gray-500">{acc.BankName} •••• {acc.AccountNumber ? acc.AccountNumber.slice(-4) : 'N/A'}</div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeactivateAccount(acc.AccountID)}
+                                                className="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-wider transition-all"
+                                            >
+                                                Deactivate
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Add Account Form */}
+                            {showAddAccount && (
+                                <div className="bg-zinc-900/50 border border-emerald-500/30 p-4 rounded animate-in fade-in slide-in-from-top-2">
+                                    <h4 className="text-xs font-bold text-emerald-500 uppercase mb-3">New Account Details</h4>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <input
+                                            placeholder="Account Name (e.g. Operating)"
+                                            className="input-field text-xs"
+                                            value={newAccount.accountName}
+                                            onChange={e => setNewAccount({ ...newAccount, accountName: e.target.value })}
+                                        />
+                                        <input
+                                            placeholder="Bank Name (e.g. Chase)"
+                                            className="input-field text-xs"
+                                            value={newAccount.bankName}
+                                            onChange={e => setNewAccount({ ...newAccount, bankName: e.target.value })}
+                                        />
+                                        <input
+                                            placeholder="Account Number (Last 4)"
+                                            className="input-field text-xs"
+                                            value={newAccount.accountNumber}
+                                            onChange={e => setNewAccount({ ...newAccount, accountNumber: e.target.value })}
+                                        />
+                                        <select
+                                            className="input-field text-xs cursor-pointer"
+                                            value={newAccount.accountType}
+                                            onChange={e => setNewAccount({ ...newAccount, accountType: e.target.value })}
+                                        >
+                                            <option value="Operating">Operating</option>
+                                            <option value="Payroll">Payroll</option>
+                                            <option value="Savings">Savings</option>
+                                            <option value="Foundation">Foundation</option>
+                                            <option value="PAC">PAC</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAddAccount(false)}
+                                            className="px-3 py-1.5 text-xs text-gray-400 hover:text-white"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddAccount}
+                                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded"
+                                        >
+                                            Save Account
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <div className="flex gap-4 pt-6 border-t border-white/10 mt-6">
                         <button
                             type="button"
@@ -459,7 +624,7 @@ function ClientModal({ client, onClose, onSuccess }: { client: any, onClose: () 
                             className="flex-1 btn-primary"
                             disabled={uploading}
                         >
-                            {uploading ? 'Saving...' : 'Save Changes'}
+                            {uploading ? 'Saving...' : 'Save Client'}
                         </button>
                     </div>
                 </form>

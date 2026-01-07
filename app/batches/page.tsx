@@ -273,6 +273,7 @@ function BatchesContent() {
                                 <tr>
                                     <th>Batch ID</th>
                                     <th>Client</th>
+                                    <th>Account</th>
                                     <th>Mode</th>
                                     <th>Category</th>
                                     <th className="text-center">Status</th>
@@ -294,6 +295,7 @@ function BatchesContent() {
                                                 </span>
                                             </td>
                                             <td className="font-medium text-white">{batch.ClientCode}</td>
+                                            <td className="text-gray-400 text-xs truncate max-w-[100px]" title={batch.AccountName}>{batch.AccountName || '-'}</td>
                                             <td className="text-gray-400 text-xs uppercase tracking-wide">{batch.EntryMode}</td>
                                             <td className="text-gray-400 text-xs uppercase tracking-wide">
                                                 {batch.PaymentCategory || '-'}
@@ -342,8 +344,10 @@ function BatchesContent() {
 function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: () => void }) {
     const router = useRouter();
     const [clients, setClients] = useState<any[]>([]);
+    const [accounts, setAccounts] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         clientId: '',
+        accountId: '',
         description: '',
         date: (() => {
             const d = new Date();
@@ -363,6 +367,25 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
     useEffect(() => {
         fetch('/api/clients', { cache: 'no-store' }).then(res => res.json()).then(data => setClients(data || []));
     }, []);
+
+    // Fetch accounts when client changes
+    useEffect(() => {
+        if (formData.clientId) {
+            fetch(`/api/clients/accounts?clientId=${formData.clientId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const validAccounts = Array.isArray(data) ? data : [];
+                    setAccounts(validAccounts);
+                    // Select first account by default if none selected
+                    if (validAccounts.length > 0 && !formData.accountId) {
+                        setFormData(prev => ({ ...prev, accountId: validAccounts[0].AccountID.toString() }));
+                    }
+                })
+                .catch(err => console.error(err));
+        } else {
+            setAccounts([]);
+        }
+    }, [formData.clientId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -414,6 +437,24 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                         >
                             <option value="">Select Client...</option>
                             {clients.map(c => <option key={c.ClientID} value={c.ClientID}>{c.ClientCode}</option>)}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Account</label>
+                        <select
+                            className="input-field bg-zinc-900/50 border-white/10 focus:border-white/30 hover:border-white/20 transition-colors"
+                            value={formData.accountId}
+                            onChange={e => setFormData({ ...formData, accountId: e.target.value })}
+                            disabled={!formData.clientId}
+                            required
+                        >
+                            <option value="">Select Account...</option>
+                            {accounts.map(a => (
+                                <option key={a.AccountID} value={a.AccountID}>
+                                    {a.AccountName} ({a.AccountType})
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <div>
