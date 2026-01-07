@@ -12,7 +12,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     try {
         // 1. Get Donor Profile
         const donorRes = await query(`
-            SELECT * FROM "Donors" WHERE "DonorID" = $1
+            SELECT 
+                d.*,
+                u."Username" as "AssignedStafferName",
+                u."Initials" as "AssignedStafferInitials"
+            FROM "Donors" d
+            LEFT JOIN "Users" u ON d."AssignedStafferID" = u."UserID"
+            WHERE d."DonorID" = $1
         `, [id]);
 
         if (donorRes.rows.length === 0) return NextResponse.json({ error: 'Donor not found' }, { status: 404 });
@@ -23,6 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             SELECT 
                 "DonationID", "GiftDate", "GiftAmount", "GiftMethod", "GiftPlatform", 
                 "BatchID", "CheckNumber", "MailCode",
+                "Designation", "ThankYouSentAt", "TaxReceiptSentAt",
                 c."ClientName", c."ClientCode"
             FROM "Donations" d
             LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
@@ -62,8 +69,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // 6. Get Subscription Status
         const subRes = await query(`
             SELECT 1 FROM "DonorSubscriptions" WHERE "UserID" = $1 AND "DonorID" = $2
-        `, [session.user.id || (session.user as any).UserID, id]); // Handle both session formats if needed, usually session.user.id is string from next-auth
+        `, [session.user.id || (session.user as any).UserID, id]);
         const isSubscribed = subRes.rows.length > 0;
+
+        // 7. Get Tasks (Summary)
+        const tasksRes = await query(`
+            SELECT COUNT(*) as "PendingTasks" FROM "DonorTasks" WHERE "DonorID" = $1 AND "IsCompleted" = FALSE
+        `, [id]);
+        const pendingTasks = parseInt(tasksRes.rows[0]?.PendingTasks || '0');
 
         return NextResponse.json({
             profile: donor,
@@ -71,7 +84,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 totalGiven,
                 giftCount,
                 avgGift,
-                lastContact
+                lastContact,
+                pendingTasks
             },
             history: history,
             pledges: pledges,
@@ -90,15 +104,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     try {
         const body = await req.json();
-        const { FirstName, LastName, Email, Phone, Address, City, State, Zip } = body;
+        const { FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID } = body;
 
         await query(`
             UPDATE "Donors"
             SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Phone" = $4,
                 "Address" = $5, "City" = $6, "State" = $7, "Zip" = $8,
+                "Bio" = $9, "AssignedStafferID" = $10,
                 "UpdatedAt" = NOW()
-            WHERE "DonorID" = $9
-        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, id]);
+            WHERE "DonorID" = $11
+        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID || null, id]);
 
         return NextResponse.json({ success: true });
     } catch (e: any) {

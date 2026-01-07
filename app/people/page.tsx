@@ -18,6 +18,7 @@ function PeopleContent() {
     const [minAmount, setMinAmount] = useState(initialMin);
     const [city, setCity] = useState(initialCity);
     const [clientId, setClientId] = useState(initialClientId);
+    const [assignedToMe, setAssignedToMe] = useState(false);
 
     const [donors, setDonors] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]); // New Clients State
@@ -35,6 +36,7 @@ function PeopleContent() {
         if (initialMin) params.set('min', initialMin);
         if (initialCity) params.set('city', initialCity);
         if (initialClientId) params.set('clientId', initialClientId);
+        if (assignedToMe) params.set('assignedTo', 'me');
 
         fetch(`/api/people?${params.toString()}`)
             .then(res => res.json())
@@ -45,7 +47,7 @@ function PeopleContent() {
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [q, initialMin, initialCity, initialClientId]);
+    }, [q, initialMin, initialCity, initialClientId, assignedToMe]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,6 +56,7 @@ function PeopleContent() {
         if (minAmount) params.set('min', minAmount);
         if (city) params.set('city', city);
         if (clientId) params.set('clientId', clientId);
+        if (assignedToMe) params.set('assignedTo', 'me');
 
         router.push(`/people?${params.toString()}`);
     };
@@ -127,6 +130,15 @@ function PeopleContent() {
                             onChange={e => setMinAmount(e.target.value)}
                         />
                     </div>
+
+                    {/* Assigned To Me Filter */}
+                    <button
+                        type="button"
+                        onClick={() => setAssignedToMe(!assignedToMe)}
+                        className={`px-3 py-2 rounded text-xs font-bold uppercase tracking-wide border transition-all ${assignedToMe ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-transparent text-gray-500 hover:text-white'}`}
+                    >
+                        My Donors
+                    </button>
 
                     {/* Submit Button (Icon) */}
                     <button type="submit" className="px-4 bg-white text-black rounded hover:bg-gray-200 transition-colors flex items-center justify-center">

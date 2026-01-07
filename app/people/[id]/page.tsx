@@ -3,6 +3,8 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+import TasksSection from './TasksSection';
+import FilesSection from './FilesSection';
 
 export default function PeopleProfile({ params }: { params: Promise<{ id: string }> }) {
     const [donorId, setDonorId] = useState<string>('');
@@ -18,6 +20,9 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     // Modals State
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [showAddPledge, setShowAddPledge] = useState(false);
+
+    // Sidebar/Tabs
+    const [activeTab, setActiveTab] = useState<'notes' | 'tasks' | 'files'>('notes');
 
     // Filters
     const [startDate, setStartDate] = useState('');
@@ -125,6 +130,17 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         <div className="flex justify-between items-start">
                             <div>
                                 <h1 className="text-4xl font-display text-white mb-2">{donor.FirstName} {donor.LastName}</h1>
+
+                                {/* Bio / Staffer Info */}
+                                <div className="mb-4">
+                                    {donor.Bio && <p className="text-gray-300 text-sm italic max-w-2xl mb-2">"{donor.Bio}"</p>}
+                                    <div className="flex items-center gap-4 text-xs">
+                                        <span className={`px-2 py-0.5 rounded border ${donor.AssignedStafferName ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-gray-800 border-gray-700 text-gray-500'}`}>
+                                            Assigned to: <span className="font-bold">{donor.AssignedStafferName || 'Unassigned'}</span>
+                                        </span>
+                                    </div>
+                                </div>
+
                                 {/* Recency Indicators */}
                                 <div className="flex gap-4 text-xs font-bold uppercase tracking-wider mt-1">
                                     <span className={`${stats.avgGift > 0 && getDaysAgo(history[0]?.GiftDate).includes('days') && parseInt(getDaysAgo(history[0]?.GiftDate)) < 90 ? 'text-emerald-400' : 'text-gray-400'}`}>
@@ -281,15 +297,31 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             </div>
 
 
-            {/* CRM Notes Section */}
-            <div className="glass-panel p-6 mb-8">
-                <h3 className="text-lg font-display text-white mb-4">Notes & Activity</h3>
-                <div className="space-y-3 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
-                    {/* Notes List */}
-                    <NotesList donorId={donorId} />
+            {/* TABS: Notes, Tasks, Files */}
+            <div className="mb-8">
+                <div className="flex gap-4 mb-4 border-b border-white/10 pb-1">
+                    <button onClick={() => setActiveTab('notes')} className={`pb-2 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'notes' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-500 hover:text-white'}`}>
+                        Notes
+                    </button>
+                    <button onClick={() => setActiveTab('tasks')} className={`pb-2 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'tasks' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-500 hover:text-white'}`}>
+                        Tasks ({stats.pendingTasks || 0})
+                    </button>
+                    <button onClick={() => setActiveTab('files')} className={`pb-2 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'files' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-500 hover:text-white'}`}>
+                        Files
+                    </button>
                 </div>
-                {/* Add Note Form */}
-                <AddNoteForm donorId={donorId} />
+
+                {activeTab === 'notes' && (
+                    <div className="glass-panel p-6">
+                        <h3 className="text-lg font-display text-white mb-4">Notes & Activity</h3>
+                        <div className="space-y-3 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
+                            <NotesList donorId={donorId} />
+                        </div>
+                        <AddNoteForm donorId={donorId} />
+                    </div>
+                )}
+                {activeTab === 'tasks' && <TasksSection donorId={donorId} />}
+                {activeTab === 'files' && <FilesSection donorId={donorId} />}
             </div>
 
             {/* Timeline / History Table */}
@@ -346,7 +378,9 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 <th className="px-6 py-4">Client</th>
                                 <th className="px-6 py-4">Method</th>
                                 <th className="px-6 py-4">Campaign</th>
+                                <th className="px-6 py-4">Designation</th>
                                 <th className="px-6 py-4 text-center">Batch</th>
+                                <th className="px-6 py-4 text-center">Ack</th>
                                 <th className="px-6 py-4 text-right">Amount</th>
                             </tr>
                         </thead>
@@ -374,10 +408,35 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                                 <span className="text-gray-600 text-[10px] uppercase tracking-wider font-bold">General</span>
                                             )}
                                         </td>
+                                        <td className="px-6 py-4 text-sm text-gray-300">
+                                            {h.Designation || '-'}
+                                        </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">
                                                 #{h.BatchID}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center flex gap-1 justify-center">
+                                            <button
+                                                title={`Thank You: ${h.ThankYouSentAt ? 'Sent' : 'Pending'}`}
+                                                className={`w-6 h-6 rounded flex items-center justify-center border ${h.ThankYouSentAt ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-600 hover:text-gray-400'}`}
+                                                onClick={async () => {
+                                                    await fetch(`/api/donations/${h.DonationID}/ack`, { method: 'PUT', body: JSON.stringify({ type: 'ThankYou', status: !h.ThankYouSentAt }) });
+                                                    fetchData(); // Simplest refresh
+                                                }}
+                                            >
+                                                T
+                                            </button>
+                                            <button
+                                                title={`Tax Receipt: ${h.TaxReceiptSentAt ? 'Sent' : 'Pending'}`}
+                                                className={`w-6 h-6 rounded flex items-center justify-center border ${h.TaxReceiptSentAt ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-gray-600 hover:text-gray-400'}`}
+                                                onClick={async () => {
+                                                    await fetch(`/api/donations/${h.DonationID}/ack`, { method: 'PUT', body: JSON.stringify({ type: 'TaxReceipt', status: !h.TaxReceiptSentAt }) });
+                                                    fetchData();
+                                                }}
+                                            >
+                                                R
+                                            </button>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono text-white font-medium">
                                             ${Number(h.GiftAmount).toFixed(2)}
@@ -500,9 +559,19 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
         Address: donor.Address || '',
         City: donor.City || '',
         State: donor.State || '',
-        Zip: donor.Zip || ''
+        Zip: donor.Zip || '',
+        Bio: donor.Bio || '',
+        AssignedStafferID: donor.AssignedStafferID || ''
     });
     const [saving, setSaving] = useState(false);
+    const [users, setUsers] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Fetch users for dropdown
+        fetch('/api/users').then(res => res.json()).then(data => {
+            if (Array.isArray(data)) setUsers(data);
+        }).catch(() => { });
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -524,7 +593,7 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-zinc-900 border border-zinc-700 w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden">
+            <div className="bg-zinc-900 border border-zinc-700 w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-zinc-700 flex justify-between items-center bg-zinc-800/50">
                     <h3 className="text-xl font-display text-white">Edit Profile</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
@@ -540,6 +609,30 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
                             <input className="input-field w-full" value={formData.LastName} onChange={e => setFormData({ ...formData, LastName: e.target.value })} required />
                         </div>
                     </div>
+                    {/* Bio & Assigned Staffer */}
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">Bio</label>
+                        <textarea
+                            className="input-field w-full h-20"
+                            value={formData.Bio}
+                            onChange={e => setFormData({ ...formData, Bio: e.target.value })}
+                            placeholder="Donor background..."
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">Assigned Staffer</label>
+                        <select
+                            className="input-field w-full"
+                            value={formData.AssignedStafferID}
+                            onChange={e => setFormData({ ...formData, AssignedStafferID: e.target.value })}
+                        >
+                            <option value="">Unassigned</option>
+                            {users.map(u => (
+                                <option key={u.UserID} value={u.UserID}>{u.Username} ({u.Email})</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs uppercase text-gray-500 mb-1">Email</label>

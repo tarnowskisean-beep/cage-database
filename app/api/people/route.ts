@@ -88,6 +88,18 @@ export async function GET(req: NextRequest) {
             paramIdx++;
         }
 
+        const assignedTo = searchParams.get('assignedTo');
+        if (assignedTo === 'me') {
+            // @ts-ignore
+            params.push(session.user.id || (session.user as any).UserID);
+            sql += ` AND d."AssignedStafferID" = $${paramIdx}`;
+            paramIdx++;
+        } else if (assignedTo) {
+            params.push(parseInt(assignedTo));
+            sql += ` AND d."AssignedStafferID" = $${paramIdx}`;
+            paramIdx++;
+        }
+
         sql += ` ORDER BY "LifetimeValue" DESC NULLS LAST LIMIT ${limit} OFFSET ${offset}`;
 
         const res = await query(sql, params);
