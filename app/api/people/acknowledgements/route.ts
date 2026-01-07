@@ -17,12 +17,15 @@ export async function GET(req: NextRequest) {
     try {
         let sql = `
             SELECT 
-                d."DonationID", d."GiftDate", d."GiftAmount", d."GiftMethod", d."CampaignID",
-                don."DonorID", don."FirstName", don."LastName", don."Email"
+                d."DonationID", d."GiftDate", d."GiftAmount", d."GiftMethod", d."CampaignID", d."Comment",
+                don."DonorID", don."FirstName", don."LastName", don."Email",
+                don."Address", don."City", don."State", don."Zip"
             FROM "Donations" d
             JOIN "Donors" don ON d."DonorID" = don."DonorID"
+            JOIN "Batches" b ON d."BatchID" = b."BatchID"
             WHERE d."ThankYouSentAt" IS NULL
-            AND d."GiftAmount" > 0
+            AND d."GiftAmount" > 50
+            AND b."Status" IN ('Closed', 'Reconciled')
         `;
         const params: any[] = [];
         let paramIdx = 1;

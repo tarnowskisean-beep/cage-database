@@ -18,8 +18,8 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                     <Link
                         href="/people"
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${pathname === '/people'
-                                ? 'border-white text-white'
-                                : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
+                            ? 'border-white text-white'
+                            : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
                             }`}
                     >
                         Directory
@@ -27,11 +27,20 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                     <Link
                         href="/people/resolution"
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${pathname === '/people/resolution'
-                                ? 'border-yellow-500 text-yellow-500' // Distinctive color for this tab
-                                : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
+                            ? 'border-yellow-500 text-yellow-500' // Distinctive color for this tab
+                            : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
                             }`}
                     >
                         Resolution Queue
+                    </Link>
+                    <Link
+                        href="/people/acknowledgements"
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${pathname === '/people/acknowledgements'
+                            ? 'border-emerald-500 text-emerald-500'
+                            : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
+                            }`}
+                    >
+                        Acknowledgements
                     </Link>
                 </div>
             </header>

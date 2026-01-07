@@ -69,7 +69,7 @@ export default function AcknowledgementsPage() {
         <div className="max-w-[1600px] mx-auto px-6 py-8">
             <div className="flex justify-between items-end mb-6">
                 <div>
-                    <Link href="/people" className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wide mb-2 block">&larr; Back to Directory</Link>
+                    {/* <Link href="/people" className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wide mb-2 block">&larr; Back to Directory</Link> */}
                     <h1 className="text-3xl font-display text-white">Outstanding Acknowledgements</h1>
                     <p className="text-gray-400 mt-1">Donations that have not yet been sent a Thank You letter.</p>
                 </div>
@@ -84,6 +84,43 @@ export default function AcknowledgementsPage() {
                         </button>
                     )}
                     <button onClick={fetchDonations} className="btn-secondary">Refresh</button>
+                    <button
+                        onClick={() => {
+                            if (donations.length === 0) return;
+                            const headers = ['DonationID', 'Date', 'Amount', 'FirstName', 'LastName', 'Address', 'City', 'State', 'Zip', 'Email', 'Campaign', 'Comment'];
+                            const csv = [
+                                headers.join(','),
+                                ...donations.map(d => [
+                                    d.DonationID,
+                                    new Date(d.GiftDate).toLocaleDateString(),
+                                    d.GiftAmount,
+                                    `"${d.FirstName || ''}"`,
+                                    `"${d.LastName || ''}"`,
+                                    `"${d.Address || ''}"`,
+                                    `"${d.City || ''}"`,
+                                    `"${d.State || ''}"`,
+                                    `"${d.Zip || ''}"`,
+                                    d.Email || '',
+                                    d.CampaignID || '',
+                                    `"${d.Comment || ''}"`
+                                ].join(','))
+                            ].join('\n');
+
+                            const blob = new Blob([csv], { type: 'text/csv' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `acknowledgements_${new Date().toISOString().split('T')[0]}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }}
+                        className="btn-secondary flex items-center gap-2"
+                        disabled={donations.length === 0}
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Download CSV
+                    </button>
                 </div>
             </div>
 
