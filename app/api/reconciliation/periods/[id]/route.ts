@@ -137,6 +137,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 "TransactionDate" as "Date",
                 "Description",
                 "ReferenceNumber" as "Reference",
+                "Status",
                 "Cleared",
                 "Matched",
                 "ReconciliationPeriodID",
