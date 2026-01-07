@@ -46,9 +46,9 @@ export async function POST(req: NextRequest) {
             sql += ` AND d."ClientID" = $${pIdx++}`;
             params.push(clientId);
         }
-        if (body.accountId) {
+        if (accountId) {
             sql += ` AND b."AccountID" = $${pIdx++}`;
-            params.push(body.accountId);
+            params.push(accountId);
         }
 
         sql += ` ORDER BY d."Date" ASC LIMIT 5000`; // Safety limit
