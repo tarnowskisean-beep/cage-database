@@ -57,7 +57,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 d."BatchID", d."CheckNumber", d."CampaignID",
                 d."Designation", d."ThankYouSentAt", d."TaxReceiptSentAt",
                 c."ClientName", c."ClientCode",
-                a."AccountName"
+                a."AccountName",
+                b."BatchCode"
             FROM "Donations" d
             LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
             LEFT JOIN "Batches" b ON d."BatchID" = b."BatchID"

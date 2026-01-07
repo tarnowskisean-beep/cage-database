@@ -392,7 +392,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                 <th className="px-6 py-4">Account</th>
                                 <th className="px-6 py-4">Designation</th>
                                 <th className="px-6 py-4 text-center">Batch</th>
-                                <th className="px-6 py-4 text-center">Ack</th>
+                                <th className="px-6 py-4 text-center">Acknowledged</th>
                                 <th className="px-6 py-4 text-right">Amount</th>
                             </tr>
                         </thead>
@@ -448,7 +448,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center gap-1">
                                                 <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">
-                                                    #{h.BatchID}
+                                                    {h.BatchCode || `#${h.BatchID}`}
                                                 </span>
                                                 {h.ResolutionStatus !== 'Pending' && (
                                                     <button
@@ -470,26 +470,18 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center flex gap-1 justify-center">
+                                        <td className="px-6 py-4 text-center">
                                             <button
-                                                title={`Thank You: ${h.ThankYouSentAt ? 'Sent' : 'Pending'}`}
-                                                className={`w-6 h-6 rounded flex items-center justify-center border ${h.ThankYouSentAt ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-600 hover:text-gray-400'}`}
                                                 onClick={async () => {
                                                     await fetch(`/api/donations/${h.DonationID}/ack`, { method: 'PUT', body: JSON.stringify({ type: 'ThankYou', status: !h.ThankYouSentAt }) });
-                                                    fetchData(); // Simplest refresh
-                                                }}
-                                            >
-                                                T
-                                            </button>
-                                            <button
-                                                title={`Tax Receipt: ${h.TaxReceiptSentAt ? 'Sent' : 'Pending'}`}
-                                                className={`w-6 h-6 rounded flex items-center justify-center border ${h.TaxReceiptSentAt ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-gray-600 hover:text-gray-400'}`}
-                                                onClick={async () => {
-                                                    await fetch(`/api/donations/${h.DonationID}/ack`, { method: 'PUT', body: JSON.stringify({ type: 'TaxReceipt', status: !h.TaxReceiptSentAt }) });
                                                     fetchData();
                                                 }}
+                                                className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider transition-colors ${h.ThankYouSentAt
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500/30'
+                                                    : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10 hover:text-gray-300'
+                                                    }`}
                                             >
-                                                R
+                                                {h.ThankYouSentAt ? 'Yes' : 'No'}
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono text-white font-medium">
