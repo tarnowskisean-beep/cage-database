@@ -13,7 +13,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const res = await query('SELECT "UserID", "Username", "Email", "Role", "Initials", "IsActive", "CreatedAt" FROM "Users" ORDER BY "Username" ASC');
+        const res = await query('SELECT "UserID", "Username", "Email", "Role", "Initials", "IsActive", "ReceiveFlaggedAlerts", "CreatedAt" FROM "Users" ORDER BY "Username" ASC');
 
         console.log(`GET /api/users: Request by Admin ${(session.user as any).id} (${(session.user as any).email})`);
         console.log(`GET /api/users: Returning ${res.rows.length} users. User IDs: ${res.rows.map(u => u.UserID).join(', ')}`);
@@ -46,10 +46,10 @@ export async function POST(request: Request) {
         const hashedPassword = password ? await bcrypt.hash(password, 10) : 'PENDING_SETUP';
 
         const res = await query(
-            `INSERT INTO "Users" ("Username", "Email", "Role", "PasswordHash", "Initials")
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO "Users" ("Username", "Email", "Role", "PasswordHash", "Initials", "ReceiveFlaggedAlerts")
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING "UserID"`,
-            [username, email, role, hashedPassword, username.substring(0, 2).toUpperCase()]
+            [username, email, role, hashedPassword, username.substring(0, 2).toUpperCase(), body.receiveFlaggedAlerts || false]
         );
         const newUserId = res.rows[0].UserID;
 

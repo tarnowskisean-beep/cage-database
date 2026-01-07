@@ -50,7 +50,8 @@ export default async function FixSchemaPage() {
         try {
             await query(`ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE`);
             await query(`ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Initials" TEXT`);
-            log('Checked Users Columns (IsActive, Initials)');
+            await query(`ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "ReceiveFlaggedAlerts" BOOLEAN DEFAULT FALSE`);
+            log('Checked Users Columns (IsActive, Initials, ReceiveFlaggedAlerts)');
         } catch (e: any) {
             log(`⚠️ Error on Users: ${e.message}`);
         }

@@ -27,7 +27,8 @@ export default function BatchEntry({ id }: { id: string }) {
         resetForm,
         editingId,
         loadRecord,
-        setFormData
+        setFormData,
+        campaigns
     } = useBatchEntry({ id });
 
     const handleFillFakeData = () => {
@@ -242,6 +243,10 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <Input disabled value={batch?.ClientCode || ''} />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Account</Label>
+                                    <Input disabled value={batch?.AccountName || 'Main Operating'} />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>CagingID / Scan</Label>
                                     {batch?.EntryMode === 'Manual' ? (
                                         <div style={{
@@ -275,7 +280,12 @@ export default function BatchEntry({ id }: { id: string }) {
                                         value={formData.campaignId}
                                         onChange={handleChange('campaignId')}
                                         autoFocus={batch?.EntryMode === 'Manual'}
+                                        list="campaign-list"
+                                        placeholder="Select or Type..."
                                     />
+                                    <datalist id="campaign-list">
+                                        {campaigns.map(c => <option key={c} value={c} />)}
+                                    </datalist>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Prefix</Label>

@@ -13,7 +13,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
         const { id } = await params;
         const body = await request.json();
-        const { email, role, password, is_active } = body;
+        const { email, role, password, is_active, receiveFlaggedAlerts } = body;
 
         // Build Update Query dynamically
         const updates: string[] = [];
@@ -31,6 +31,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (is_active !== undefined) {
             updates.push(`"IsActive" = $${queryIdx++}`);
             values.push(is_active);
+        }
+        if (receiveFlaggedAlerts !== undefined) {
+            updates.push(`"ReceiveFlaggedAlerts" = $${queryIdx++}`);
+            values.push(receiveFlaggedAlerts);
         }
         if (password) {
             const salt = await bcrypt.genSalt(10);

@@ -14,6 +14,7 @@ export interface Batch {
     DefaultGiftQuarter?: string;
     ImportSessionID?: number;
     PaymentCategory: string;
+    AccountName?: string;
 }
 
 export interface Client {

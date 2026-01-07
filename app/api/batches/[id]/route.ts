@@ -7,9 +7,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     try {
         const { id } = await params;
         const result = await query(`
-            SELECT b.*, c."ClientCode" 
+            SELECT b.*, c."ClientCode", a."AccountName"
             FROM "Batches" b
             LEFT JOIN "Clients" c ON b."ClientID" = c."ClientID"
+            LEFT JOIN "ClientBankAccounts" a ON b."AccountID" = a."AccountID"
             WHERE b."BatchID" = $1
         `, [id]);
 

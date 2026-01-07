@@ -13,6 +13,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
     const [saving, setSaving] = useState(false);
     const [lastSavedId, setLastSavedId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [campaigns, setCampaigns] = useState<string[]>([]);
 
     // Refs
     const scanRef = useRef<HTMLInputElement>(null);
@@ -106,6 +107,14 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                     postMarkYear: data.DefaultGiftYear?.toString() || new Date().getFullYear().toString(),
                     postMarkQuarter: data.DefaultGiftQuarter || `Q${Math.floor(new Date().getMonth() / 3) + 1}`
                 }));
+
+                // Fetch Campaigns for this Client
+                if (data.ClientID) {
+                    try {
+                        const campRes = await fetch(`/api/clients/${data.ClientID}/campaigns`);
+                        if (campRes.ok) setCampaigns(await campRes.json());
+                    } catch (e) { console.error('Failed to fetch campaigns', e); }
+                }
             }
         } catch (e) { console.error(e); }
     }, [id]);
@@ -442,6 +451,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         handleSave,
         resetForm,
         editingId,
-        loadRecord
+        loadRecord,
+        campaigns
     };
 }

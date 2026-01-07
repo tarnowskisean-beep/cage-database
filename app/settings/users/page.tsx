@@ -10,6 +10,7 @@ type User = {
     Email: string;
     Role: 'Admin' | 'Clerk' | 'ClientUser';
     IsActive: boolean;
+    ReceiveFlaggedAlerts: boolean;
     CreatedAt: string;
 };
 
@@ -175,7 +176,8 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
         role: user?.Role || 'Clerk',
         password: '', // Only for new users or password reset
         sendInvite: true, // Default to sending invite
-        allowedClientIds: [] as number[]
+        allowedClientIds: [] as number[],
+        receiveFlaggedAlerts: user?.ReceiveFlaggedAlerts || false
     });
     const [clients, setClients] = useState<{ ClientID: number, ClientName: string, ClientCode: string }[]>([]);
     const [saving, setSaving] = useState(false);
@@ -204,7 +206,8 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
                 username: formData.username,
                 email: formData.email,
                 role: formData.role,
-                allowedClientIds: formData.role === 'ClientUser' ? formData.allowedClientIds : []
+                allowedClientIds: formData.role === 'ClientUser' ? formData.allowedClientIds : [],
+                receiveFlaggedAlerts: formData.receiveFlaggedAlerts
             };
 
             if (!user) {
@@ -291,6 +294,17 @@ function UserModal({ user, onClose, onSave }: { user: User | null, onClose: () =
                             <option value="Admin">Admin</option>
                             <option value="ClientUser">Client User</option>
                         </select>
+                    </div>
+
+                    <div style={{ margin: '1rem 0' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={formData.receiveFlaggedAlerts}
+                                onChange={e => setFormData({ ...formData, receiveFlaggedAlerts: e.target.checked })}
+                            />
+                            <span>Receive Alerts for Flagged Donations</span>
+                        </label>
                     </div>
 
                     {/* Client Selection (Only for ClientUser) */}

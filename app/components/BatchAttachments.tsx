@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface Document {
     BatchDocumentID: number;
-    DocumentType: 'ReplySlipsPDF' | 'ChecksPDF' | 'DepositSlip';
+    DocumentType: 'ReplySlipsPDF' | 'ChecksPDF' | 'DepositSlip' | 'RelatedDocuments';
     FileName: string;
     UploadedAt: string;
 }
@@ -62,6 +62,9 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
             reqs.push({ label: 'Reply Slips', type: 'ReplySlipsPDF', required: true });
             reqs.push({ label: 'Deposit Slip', type: 'DepositSlip', required: true });
         }
+
+        reqs.push({ label: 'Related Documents', type: 'RelatedDocuments', required: false });
+
         return reqs;
     };
 
