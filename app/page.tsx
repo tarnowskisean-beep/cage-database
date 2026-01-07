@@ -209,7 +209,7 @@ function DashboardContent() {
       </div>
 
       {/* Secondary Metrics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 mt-8">
         <DistributionChart title="Revenue by Platform" data={stats?.byPlatform || []} />
         <DistributionChart title="Revenue by Method" data={stats?.byMethod || []} />
       </div>

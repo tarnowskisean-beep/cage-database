@@ -404,7 +404,7 @@ function ReportContent() {
                             <th>Total $$</th>
                             <th colSpan={2} style={{ borderLeft: '2px solid black' }}>Check</th>
                             <th colSpan={2} style={{ borderLeft: '2px solid black' }}>Cash</th>
-                            <th colSpan={2} style={{ borderLeft: '2px solid black' }}>CC</th>
+                            <th colSpan={2} style={{ borderLeft: '2px solid black' }}>Credit Card</th>
                         </tr>
                         <tr className="bg-gray" style={{ fontSize: '0.7rem' }}>
                             <th></th><th></th><th></th><th></th>

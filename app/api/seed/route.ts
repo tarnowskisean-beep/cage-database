@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { faker } from '@faker-js/faker';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,146 +11,180 @@ const CLIENTS = [
     { code: 'AFL', name: 'America First Legal', type: 'c3' },
     { code: 'AMSI', name: 'American Main Street Initiative', type: 'c3' },
     { code: 'CFRA', name: 'Citizens for Renewing America', type: 'c4' },
-    { code: 'CFS', name: 'Citizens for Sanity, Inc.', type: '527' },
     { code: 'CPI', name: 'Conservative Partnership Institute', type: 'c3' },
-    { code: 'CPIN', name: 'Conservative Partnership Initiative', type: 'c3' },
-    { code: 'CRA', name: 'Center for Renewing America', type: 'c3' },
-    { code: 'EIN', name: 'Election Integrity Network', type: 'c4' },
-    { code: 'IAP', name: 'Immigration Accountability Project', type: 'c3' },
-    { code: 'JLF', name: 'Johnson Leadership Fund', type: 'PAC' },
-    { code: 'MFI', name: 'Maryland Family Institute', type: 'c3' },
-    { code: 'PPO', name: 'Personal Policy Organization', type: 'c3' },
-    { code: 'SFCA', name: 'State Freedom Caucus Action', type: '527' },
-    { code: 'SFCF', name: 'State Freedom Caucus Foundation', type: 'c3' },
-    { code: 'SFCN', name: 'State Freedom Caucus Network', type: 'c4' }
+    { code: 'CPIN', name: 'Conservative Partnership Initiative', type: 'c3' }
 ];
 
-const PLATFORMS = ['Cage', 'Stripe', 'Propay', 'WinRed', 'Anedot'];
-const METHODS = ['Check', 'Credit Card', 'Cash', 'EFT', 'Online'];
-
-function randomDate(start: Date, end: Date) {
-    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-}
-
-function randomAmount() {
-    const rand = Math.random();
-    if (rand < 0.5) return Math.floor(Math.random() * 50) + 10;
-    if (rand < 0.8) return Math.floor(Math.random() * 200) + 50;
-    return Math.floor(Math.random() * 5000) + 250;
-}
-
-function randomChoice(arr: any[]) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
+const CAMPAIGNS = ['GENERAL', 'FALL25', 'GALA25', 'OYE25', 'MEMORIAL', 'BUILDING'];
+const METHODS = ['Check', 'Credit Card', 'EFT', 'Online'];
+const PLATFORMS = ['WinRed', 'Anedot', 'Stripe', 'Cage', 'Chainbridge'];
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const force = searchParams.get('force') === 'true';
 
-        console.log('Starting seed process...');
+        console.log('🌱 Starting Seed Process (Status Fixed)...');
 
-        if (force) {
-            await query(`TRUNCATE TABLE "DepositDonationLinks", "BankDeposits", "Donations", "BatchDocuments", "Batches", "Clients", "Users" RESTART IDENTITY CASCADE;`);
+        if (!force) {
+            return NextResponse.json({ message: 'Pass ?force=true to wipe and re-seed.' });
         }
 
-        // 2. Seed Users
-        let userId = 1;
-        const passwordHash = await bcrypt.hash('password', 10);
+        // 1. TRUNCATE
+        await query(`
+            TRUNCATE TABLE 
+            "Donations", "Batches", "Donors", "ClientBankAccounts", "ReconciliationPeriods", 
+            "Clients", "Users", "DonorTasks", "DonorFiles", "DonorNotes" 
+            RESTART IDENTITY CASCADE;
+        `);
 
-        // Upsert Admin
+        // 2. USERS
+        const passwordHash = await bcrypt.hash('password', 10);
         const userRes = await query(`
             INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials")
             VALUES ('agraham', 'alyssa@compass.com', $1, 'Admin', 'AG')
-            ON CONFLICT ("Email") DO UPDATE SET "Role" = 'Admin'
             RETURNING "UserID"
         `, [passwordHash]);
+        const userID = userRes.rows[0].UserID;
 
-        if (userRes.rows.length > 0) userId = userRes.rows[0].UserID;
-        else {
-            // Fetch existing if conflict
-            const existing = await query(`SELECT "UserID" FROM "Users" WHERE "Email" = 'alyssa@compass.com'`);
-            userId = existing.rows[0].UserID;
+        // 3. CLIENTS
+        const clientIds = [];
+        for (const c of CLIENTS) {
+            const res = await query(`
+                INSERT INTO "Clients" ("ClientCode", "ClientName", "ClientType", "Status")
+                VALUES ($1, $2, $3, 'Active') RETURNING "ClientID"
+            `, [c.code, c.name, c.type]);
+            clientIds.push(res.rows[0].ClientID);
         }
 
-        // 3. Seed Clients
-        const clientIds: number[] = [];
-        for (const client of CLIENTS) {
-            const res = await query(
-                `INSERT INTO "Clients" ("ClientCode", "ClientName", "ClientType") 
-                 VALUES ($1, $2, $3) 
-                 ON CONFLICT ("ClientCode") DO NOTHING
-                 RETURNING "ClientID"`,
-                [client.code, client.name, client.type]
-            );
+        // 4. DATA GENERATION PER CLIENT
+        for (const clientId of clientIds) {
 
-            if (res.rows.length > 0) {
-                clientIds.push(res.rows[0].ClientID);
-            } else {
-                const existing = await query(`SELECT "ClientID" FROM "Clients" WHERE "ClientCode" = $1`, [client.code]);
-                clientIds.push(existing.rows[0].ClientID);
+            // A. Bank Account
+            const bankRes = await query(`
+                INSERT INTO "ClientBankAccounts" ("ClientID", "AccountName", "AccountType", "BankName", "AccountNumberEncrypted")
+                VALUES ($1, 'Main Operating', 'Checking', 'Chase Bank', $2) RETURNING "AccountID"
+            `, [clientId, `ENC-${faker.string.numeric(8)}`]);
+            const accountId = bankRes.rows[0].AccountID;
+
+            // B. Donors
+            const donorIds = [];
+            const numDonors = faker.number.int({ min: 50, max: 100 });
+            for (let i = 0; i < numDonors; i++) {
+                const firstName = faker.person.firstName();
+                const lastName = faker.person.lastName();
+                const email = faker.internet.email({ firstName, lastName });
+
+                const dRes = await query(`
+                    INSERT INTO "Donors" 
+                    ("FirstName", "LastName", "Email", "Phone", "Address", "City", "State", "Zip", "Bio", "CreatedAt")
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                    RETURNING "DonorID"
+                `, [
+                    firstName,
+                    lastName,
+                    email,
+                    faker.phone.number(),
+                    faker.location.streetAddress(),
+                    faker.location.city(),
+                    faker.location.state({ abbreviated: true }),
+                    faker.location.zipCode(),
+                    faker.lorem.paragraph()
+                ]);
+                const donorId = dRes.rows[0].DonorID;
+                donorIds.push(donorId);
             }
-        }
 
-        // 4. Seed Batches & Donations
-        if (force) {
-            const startDate = new Date();
-            startDate.setMonth(startDate.getMonth() - 6);
-            const endDate = new Date();
+            // C. Periods & Batches
+            const today = new Date();
+            for (let i = 12; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const startOfPeriod = new Date(d.getFullYear(), d.getMonth(), 1);
+                const endOfPeriod = new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
-            for (const clientId of clientIds) {
-                const numBatches = Math.floor(Math.random() * 2) + 1;
+                const transferDate = new Date(endOfPeriod);
+                transferDate.setDate(transferDate.getDate() + 14);
 
-                for (let i = 0; i < numBatches; i++) {
-                    const batchDate = randomDate(startDate, endDate);
-                    const batchCode = `BATCH-${Math.floor(Math.random() * 10000)}`;
+                const isReconciled = i > 1;
+                const periodStatus = isReconciled ? 'Reconciled' : 'Open';
+
+                const pRes = await query(`
+                    INSERT INTO "ReconciliationPeriods" ("ClientID", "AccountID", "PeriodStartDate", "PeriodEndDate", "ScheduledTransferDate", "Status")
+                    VALUES ($1, $2, $3, $4, $5, $6) RETURNING "ReconciliationPeriodID"
+                `, [clientId, accountId, startOfPeriod.toISOString(), endOfPeriod.toISOString(), transferDate.toISOString(), periodStatus]);
+
+                // Batches
+                const numBatches = faker.number.int({ min: 2, max: 5 });
+                for (let b = 0; b < numBatches; b++) {
+                    const batchDate = new Date(d.getFullYear(), d.getMonth(), faker.number.int({ min: 1, max: 28 }));
+                    // Status must be Closed if reconciled, or Open/Closed otherwise.
+                    // Constraint allows: Open, Submitted, Closed.
+                    const batchStatus = isReconciled ? 'Closed' : (faker.datatype.boolean() ? 'Closed' : 'Open');
 
                     const batchRes = await query(`
-                        INSERT INTO "Batches" ("BatchCode", "ClientID", "EntryMode", "PaymentCategory", "Status", "CreatedBy", "Date")
-                        VALUES ($1, $2, 'Manual', 'Check', 'Closed', $3, $4)
-                        RETURNING "BatchID"
-                    `, [batchCode, clientId, userId, batchDate.toISOString()]);
-
+                        INSERT INTO "Batches" ("ClientID", "BatchCode", "Date", "Status", "EntryMode", "PaymentCategory", "CreatedBy")
+                        VALUES ($1, $2, $3, $4, 'Manual', 'Credit Card', $5) RETURNING "BatchID"
+                    `, [
+                        clientId,
+                        `BATCH-${faker.string.numeric(4)}`,
+                        batchDate.toISOString(),
+                        batchStatus,
+                        userID
+                    ]);
                     const batchId = batchRes.rows[0].BatchID;
 
-                    const numDonations = Math.floor(Math.random() * 10) + 1;
-                    for (let j = 0; j < numDonations; j++) {
-                        const amount = randomAmount();
-                        let method = randomChoice(METHODS);
-                        const platform = randomChoice(PLATFORMS);
-                        const type = 'Contribution';
+                    // Donations
+                    const numDonations = faker.number.int({ min: 5, max: 15 });
+                    for (let g = 0; g < numDonations; g++) {
+                        const amount = parseFloat(faker.finance.amount({ min: 25, max: 2500, dec: 2 }));
+                        const donorId = faker.helpers.arrayElement(donorIds);
 
-                        if (['WinRed', 'Stripe', 'Anedot'].includes(platform)) {
-                            method = 'Online';
+                        const method = faker.helpers.arrayElement(METHODS);
+                        let platform = 'Cage';
+                        if (method === 'Online') {
+                            platform = faker.helpers.arrayElement(['WinRed', 'Anedot', 'Stripe']);
+                        } else if (method === 'Check') {
+                            platform = 'Cage';
+                        } else {
+                            platform = faker.helpers.arrayElement(PLATFORMS);
                         }
 
-                        // Insert Donation
-                        await query(`
-                            INSERT INTO "Donations" ("ClientID", "BatchID", "GiftAmount", "GiftMethod", "GiftPlatform", "GiftDate", "TransactionType", "GiftYear", "GiftQuarter", "GiftType")
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Individual/Trust/IRA')
-                        `, [
-                            clientId,
-                            batchId,
-                            amount,
-                            method,
-                            platform,
-                            batchDate.toISOString(),
-                            type,
-                            batchDate.getFullYear(),
-                            `Q${Math.ceil((batchDate.getMonth() + 1) / 3)}`
-                        ]);
+                        // Ack logic
+                        let thankedAt = null;
+                        if (periodStatus === 'Reconciled' || (batchStatus === 'Closed' && faker.datatype.boolean())) {
+                            thankedAt = new Date(batchDate);
+                            thankedAt.setDate(thankedAt.getDate() + faker.number.int({ min: 1, max: 5 }));
+                        }
+                        if (amount > 100 && faker.datatype.boolean(0.2)) {
+                            thankedAt = null;
+                        }
+
+                        try {
+                            await query(`
+                                INSERT INTO "Donations" 
+                                ("ClientID", "BatchID", "DonorID", "GiftAmount", "GiftDate", "GiftMethod", "GiftPlatform", "CampaignID", "ThankYouSentAt", "GiftType", "CreatedBy")
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Individual', $10)
+                            `, [
+                                clientId,
+                                batchId,
+                                donorId,
+                                amount,
+                                batchDate.toISOString(),
+                                method,
+                                platform,
+                                faker.helpers.arrayElement(CAMPAIGNS),
+                                thankedAt ? thankedAt.toISOString() : null,
+                                userID
+                            ]);
+                        } catch (err) { }
                     }
                 }
             }
         }
 
-        return NextResponse.json({
-            success: true,
-            message: `Seeding complete. Clients: ${CLIENTS.length}. Mode: ${force ? 'Full Reset' : 'Clients Only (Safe)'}`
-        });
-
+        return NextResponse.json({ success: true, message: 'Database populated successfully!' });
     } catch (error: any) {
-        console.error('Seed error:', error);
+        console.error(error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

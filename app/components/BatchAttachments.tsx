@@ -56,7 +56,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
         if (paymentCategory === 'Checks' || paymentCategory === 'Mixed') {
             reqs.push({ label: 'Reply Slips', type: 'ReplySlipsPDF', required: true });
             reqs.push({ label: 'Check Images', type: 'ChecksPDF', required: true });
-        } else if (paymentCategory === 'CC') {
+        } else if (paymentCategory === 'Credit Card') {
             reqs.push({ label: 'Reply Slips', type: 'ReplySlipsPDF', required: true });
         } else if (paymentCategory === 'Cash') {
             reqs.push({ label: 'Reply Slips', type: 'ReplySlipsPDF', required: true });

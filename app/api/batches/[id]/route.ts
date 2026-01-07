@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
                     if (!uploadedTypes.has('ReplySlipsPDF')) missing.push('Reply Slips');
                     if (!uploadedTypes.has('ChecksPDF')) missing.push('Check Images');
                 }
-                else if (paymentCategory === 'CC') {
+                else if (paymentCategory === 'Credit Card') {
                     if (!uploadedTypes.has('ReplySlipsPDF')) missing.push('Reply Slips');
                 }
                 else if (paymentCategory === 'Cash') {

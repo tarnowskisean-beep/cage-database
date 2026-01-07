@@ -434,7 +434,7 @@ function CreateBatchModal({ onClose, refresh }: { onClose: () => void, refresh: 
                             >
                                 <option value="Checks">Check</option>
                                 <option value="Cash">Cash</option>
-                                <option value="CC">Credit Card</option>
+                                <option value="Credit Card">Credit Card</option>
                                 <option value="EFT">EFT</option>
                                 {/* <option value="Online">Online</option> */}
                                 {/* <option value="Stock">Stock</option> */}

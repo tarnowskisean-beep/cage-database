@@ -75,7 +75,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         switch (category) {
             case 'Checks': return 'Check';
             case 'Cash': return 'Cash';
-            case 'CC': return 'Credit Card';
+            case 'Credit Card': return 'Credit Card';
+            case 'CC': return 'Credit Card'; // Legacy support
             case 'EFT': return 'EFT';
             default: return null; // Mixed or Zeros or others allow selection
         }
