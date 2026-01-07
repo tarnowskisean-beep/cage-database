@@ -589,7 +589,6 @@ export default function ImportPage() {
                                                 <option key={c.ClientID} value={c.ClientID}>{c.ClientCode} - {c.ClientName}</option>
                                             ))}
                                         </select>
-                                        </select>
                                     </div>
 
                                     {/* Account Selector */}
@@ -669,10 +668,10 @@ export default function ImportPage() {
                                 </div>
                             </div>
                         </div>
-            )}
-        </div>
-    )
-}
+                    )}
+                </div>
+            )
+            }
         </div >
     );
 }
