@@ -14,6 +14,7 @@ function BatchesContent() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [clientFilter, setClientFilter] = useState('All');
     const [modeFilter, setModeFilter] = useState('All');
+    const [paymentCategoryFilter, setPaymentCategoryFilter] = useState('All');
     const [error, setError] = useState('');
 
     // Helper to get local date string YYYY-MM-DD
@@ -125,11 +126,17 @@ function BatchesContent() {
             }
         }
 
+        // Payment Category Filter Logic
+        let matchesCategory = paymentCategoryFilter === 'All';
+        if (!matchesCategory && b.PaymentCategory) {
+            matchesCategory = b.PaymentCategory === paymentCategoryFilter;
+        }
+
         // Date Range Check
         const batchDate = b.Date ? b.Date.substring(0, 10) : '';
         const matchesDate = (!startDate || batchDate >= startDate) && (!endDate || batchDate <= endDate);
 
-        return matchesStatus && matchesClient && matchesMode && matchesDate;
+        return matchesStatus && matchesClient && matchesMode && matchesDate && matchesCategory;
     });
 
     const totalCount = filteredBatches.length;
@@ -216,6 +223,20 @@ function BatchesContent() {
                         <option value="Barcode/Datamatrix">Barcode/Datamatrix</option>
                         <option value="Manual">Manual</option>
                         <option value="Zeros">Zeros</option>
+                    </select>
+
+                    {/* Payment Category Filter */}
+                    <select
+                        className="glass-panel px-4 py-2 text-sm text-gray-300 bg-transparent border-none focus:ring-0 cursor-pointer min-w-[150px]"
+                        value={paymentCategoryFilter}
+                        onChange={(e) => setPaymentCategoryFilter(e.target.value)}
+                    >
+                        <option value="All">All Categories</option>
+                        <option value="Checks">Check</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="EFT">EFT</option>
+                        <option value="Mixed">Mixed</option>
                     </select>
 
                     {/* Status Tabs */}
