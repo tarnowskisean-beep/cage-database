@@ -127,7 +127,6 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
                 donorEmployer, donorOccupation,
                 giftPledgeAmount || 0, giftFee || 0, giftCustodian, giftConduit,
                 postMarkYear, postMarkQuarter, isInactive || false, comment,
-                postMarkYear, postMarkQuarter, isInactive || false, comment,
                 campaignId || '' // Fail-safe
             ]
         );
