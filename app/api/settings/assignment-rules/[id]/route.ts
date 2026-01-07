@@ -4,14 +4,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from '@/lib/db';
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || (session.user as any).role !== 'Admin') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const id = params.id;
+        const { id } = await params;
         await query('DELETE FROM "AssignmentRules" WHERE "RuleID" = $1', [id]);
 
         return NextResponse.json({ success: true });
@@ -21,14 +21,14 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || (session.user as any).role !== 'Admin') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const id = params.id;
+        const { id } = await params;
         const body = await request.json();
 
         // Simple update for IsActive toggle or full edit (not implemented full edit UI yet, but API should support it)
