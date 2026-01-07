@@ -138,7 +138,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                     data['Gift Type'] || 'Online Source',
                     data['Gift Method'] || 'Credit Card',
                     sessionId,
-                    data['MailCode'] || data['Mail Code'] || null,
+                    data['CampaignID'] || data['Campaign ID'] || data['MailCode'] || data['Mail Code'] || null,
                     data['ScanString'] || data['Scan String'] || data['Scan'] || null
                 );
                 insertValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
@@ -147,7 +147,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             if (insertValues.length > 0) {
                 const queryStr = `
                     INSERT INTO "Donations" (
-                        "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID", "MailCode", "ScanString"
+                        "BatchID", "ClientID", "FirstName", "LastName", "Amount", "DonationDate", "GiftType", "PaymentMethod", "ImportSessionID", "CampaignID", "ScanString"
                     )
                     VALUES ${insertValues.join(', ')}
                 `;

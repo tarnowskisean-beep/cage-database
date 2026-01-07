@@ -14,9 +14,9 @@ export default async function FixSchemaPage() {
 
         // 1. Add Donations Columns
         const missingCols = [
-            'MailCode', 'DonorPrefix', 'DonorFirstName', 'DonorMiddleName', 'DonorLastName', 'DonorSuffix',
+            'CampaignID', 'DonorPrefix', 'DonorFirstName', 'DonorMiddleName', 'DonorLastName', 'DonorSuffix',
             'DonorAddress', 'DonorCity', 'DonorState', 'DonorZip', 'DonorEmployer', 'DonorOccupation',
-            'GiftCustodian', 'GiftConduit', 'PostMarkYear', 'PostMarkQuarter', 'Comment', 'OrganizationName',
+            'GiftCustodian', 'GiftConduit', 'ReceiptYear', 'ReceiptQuarter', 'Comment', 'OrganizationName',
             'DonorEmail', 'DonorPhone', 'CheckNumber', 'ScanString', 'GiftType', 'Version', 'GiftPledgeAmount', 'IsInactive',
             'UpdatedAt'
         ];

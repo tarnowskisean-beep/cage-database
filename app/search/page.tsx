@@ -30,7 +30,7 @@ interface SearchResult {
     ClientCode: string;
     BatchCode: string; // "Batch No"
     BatchID: number;
-    MailCode?: string;
+    CampaignID?: string;
     ScanString?: string; // "Composite ID"
     // ... other fields as needed for display
     CheckNumber?: string;
@@ -85,7 +85,7 @@ export default function SearchPage() {
         docTypeOp: 'equals', docTypeVal: '',
         statusOp: 'equals', statusVal: '',
         compositeIdOp: 'beginsWith', compositeIdVal: '',
-        mailCodeOp: 'equals', mailCodeVal: ''
+        campaignIdOp: 'equals', campaignIdVal: ''
     });
 
     const [dateRangeType, setDateRangeType] = useState<'custom' | '12months' | 'all'>('custom');
@@ -160,7 +160,7 @@ export default function SearchPage() {
             add('accountId', formData.accountOp, formData.accountVal);
             add('checkNumber', formData.checkNoOp, formData.checkNoVal);
             add('giftType', formData.docTypeOp, formData.docTypeVal);
-            add('mailCode', formData.mailCodeOp, formData.mailCodeVal);
+            add('campaignId', formData.campaignIdOp, formData.campaignIdVal);
 
             if (formData.statusVal === 'Inactive') add('isInactive', 'equals', 'true');
             if (formData.statusVal === 'Active') add('isInactive', 'equals', 'false');
@@ -198,7 +198,7 @@ export default function SearchPage() {
             clientVal: '', batchCodeVal: '', accountVal: '',
             amountVal: '', lastNameVal: '', zipCodeVal: '', cityVal: '',
             checkNoVal: '', docTypeVal: '', statusVal: '',
-            compositeIdVal: '', mailCodeVal: ''
+            compositeIdVal: '', campaignIdVal: ''
         }));
         setResults([]);
         setSearched(false);
@@ -433,7 +433,7 @@ export default function SearchPage() {
                         <Row label="Check No" fieldKey="checkNumber" opKey="checkNoOp" valKey="checkNoVal" />
                         <Row label="Doc Type" fieldKey="giftType" opKey="docTypeOp" valKey="docTypeVal" options={['Check', 'Cash', 'Credit Card', 'EFT']} />
                         <Row label="Status" fieldKey="isInactive" opKey="statusOp" valKey="statusVal" options={['Active', 'Inactive']} />
-                        <Row label="Mail Code" fieldKey="mailCode" opKey="mailCodeOp" valKey="mailCodeVal" />
+                        <Row label="Campaign" fieldKey="campaignId" opKey="campaignIdOp" valKey="campaignIdVal" />
                     </div>
                 </div>
 

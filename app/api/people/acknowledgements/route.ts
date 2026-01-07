@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     try {
         let sql = `
             SELECT 
-                d."DonationID", d."GiftDate", d."GiftAmount", d."GiftMethod", d."MailCode",
+                d."DonationID", d."GiftDate", d."GiftAmount", d."GiftMethod", d."CampaignID",
                 don."DonorID", don."FirstName", don."LastName", don."Email"
             FROM "Donations" d
             JOIN "Donors" don ON d."DonorID" = don."DonorID"

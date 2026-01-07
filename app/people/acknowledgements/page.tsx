@@ -152,7 +152,7 @@ export default function AcknowledgementsPage() {
                                     <td className="px-6 py-3 font-mono text-white">${Number(d.GiftAmount).toFixed(2)}</td>
                                     <td className="px-6 py-3">{d.GiftMethod}</td>
                                     <td className="px-6 py-3 text-xs">
-                                        {d.MailCode ? <span className="bg-white/10 px-2 py-0.5 rounded">{d.MailCode}</span> : <span className="text-gray-600">General</span>}
+                                        {d.CampaignID ? <span className="bg-white/10 px-2 py-0.5 rounded">{d.CampaignID}</span> : <span className="text-gray-600">General</span>}
                                     </td>
                                     <td className="px-6 py-3 text-right">
                                         <button

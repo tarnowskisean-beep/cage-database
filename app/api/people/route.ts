@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
 
         if (campaignParam) {
             params.push(campaignParam);
-            sql += ` AND don."MailCode" = $${paramIdx}`;
+            sql += ` AND don."CampaignID" = $${paramIdx}`;
             paramIdx++;
         }
 

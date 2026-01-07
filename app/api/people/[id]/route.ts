@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const historyRes = await query(`
             SELECT 
                 "DonationID", "GiftDate", "GiftAmount", "GiftMethod", "GiftPlatform", 
-                "BatchID", "CheckNumber", "MailCode",
+                "BatchID", "CheckNumber", "CampaignID",
                 "Designation", "ThankYouSentAt", "TaxReceiptSentAt",
                 c."ClientName", c."ClientCode"
             FROM "Donations" d
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const pledges = pledgesRes.rows.map(pledge => {
             const donated = history
-                .filter(h => h.MailCode === pledge.MailCode)
+                .filter(h => h.CampaignID === pledge.CampaignID)
                 .reduce((sum, h) => sum + Number(h.GiftAmount), 0);
             return {
                 ...pledge,

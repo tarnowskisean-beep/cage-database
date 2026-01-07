@@ -281,7 +281,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                     )}
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Mail Code</Label>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Campaign ID</Label>
                                     <Input
                                         ref={manualEntryRef}
                                         value={formData.mailCode}
@@ -395,13 +395,13 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <Input disabled value={new Date().toLocaleString()} />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>PostMark Year</Label>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Receipt Year</Label>
                                     <Select value={formData.postMarkYear} onChange={handleChange('postMarkYear')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
                                         {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                                     </Select>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>PostMark Qtr</Label>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Receipt Qtr</Label>
                                     <Select value={formData.postMarkQuarter} onChange={handleChange('postMarkQuarter')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
                                         {['Q1', 'Q2', 'Q3', 'Q4'].map(q => <option key={q} value={q}>{q}</option>)}
                                     </Select>
@@ -447,7 +447,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Mail Code</Label>
+                                <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Campaign ID</Label>
                                 <Input value={formData.mailCode} onChange={handleChange('mailCode')} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>

@@ -14,7 +14,7 @@ interface SearchResult {
     CreatedAt: string;
     GiftDate: string;
     ScanString?: string;
-    MailCode?: string;
+    CampaignID?: string;
     GiftPledgeAmount?: number;
     GiftFee?: number;
 }
@@ -113,15 +113,15 @@ function ReportContent() {
         const fee = parseAmount(r.GiftFee);
         const platform = r.GiftPlatform || 'Unknown';
 
-        // MailCode extraction:
+        // CampaignID extraction:
         // 1. Try ScanString split
-        // 2. Try MailCode field
+        // 2. Try CampaignID field
         // 3. Fallback
-        let mailCode = 'No Mail Code';
+        let mailCode = 'No Campaign';
         if (r.ScanString && r.ScanString.includes('\t')) {
             mailCode = r.ScanString.split('\t')[0];
-        } else if (r.MailCode) {
-            mailCode = r.MailCode;
+        } else if (r.CampaignID) {
+            mailCode = r.CampaignID;
         }
 
         // --- Activity Window ---

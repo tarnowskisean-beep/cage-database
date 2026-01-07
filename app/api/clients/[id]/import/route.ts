@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             try {
                 await query(`
                     INSERT INTO "Prospects" 
-                    ("ClientID", "CagingID", "MailerID", "MailCode", "FirstName", "LastName", "Address", "City", "State", "Zip", "ImportedAt")
+                    ("ClientID", "CagingID", "MailerID", "CampaignID", "FirstName", "LastName", "Address", "City", "State", "Zip", "ImportedAt")
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
                     ON CONFLICT ("ClientID", "CagingID") 
                     DO UPDATE SET 

@@ -11,13 +11,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     try {
         const body = await req.json();
-        const { MailCode, Amount } = body;
+        const { CampaignID, Amount } = body;
 
         const result = await query(`
-            INSERT INTO "Pledges" ("DonorID", "MailCode", "Amount", "CreatedAt", "UpdatedAt")
+            INSERT INTO "Pledges" ("DonorID", "CampaignID", "Amount", "CreatedAt", "UpdatedAt")
             VALUES ($1, $2, $3, NOW(), NOW())
             RETURNING *
-        `, [id, MailCode, Amount]);
+        `, [id, CampaignID, Amount]);
 
         return NextResponse.json({ success: true, pledge: result.rows[0] });
     } catch (e: any) {

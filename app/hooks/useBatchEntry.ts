@@ -244,8 +244,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
             transactionType: (record.TransactionType === 'Contribution' ? 'Donation' : record.TransactionType) ||
                 (batch?.DefaultTransactionType === 'Contribution' ? 'Donation' : batch?.DefaultTransactionType) || 'Donation',
             method: record.GiftMethod || batch?.DefaultGiftMethod || '',
-            postMarkYear: record.PostMarkYear?.toString() || new Date().getFullYear().toString(),
-            postMarkQuarter: record.PostMarkQuarter || `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
+            postMarkYear: record.ReceiptYear?.toString() || new Date().getFullYear().toString(),
+            postMarkQuarter: record.ReceiptQuarter || `Q${Math.floor(new Date().getMonth() / 3) + 1}`,
             isInactive: record.IsInactive ? 'True' : 'False',
             comment: record.Comment || '',
             organizationName: record.OrganizationName || '',
@@ -335,10 +335,11 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 GiftFee: parseFloat(formData.giftFee) || 0,
                 GiftCustodian: formData.giftCustodian,
                 GiftConduit: formData.giftConduit,
-                PostMarkYear: parseInt(formData.postMarkYear),
-                PostMarkQuarter: formData.postMarkQuarter,
+                ReceiptYear: parseInt(formData.postMarkYear),
+                ReceiptQuarter: formData.postMarkQuarter,
                 IsInactive: formData.isInactive === 'True',
-                Comment: formData.comment
+                Comment: formData.comment,
+                CampaignID: formData.mailCode
             };
 
             let res;

@@ -51,8 +51,8 @@ export default async function DebugFull() {
              "DonorAddress", "DonorCity", "DonorState", "DonorZip",
              "DonorEmployer", "DonorOccupation",
              "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
-             "PostMarkYear", "PostMarkQuarter", "IsInactive", "Comment",
-             "MailCode"
+             "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
+             "CampaignID"
             )
             VALUES ($1, $2, $3, $4, $5, $6, 'Donation', $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
             RETURNING "DonationID"`,

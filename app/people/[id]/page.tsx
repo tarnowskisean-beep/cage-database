@@ -29,12 +29,12 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     const [endDate, setEndDate] = useState('');
     const [clientFilter, setClientFilter] = useState('All');
     const [methodFilter, setMethodFilter] = useState('All');
-    const [mailCodeFilter, setMailCodeFilter] = useState('All');
+    const [campaignFilter, setCampaignFilter] = useState('All');
 
     // Derived Lists for Dropdowns
     const uniqueClients = Array.from(new Set(history.map(h => h.ClientCode).filter(Boolean))).sort();
     const uniqueMethods = Array.from(new Set(history.map(h => h.GiftMethod || 'Check').filter(Boolean))).sort();
-    const uniqueMailCodes = Array.from(new Set(history.map(h => h.MailCode).filter(Boolean))).sort();
+    const uniqueCampaigns = Array.from(new Set(history.map(h => h.CampaignID).filter(Boolean))).sort();
 
     // Filter Logic
     const filteredHistory = history.filter(h => {
@@ -42,8 +42,8 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
         const matchDate = (!startDate || d >= startDate) && (!endDate || d <= endDate);
         const matchClient = clientFilter === 'All' || h.ClientCode === clientFilter;
         const matchMethod = methodFilter === 'All' || (h.GiftMethod || 'Check') === methodFilter;
-        const matchMailCode = mailCodeFilter === 'All' || h.MailCode === mailCodeFilter;
-        return matchDate && matchClient && matchMethod && matchMailCode;
+        const matchCampaign = campaignFilter === 'All' || h.CampaignID === campaignFilter;
+        return matchDate && matchClient && matchMethod && matchCampaign;
     });
 
     const fetchData = () => {
@@ -275,7 +275,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                             <div key={pledge.PledgeID} className="bg-white/5 p-4 rounded border border-white/5">
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
-                                        <p className="text-sm font-medium text-white">{pledge.MailCode}</p>
+                                        <p className="text-sm font-medium text-white">{pledge.CampaignID}</p>
                                         <p className="text-xs text-gray-400 uppercase tracking-widest">Campaign</p>
                                     </div>
                                     <div className="text-right">
@@ -367,11 +367,11 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                         </select>
                         <select
                             className="bg-black/20 border border-white/10 rounded px-3 py-1 text-sm text-gray-300 focus:outline-none focus:border-white/30"
-                            value={mailCodeFilter}
-                            onChange={e => setMailCodeFilter(e.target.value)}
+                            value={campaignFilter}
+                            onChange={e => setCampaignFilter(e.target.value)}
                         >
                             <option value="All">All Campaigns</option>
-                            {uniqueMailCodes.map(m => <option key={m} value={m}>{m}</option>)}
+                            {uniqueCampaigns.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                     </div>
                 </div>
@@ -407,8 +407,8 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                             {h.GiftMethod || 'Check'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {h.MailCode ? (
-                                                <span className="text-gray-300 font-medium">{h.MailCode}</span>
+                                            {h.CampaignID ? (
+                                                <span className="text-gray-300 font-medium">{h.CampaignID}</span>
                                             ) : (
                                                 <span className="text-gray-600 text-[10px] uppercase tracking-wider font-bold">General</span>
                                             )}
@@ -485,7 +485,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
             {showAddPledge && (
                 <AddPledgeModal
                     donorId={donorId}
-                    campaigns={uniqueMailCodes}
+                    campaigns={uniqueCampaigns}
                     onClose={() => setShowAddPledge(false)}
                     onSave={() => { setShowAddPledge(false); fetchData(); }}
                 />
@@ -752,7 +752,7 @@ function AddPledgeModal({ donorId, campaigns, onClose, onSave }: any) {
             await fetch(`/api/people/${donorId}/pledges`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Amount: amount, MailCode: finalCampaign })
+                body: JSON.stringify({ Amount: amount, CampaignID: finalCampaign })
             });
             onSave();
         } catch (error) {

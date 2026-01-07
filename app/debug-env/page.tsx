@@ -14,7 +14,7 @@ export default async function DebugEnv() {
 
         // Check Donations Columns
         const requiredCols = [
-            'MailCode', 'DonorPrefix', 'DonorFirstName', 'GiftType', 'OrganizationName', 'StartLine', 'Version'
+            'CampaignID', 'DonorPrefix', 'DonorFirstName', 'GiftType', 'OrganizationName', 'StartLine', 'Version'
         ];
         const missing: string[] = [];
 

@@ -54,8 +54,8 @@ export interface DonationRecord {
     DonorZip?: string;
     DonorPhone?: string;
     GiftPlatform?: string; // NEW
-    PostMarkYear?: number; // NEW
-    PostMarkQuarter?: string; // NEW
+    ReceiptYear?: number; // NEW
+    ReceiptQuarter?: string; // NEW
     IsInactive?: boolean; // NEW
     GiftYear?: number; // NEW
     GiftQuarter?: string; // NEW
@@ -65,4 +65,5 @@ export interface DonationRecord {
     Comment?: string;
     GiftCustodian?: string;
     GiftConduit?: string;
+    CampaignID?: string; // Renamed from MailCode
 }

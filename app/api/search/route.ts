@@ -45,7 +45,8 @@ const FIELD_MAP: Record<string, string> = {
     'clientCode': 'c."ClientCode"',
     'batchCode': 'b."BatchCode"',
     'compositeId': 'd."ScanString"',
-    'accountId': 'd."AccountID"'
+    'accountId': 'd."AccountID"',
+    'campaignId': 'd."CampaignID"'
 };
 
 function buildWhereClause(group: SearchGroup, params: (string | number | boolean | null)[]): string {
