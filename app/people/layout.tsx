@@ -31,7 +31,7 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                             : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
                             }`}
                     >
-                        Resolution Queue
+                        Client Review queue
                     </Link>
                     <Link
                         href="/people/acknowledgements"

@@ -187,7 +187,7 @@ function DashboardContent() {
             <div>
               <h3 className="text-yellow-500 font-bold uppercase tracking-wide text-sm">Action Required</h3>
               {/* @ts-ignore */}
-              <p className="text-gray-300 text-sm">There are <strong className="text-white">{stats.pendingResolutions} donor identity conflicts</strong> waiting for resolution.</p>
+              <p className="text-gray-300 text-sm">There are <strong className="text-white">{stats.pendingResolutions} items</strong> flagged for client review.</p>
             </div>
           </div>
           <button

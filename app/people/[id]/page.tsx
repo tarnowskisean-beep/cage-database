@@ -449,19 +449,19 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                                 {h.ResolutionStatus !== 'Pending' && (
                                                     <button
                                                         onClick={async () => {
-                                                            if (!confirm('Flag this donation for resolution?')) return;
+                                                            if (!confirm('Flag this donation for client review?')) return;
                                                             await fetch(`/api/donations/${h.DonationID}/flag`, { method: 'POST' });
                                                             fetchData();
                                                         }}
                                                         className="text-[10px] text-gray-600 hover:text-yellow-500 transition-colors opacity-0 group-hover:opacity-100 uppercase tracking-wider font-bold"
-                                                        title="Flag as Ambiguous"
+                                                        title="Flag for Client Review"
                                                     >
-                                                        🚩 Flag
+                                                        🚩 Flag for Client
                                                     </button>
                                                 )}
                                                 {h.ResolutionStatus === 'Pending' && (
                                                     <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-wider">
-                                                        ⚠️ Pending
+                                                        ⚠️ Client Review
                                                     </span>
                                                 )}
                                             </div>

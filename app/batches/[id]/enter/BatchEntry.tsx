@@ -457,7 +457,7 @@ export default function BatchEntry({ id }: { id: string }) {
                                     style={{ width: '16px', height: '16px', accentColor: 'var(--color-warning)' }}
                                 />
                                 <label htmlFor="flagResolution" style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>
-                                    🚩 Flag for Resolution (Ambiguous)
+                                    🚩 Flag for Client Review
                                 </label>
                             </div>
 
