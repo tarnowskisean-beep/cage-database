@@ -3,6 +3,7 @@ import { query, transaction } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { CreateBatchSchema } from '@/lib/schemas';
+import { logAudit } from '@/lib/audit';
 
 export async function GET(request: Request) {
   try {
@@ -187,6 +188,14 @@ export async function POST(request: Request) {
 
       return insertRes.rows[0];
     });
+
+    // 5. Audit Log (Non-blocking)
+    logAudit(userId, 'CREATE_BATCH', result.BatchID, {
+      batchCode: result.BatchCode,
+      clientId: data.clientId,
+      date: data.date,
+      createdBy: session.user.email
+    }).catch(console.error);
 
     return NextResponse.json(result);
   } catch (error: any) {

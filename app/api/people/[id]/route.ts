@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { query } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
@@ -148,6 +149,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 "UpdatedAt" = NOW()
             WHERE "DonorID" = $11
         `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID || null, id, ProfilePicture, AlertMessage, alertEnabled]);
+
+        // Audit Log
+        logAudit(session.user.id || (session.user as any).UserID || 0, 'UPDATE_DONOR', id, {
+            updatedFields: Object.keys(body),
+            updatedBy: session.user.email
+        }).catch(console.error);
 
         return NextResponse.json({ success: true });
     } catch (e: any) {

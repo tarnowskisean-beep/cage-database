@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const contentType = request.headers.get('content-type') || '';
         let code: string, name: string, logoUrl: string, clientType: string, initialAccount: any;
 
@@ -118,6 +124,13 @@ export async function POST(request: Request) {
                     initialAccount.accountType || 'Operating'
                 ]
             );
+
+            // Audit Log
+            logAudit((session.user as any).id || 0, 'CREATE_CLIENT', newClient.ClientID, {
+                clientCode: newClient.ClientCode,
+                clientName: newClient.ClientName,
+                createdBy: session.user?.email
+            }).catch(console.error);
 
             return newClient;
         });
