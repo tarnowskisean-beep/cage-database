@@ -576,7 +576,7 @@ export default function ImportPage() {
                                     </p>
                                 </div>
 
-                                <div className="glass-panel p-4 flex gap-4 items-end bg-zinc-900 border-blue-500/30 shadow-lg shadow-blue-500/10">
+                                <div className="glass-panel p-4 flex flex-wrap gap-4 items-end bg-zinc-900 border-blue-500/30 shadow-lg shadow-blue-500/10">
                                     <div className="flex flex-col">
                                         <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Assign to Client</label>
                                         <select
@@ -610,9 +610,10 @@ export default function ImportPage() {
                                     </div>
 
                                     <button
+                                        type="button"
                                         onClick={handleCommit}
-                                        className="btn-primary h-[42px]"
-                                        disabled={loading || !selectedClientId}
+                                        className="btn-primary h-[42px] px-6"
+                                        disabled={loading || !selectedClientId || (accounts.length > 0 && !selectedAccountId)}
                                     >
                                         {loading ? 'Committing...' : 'Commit to Database'}
                                     </button>
