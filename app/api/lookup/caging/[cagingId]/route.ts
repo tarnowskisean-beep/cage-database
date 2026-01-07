@@ -11,7 +11,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ cagi
 
         // 1. Check Donors Table (Primary Source for Alerts)
         const donorRes = await query(`
-            SELECT "DonorID", "FirstName", "LastName", "Address", "City", "State", "Zip", "CampaignID", "AlertMessage", "HasAlert", "CagingID"
+            SELECT "DonorID", "FirstName", "LastName", "Address", "City", "State", "Zip", "AlertMessage", "HasAlert", "CagingID"
             FROM "Donors" 
             WHERE "CagingID" = $1 OR "DonorID"::text = $1
             LIMIT 1
