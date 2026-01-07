@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const start = searchParams.get('start');
     const end = searchParams.get('end');
     const status = searchParams.get('status') || 'outstanding'; // 'outstanding' | 'history'
+    const minAmount = parseFloat(searchParams.get('minAmount') || '50');
 
     try {
         let sql = `
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
             FROM "Donations" d
             JOIN "Donors" don ON d."DonorID" = don."DonorID"
             JOIN "Batches" b ON d."BatchID" = b."BatchID"
-            WHERE d."GiftAmount" > 50
+            WHERE d."GiftAmount" > $1
             AND b."Status" IN ('Closed', 'Reconciled')
         `;
 
@@ -35,8 +36,8 @@ export async function GET(req: NextRequest) {
         } else {
             sql += ` AND d."ThankYouSentAt" IS NULL`;
         }
-        const params: any[] = [];
-        let paramIdx = 1;
+        const params: any[] = [minAmount];
+        let paramIdx = 2;
 
         // Client Access Control
         if ((session.user as any).role === 'ClientUser') {

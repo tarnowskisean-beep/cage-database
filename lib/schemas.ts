@@ -23,6 +23,8 @@ export const CreateBatchSchema = z.object({
     defaultGiftYear: z.union([z.string(), z.number()]).optional().transform(v => Number(v)),
     defaultGiftQuarter: z.string().optional().default('Q1'),
     defaultGiftType: z.string().optional().default('Individual/IRA/Trust'),
+
+    accountId: z.string().optional(), // For Account Selection
 });
 
 // --- Donation Schema ---

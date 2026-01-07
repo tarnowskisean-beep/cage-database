@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { CreateBatchSchema } from '@/lib/schema';
+import { CreateBatchSchema } from '@/lib/schemas';
 
 export async function GET(request: Request) {
   try {

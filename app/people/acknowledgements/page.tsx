@@ -10,6 +10,7 @@ export default function AcknowledgementsPage() {
     const [filterDateEnd, setFilterDateEnd] = useState('');
     const [viewMode, setViewMode] = useState<'outstanding' | 'history'>('outstanding');
     const [searchTerm, setSearchTerm] = useState('');
+    const [minAmount, setMinAmount] = useState('50');
 
     // Bulk Selection
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -20,6 +21,7 @@ export default function AcknowledgementsPage() {
         if (filterDateStart) params.set('start', filterDateStart);
         if (filterDateEnd) params.set('end', filterDateEnd);
         params.set('status', viewMode);
+        params.set('minAmount', minAmount);
 
         try {
             const res = await fetch(`/api/people/acknowledgements?${params.toString()}`);
@@ -33,9 +35,12 @@ export default function AcknowledgementsPage() {
     };
 
     useEffect(() => {
-        fetchDonations();
-        setSelectedIds(new Set()); // Clear selection on mode switch
-    }, [filterDateStart, filterDateEnd, viewMode]);
+        // Debounce fetching when typing amount
+        const timer = setTimeout(() => {
+            fetchDonations();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [filterDateStart, filterDateEnd, viewMode, minAmount]);
 
     // Local Filter for Search
     const displayedDonations = donations.filter(d => {
@@ -121,22 +126,34 @@ export default function AcknowledgementsPage() {
                         />
                     </div>
 
-                    {/* Date Filters */}
-                    <div className="flex items-center gap-2 bg-white/5 rounded-lg border border-white/10 px-3 py-1.5">
-                        <span className="text-xs text-gray-400 font-bold uppercase">Date Range</span>
-                        <input
-                            type="date"
-                            className="bg-transparent border-none text-sm text-white focus:ring-0 p-0"
-                            value={filterDateStart}
-                            onChange={e => setFilterDateStart(e.target.value)}
-                        />
-                        <span className="text-gray-500">-</span>
-                        <input
-                            type="date"
-                            className="bg-transparent border-none text-sm text-white focus:ring-0 p-0"
-                            value={filterDateEnd}
-                            onChange={e => setFilterDateEnd(e.target.value)}
-                        />
+                    <div className="flex gap-2">
+                        {/* Date Filters */}
+                        <div className="flex items-center gap-2 bg-white/5 rounded-lg border border-white/10 px-3 py-1.5">
+                            <span className="text-xs text-gray-400 font-bold uppercase">Min $</span>
+                            <input
+                                type="number"
+                                className="bg-transparent border-none text-sm text-white focus:ring-0 p-0 w-16 text-right font-mono"
+                                value={minAmount}
+                                onChange={e => setMinAmount(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-white/5 rounded-lg border border-white/10 px-3 py-1.5">
+                            <span className="text-xs text-gray-400 font-bold uppercase">Date Range</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-sm text-white focus:ring-0 p-0"
+                                value={filterDateStart}
+                                onChange={e => setFilterDateStart(e.target.value)}
+                            />
+                            <span className="text-gray-500">-</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-sm text-white focus:ring-0 p-0"
+                                value={filterDateEnd}
+                                onChange={e => setFilterDateEnd(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
 
