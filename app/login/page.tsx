@@ -77,13 +77,13 @@ export default function LoginPage() {
 
                 <div className="w-full space-y-6">
                     <div>
-                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-medium">Username</label>
+                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-medium">Username or Email</label>
                         <input
                             type="text"
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                             className="w-full bg-[#18181b] border border-[#27272a] text-white px-4 py-3 rounded-sm outline-none focus:border-white focus:bg-[#27272a] transition-all placeholder-gray-700"
-                            placeholder="Enter your username"
+                            placeholder="Enter your username or email"
                             autoFocus
                             disabled={show2FA}
                         />

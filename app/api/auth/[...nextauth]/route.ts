@@ -19,8 +19,9 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 try {
+                    console.log("Auth Attempt:", credentials?.username); // DEBUG LOG
                     const res = await query(
-                        'SELECT * FROM "Users" WHERE "Username" = $1',
+                        'SELECT * FROM "Users" WHERE "Username" = $1 OR "Email" = $1',
                         [credentials.username]
                     );
                     const user = res.rows[0];
