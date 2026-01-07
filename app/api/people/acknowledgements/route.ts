@@ -13,20 +13,28 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const start = searchParams.get('start');
     const end = searchParams.get('end');
+    const status = searchParams.get('status') || 'outstanding'; // 'outstanding' | 'history'
 
     try {
         let sql = `
             SELECT 
                 d."DonationID", d."GiftDate", d."GiftAmount", d."GiftMethod", d."CampaignID", d."Comment",
+                d."ThankYouSentAt",
                 don."DonorID", don."FirstName", don."LastName", don."Email",
                 don."Address", don."City", don."State", don."Zip"
             FROM "Donations" d
             JOIN "Donors" don ON d."DonorID" = don."DonorID"
             JOIN "Batches" b ON d."BatchID" = b."BatchID"
-            WHERE d."ThankYouSentAt" IS NULL
-            AND d."GiftAmount" > 50
+            WHERE d."GiftAmount" > 50
             AND b."Status" IN ('Closed', 'Reconciled')
         `;
+
+        // Switch on Status
+        if (status === 'history') {
+            sql += ` AND d."ThankYouSentAt" IS NOT NULL`;
+        } else {
+            sql += ` AND d."ThankYouSentAt" IS NULL`;
+        }
         const params: any[] = [];
         let paramIdx = 1;
 
