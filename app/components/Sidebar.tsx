@@ -112,13 +112,32 @@ export default function Sidebar() {
             <div className={`mt-auto border-t border-[var(--glass-border)] bg-[#18181b]`}>
                 {/* Settings Link - ADMIN ONLY */}
                 {session?.user?.role === 'Admin' && (
-                    <Link
-                        href="/settings/mappings"
-                        className={`flex items-center gap-4 px-6 py-4 text-gray-500 hover:text-white transition-colors ${isCollapsed ? 'justify-center' : ''}`}
-                    >
-                        <span className="text-xl">⚙️</span>
-                        {!isCollapsed && <span className="text-sm font-medium">System Settings</span>}
-                    </Link>
+                    <div className="flex flex-col">
+                        <Link
+                            href="/settings/users"
+                            className={`flex items-center gap-4 px-6 py-3 text-gray-500 hover:text-white transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                            title="Users"
+                        >
+                            <span className="text-xl">👥</span>
+                            {!isCollapsed && <span className="text-sm font-medium">Users</span>}
+                        </Link>
+                        <Link
+                            href="/settings/assignment-rules"
+                            className={`flex items-center gap-4 px-6 py-3 text-gray-500 hover:text-white transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                            title="Assignment Rules"
+                        >
+                            <span className="text-xl">📋</span>
+                            {!isCollapsed && <span className="text-sm font-medium">Rules</span>}
+                        </Link>
+                        <Link
+                            href="/settings/mappings"
+                            className={`flex items-center gap-4 px-6 py-3 text-gray-500 hover:text-white transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                            title="System Settings"
+                        >
+                            <span className="text-xl">⚙️</span>
+                            {!isCollapsed && <span className="text-sm font-medium">Settings</span>}
+                        </Link>
+                    </div>
                 )}
 
                 <div className={`p-4 ${isCollapsed ? 'flex justify-center' : ''}`}>

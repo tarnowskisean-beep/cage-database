@@ -1,0 +1,6 @@
+Amount,CheckNumber,ScanString,TransactionType,GiftMethod,GiftDate,DonorFirstName,DonorLastName,DonorAddress,DonorCity,DonorState,DonorZip,DonorEmail,CampaignID
+100.00,1001,SCAN123,Contribution,Check,2025-01-01,John,Doe,123 Main St,Los Angeles,CA,90001,john.doe@example.com,CAMP-001
+250.50,1002,SCAN124,Contribution,Credit Card,2025-01-02,Jane,Smith,456 Oak Ave,San Francisco,CA,94105,jane.smith@example.com,CAMP-001
+50.00,1003,SCAN125,Contribution,Cash,2025-01-03,Bob,Johnson,789 Pine Rd,New York,NY,10001,bob.j@example.com,CAMP-002
+1000.00,1004,SCAN126,Pledge Payment,Check,2025-01-05,Alice,Brown,321 Elm St,Austin,TX,73301,,CAMP-003
+75.00,1005,,Contribution,Check,2025-01-06,Charlie,Davis,654 Maple Dr,Chicago,IL,60601,,CAMP-001

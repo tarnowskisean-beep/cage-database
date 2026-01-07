@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { formatName, formatAddress, formatState, formatZip, cleanText, formatEmail, formatPhone } from '@/lib/cleaners';
+import { findAssignedUser } from '@/lib/assignment-rules';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,13 @@ export async function POST(request: Request) {
         const finalType = giftType || batch.DefaultGiftType || 'Individual/Trust/IRA';
         const finalTransactionType = body.transactionType || batch.DefaultTransactionType || 'Contribution';
 
+        const assignedToUserID = await findAssignedUser({
+            amount,
+            donorState,
+            donorZip,
+            campaignId: campaignId || ''
+        });
+
         const result = await query(
             `INSERT INTO "Donations" 
             ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", 
@@ -73,9 +81,9 @@ export async function POST(request: Request) {
              "DonorEmployer", "DonorOccupation",
              "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
              "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
-             "CampaignID", "ResolutionStatus"
+             "CampaignID", "ResolutionStatus", "AssignedToUserID", "IsFlagged"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39)
             RETURNING *`,
             [
                 batch.ClientID,
@@ -101,7 +109,9 @@ export async function POST(request: Request) {
                 giftPledgeAmount || 0, giftFee || 0, giftCustodian, giftConduit,
                 postMarkYear, postMarkQuarter, isInactive || false, comment,
                 campaignId || '', // Fail-safe (Mapped to CampaignID)
-                body.resolutionStatus === 'Pending' ? 'Pending' : 'Resolved'
+                'Resolved', // ResolutionStatus defaults to Resolved, Dedup logic is separate process
+                assignedToUserID, // $38
+                body.resolutionStatus === 'Pending' // $39 IsFlagged (Checkbox sends 'Pending' if checked)
             ]
         );
 

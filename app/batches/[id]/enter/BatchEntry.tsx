@@ -198,8 +198,9 @@ export default function BatchEntry({ id }: { id: string }) {
                         ⚡ Fill Fake Form
                     </button>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginRight: '1rem' }}>Total: {records.length}</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-success)', marginRight: '1rem' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
                     <span style={{
-                        fontSize: '0.8rem', marginRight: '1rem', fontWeight: 600,
+                        fontSize: '0.8rem', fontWeight: 600,
                         color: (records.length > 0) ? (
                             (records.filter(r => r.ScanDocumentID).length === records.length) ? 'var(--color-success)' : // 100% Green
                                 (records.filter(r => r.ScanDocumentID).length > 0) ? 'var(--color-warning)' : // Partial Orange
@@ -208,7 +209,6 @@ export default function BatchEntry({ id }: { id: string }) {
                     }}>
                         Linked: {records.length > 0 ? Math.round((records.filter(r => r.ScanDocumentID).length / records.length) * 100) : 0}%
                     </span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-success)' }}>${records.reduce((sum, r) => sum + Number(r.GiftAmount), 0).toFixed(2)}</span>
                 </div>
             </div>
 

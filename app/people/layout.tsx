@@ -52,6 +52,16 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                         )}
                     </Link>
                     <Link
+                        href="/people/alerts"
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${pathname === '/people/alerts'
+                            ? 'border-blue-500 text-blue-500' // Blue for alerts
+                            : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
+                            }`}
+                    >
+                        My Alerts
+                        {/* We can add a count badge here later if we have a specific count for 'My Alerts' vs general review */}
+                    </Link>
+                    <Link
                         href="/people/acknowledgements"
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${pathname === '/people/acknowledgements'
                             ? 'border-emerald-500 text-emerald-500'

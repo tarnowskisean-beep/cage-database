@@ -451,6 +451,15 @@ export default function ImportPage() {
                                 >
                                     {loading ? 'Uploading...' : 'Continue to Processing →'}
                                 </button>
+                                <div className="text-center pt-2">
+                                    <a
+                                        href="/templates/import_donations_template.csv"
+                                        download
+                                        className="text-xs text-gray-500 hover:text-blue-400 underline transition-colors"
+                                    >
+                                        Download Demo Template (CSV)
+                                    </a>
+                                </div>
                             </form>
                         </div>
                     )}

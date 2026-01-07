@@ -68,7 +68,8 @@ export async function GET(request: Request) {
             uniqueDonorsRes,
             chartRes,
             logsRes,
-            pendingResolutionRes
+            pendingResolutionRes,
+            flaggedRes
         ] = await Promise.all([
             // 1. Total Revenue
             query(`SELECT SUM(d."GiftAmount") as total FROM "Donations" d ${whereClause}`, params),
@@ -155,8 +156,11 @@ export async function GET(request: Request) {
             // 9. Recent Logs (Filtered)
             query(`SELECT * FROM "AuditLogs" ${auditWhere} ORDER BY "CreatedAt" DESC LIMIT 5`, auditParams),
 
-            // 10. Pending Resolutions
-            query(`SELECT COUNT(*) as count FROM "Donations" WHERE "ResolutionStatus" = 'Pending'`)
+            // 10. Pending Resolutions (Dedup)
+            query(`SELECT COUNT(*) as count FROM "Donations" WHERE "ResolutionStatus" = 'Pending'`),
+
+            // 11. Flagged Items (My Alerts)
+            query(`SELECT COUNT(*) as count FROM "Donations" WHERE "IsFlagged" = TRUE`)
         ]);
 
         const totalRevenue = revenueRes.rows[0]?.total || 0;
@@ -167,7 +171,8 @@ export async function GET(request: Request) {
             openBatches: parseInt(openBatchesRes.rows[0]?.count || '0'),
             closedBatches: parseInt(closedBatchesRes.rows[0]?.count || '0'),
             uniqueDonors: parseInt(uniqueDonorsRes.rows[0]?.count || '0'),
-            pendingResolutions: parseInt(pendingResolutionRes.rows[0]?.count || '0'),
+            pendingResolutions: parseInt(pendingResolutionRes.rows[0]?.count || '0'), // Dedup
+            flaggedItems: parseInt(flaggedRes.rows[0]?.count || '0'), // New Flags
 
             // Charts & Tables
             chartData: chartRes.rows.map(row => ({

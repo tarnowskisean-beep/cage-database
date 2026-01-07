@@ -177,24 +177,48 @@ function DashboardContent() {
       </header>
 
       {/* ACTION REQUIRED: Pending Resolutions */}
+      {/* ACTION REQUIRED: Flagged Items (My Alerts) */}
+      {/* @ts-ignore */}
+      {stats?.flaggedItems > 0 && (
+        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-red-500/20 rounded-full">
+              <svg className="w-6 h-6 text-red-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <div>
+              <h3 className="text-red-500 font-bold uppercase tracking-wide text-sm">Action Required</h3>
+              {/* @ts-ignore */}
+              <p className="text-gray-300 text-sm">There are <strong className="text-white">{stats.flaggedItems} items</strong> flagged for client review.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/people/alerts')}
+            className="px-6 py-2 bg-red-500 hover:bg-red-400 text-white font-bold uppercase text-xs rounded transition-colors shadow-lg shadow-red-500/20"
+          >
+            Review Items &rarr;
+          </button>
+        </div>
+      )}
+
+      {/* ACTION REQUIRED: Dedup (Resolution Queue) */}
       {/* @ts-ignore */}
       {stats?.pendingResolutions > 0 && (
         <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center gap-4">
             <div className="p-2 bg-yellow-500/20 rounded-full">
-              <svg className="w-6 h-6 text-yellow-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <svg className="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             </div>
             <div>
-              <h3 className="text-yellow-500 font-bold uppercase tracking-wide text-sm">Action Required</h3>
+              <h3 className="text-yellow-500 font-bold uppercase tracking-wide text-sm">Pending Deduplication</h3>
               {/* @ts-ignore */}
-              <p className="text-gray-300 text-sm">There are <strong className="text-white">{stats.pendingResolutions} items</strong> flagged for client review.</p>
+              <p className="text-gray-300 text-sm">There are <strong className="text-white">{stats.pendingResolutions} items</strong> requiring manual matching.</p>
             </div>
           </div>
           <button
             onClick={() => router.push('/people/resolution')}
             className="px-6 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold uppercase text-xs rounded transition-colors shadow-lg shadow-yellow-500/20"
           >
-            Review Items &rarr;
+            Match Records &rarr;
           </button>
         </div>
       )}
