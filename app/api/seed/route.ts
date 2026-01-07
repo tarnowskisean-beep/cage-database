@@ -11,8 +11,18 @@ const CLIENTS = [
     { code: 'AFL', name: 'America First Legal', type: 'c3' },
     { code: 'AMSI', name: 'American Main Street Initiative', type: 'c3' },
     { code: 'CFRA', name: 'Citizens for Renewing America', type: 'c4' },
+    { code: 'CFS', name: 'Citizens for Sanity, Inc.', type: '527' },
     { code: 'CPI', name: 'Conservative Partnership Institute', type: 'c3' },
-    { code: 'CPIN', name: 'Conservative Partnership Initiative', type: 'c3' }
+    { code: 'CPIN', name: 'Conservative Partnership Initiative', type: 'c3' },
+    { code: 'CRA', name: 'Center for Renewing America', type: 'c3' },
+    { code: 'EIN', name: 'Election Integrity Network', type: 'c4' },
+    { code: 'IAP', name: 'Immigration Accountability Project', type: 'c3' },
+    { code: 'JLF', name: 'Johnson Leadership Fund', type: 'PAC' },
+    { code: 'MFI', name: 'Maryland Family Institute', type: 'c3' },
+    { code: 'PPO', name: 'Personal Policy Organization', type: 'c3' },
+    { code: 'SFCA', name: 'State Freedom Caucus Action', type: '527' },
+    { code: 'SFCF', name: 'State Freedom Caucus Foundation', type: 'c3' },
+    { code: 'SFCN', name: 'State Freedom Caucus Network', type: 'c4' }
 ];
 
 const CAMPAIGNS = ['GENERAL', 'FALL25', 'GALA25', 'OYE25', 'MEMORIAL', 'BUILDING'];
@@ -40,12 +50,26 @@ export async function GET(request: Request) {
 
         // 2. USERS
         const passwordHash = await bcrypt.hash('password', 10);
-        const userRes = await query(`
-            INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials")
-            VALUES ('agraham', 'alyssa@compass.com', $1, 'Admin', 'AG')
-            RETURNING "UserID"
-        `, [passwordHash]);
-        const userID = userRes.rows[0].UserID;
+
+        const USERS = [
+            { user: 'starnowski', email: 'sean@compass.cpa', role: 'Admin', initials: 'ST' },
+            { user: 'agraham', email: 'alyssa@compass.cpa', role: 'Admin', initials: 'AG' },
+            { user: 'agraham_com', email: 'alyssa@compass.com', role: 'Admin', initials: 'AG' }, // Added to ensure login works
+            { user: 'admin', email: 'admin@compass.cpa', role: 'Admin', initials: 'ADM' },
+            { user: 'clerk', email: 'clerk@compass.cpa', role: 'Clerk', initials: 'CLK' }
+        ];
+
+        let userID = 1;
+
+        for (const u of USERS) {
+            const userRes = await query(`
+                INSERT INTO "Users" ("Username", "Email", "PasswordHash", "Role", "Initials")
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING "UserID"
+            `, [u.user, u.email, passwordHash, u.role, u.initials]);
+
+            if (u.user === 'agraham') userID = userRes.rows[0].UserID;
+        }
 
         // 3. CLIENTS
         const clientIds = [];
@@ -67,33 +91,41 @@ export async function GET(request: Request) {
             `, [clientId, `ENC-${faker.string.numeric(8)}`]);
             const accountId = bankRes.rows[0].AccountID;
 
-            // B. Donors
-            const donorIds = [];
-            const numDonors = faker.number.int({ min: 50, max: 100 });
-            for (let i = 0; i < numDonors; i++) {
-                const firstName = faker.person.firstName();
-                const lastName = faker.person.lastName();
-                const email = faker.internet.email({ firstName, lastName });
+            // B. Donors (Bulk Insert with Duplicates)
+            const numDonors = faker.number.int({ min: 150, max: 250 });
+            const donorValues = [];
+            const donorParams = [];
+            let pIdx = 1;
 
-                const dRes = await query(`
-                    INSERT INTO "Donors" 
-                    ("FirstName", "LastName", "Email", "Phone", "Address", "City", "State", "Zip", "Bio", "CreatedAt")
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-                    RETURNING "DonorID"
-                `, [
-                    firstName,
-                    lastName,
-                    email,
-                    faker.phone.number(),
-                    faker.location.streetAddress(),
-                    faker.location.city(),
-                    faker.location.state({ abbreviated: true }),
-                    faker.location.zipCode(),
-                    faker.lorem.paragraph()
-                ]);
-                const donorId = dRes.rows[0].DonorID;
-                donorIds.push(donorId);
+            const createdDonors: any[] = [];
+
+            for (let i = 0; i < numDonors; i++) {
+                let firstName = faker.person.firstName();
+                let lastName = faker.person.lastName();
+                let email = faker.internet.email({ firstName, lastName });
+                let phone = faker.phone.number();
+
+                // 10% Chance of Duplicate (Same Name/Email)
+                if (createdDonors.length > 10 && faker.datatype.boolean(0.1)) {
+                    const dup = faker.helpers.arrayElement(createdDonors);
+                    firstName = dup.firstName;
+                    lastName = dup.lastName;
+                    email = dup.email; // Exact match to trigger easy dedup
+                }
+
+                createdDonors.push({ firstName, lastName, email });
+
+                donorValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, NOW())`);
+                donorParams.push(firstName, lastName, email, phone, faker.location.streetAddress(), faker.location.city(), faker.location.state({ abbreviated: true }), faker.location.zipCode(), faker.lorem.paragraph());
             }
+
+            const dRes = await query(`
+                INSERT INTO "Donors" 
+                ("FirstName", "LastName", "Email", "Phone", "Address", "City", "State", "Zip", "Bio", "CreatedAt")
+                VALUES ${donorValues.join(', ')}
+                RETURNING "DonorID"
+            `, donorParams);
+            const donorIds = dRes.rows.map(r => r.DonorID);
 
             // C. Periods & Batches
             const today = new Date();
@@ -105,7 +137,7 @@ export async function GET(request: Request) {
                 const transferDate = new Date(endOfPeriod);
                 transferDate.setDate(transferDate.getDate() + 14);
 
-                const isReconciled = i > 1;
+                const isReconciled = i > 1; // Last 2 months open
                 const periodStatus = isReconciled ? 'Reconciled' : 'Open';
 
                 const pRes = await query(`
@@ -113,12 +145,10 @@ export async function GET(request: Request) {
                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING "ReconciliationPeriodID"
                 `, [clientId, accountId, startOfPeriod.toISOString(), endOfPeriod.toISOString(), transferDate.toISOString(), periodStatus]);
 
-                // Batches
-                const numBatches = faker.number.int({ min: 2, max: 5 });
+                // Batches (Increased Volume)
+                const numBatches = faker.number.int({ min: 5, max: 12 });
                 for (let b = 0; b < numBatches; b++) {
                     const batchDate = new Date(d.getFullYear(), d.getMonth(), faker.number.int({ min: 1, max: 28 }));
-                    // Status must be Closed if reconciled, or Open/Closed otherwise.
-                    // Constraint allows: Open, Submitted, Closed.
                     const batchStatus = isReconciled ? 'Closed' : (faker.datatype.boolean() ? 'Closed' : 'Open');
 
                     const batchRes = await query(`
@@ -133,54 +163,88 @@ export async function GET(request: Request) {
                     ]);
                     const batchId = batchRes.rows[0].BatchID;
 
-                    // Donations
-                    const numDonations = faker.number.int({ min: 5, max: 15 });
+                    // Donations (High Volume)
+                    const numDonations = faker.number.int({ min: 20, max: 60 });
+                    const donationValues = [];
+                    const donationParams = [];
+                    let dIdx = 1;
+
                     for (let g = 0; g < numDonations; g++) {
-                        const amount = parseFloat(faker.finance.amount({ min: 25, max: 2500, dec: 2 }));
+                        const amount = parseFloat(faker.finance.amount({ min: 25, max: 5000, dec: 2 }));
                         const donorId = faker.helpers.arrayElement(donorIds);
 
+                        // Look up donor details if needed for denormalization, but skipping for speed as DonorID should suffice
+
                         const method = faker.helpers.arrayElement(METHODS);
-                        let platform = 'Cage';
-                        if (method === 'Online') {
-                            platform = faker.helpers.arrayElement(['WinRed', 'Anedot', 'Stripe']);
-                        } else if (method === 'Check') {
-                            platform = 'Cage';
-                        } else {
-                            platform = faker.helpers.arrayElement(PLATFORMS);
+                        let platform = method === 'Online' ? faker.helpers.arrayElement(['WinRed', 'Anedot', 'Stripe']) : (method === 'Check' ? 'Cage' : faker.helpers.arrayElement(PLATFORMS));
+
+                        let thankedAt = null;
+                        const daysSince = (today.getTime() - batchDate.getTime()) / (1000 * 3600 * 24);
+
+                        if (batchStatus === 'Closed') {
+                            if (Math.random() > 0.1) {
+                                thankedAt = new Date(batchDate);
+                                thankedAt.setDate(thankedAt.getDate() + faker.number.int({ min: 1, max: 5 }));
+                            }
                         }
 
-                        // Ack logic
-                        let thankedAt = null;
-                        if (periodStatus === 'Reconciled' || (batchStatus === 'Closed' && faker.datatype.boolean())) {
-                            thankedAt = new Date(batchDate);
-                            thankedAt.setDate(thankedAt.getDate() + faker.number.int({ min: 1, max: 5 }));
-                        }
-                        if (amount > 100 && faker.datatype.boolean(0.2)) {
+                        // Force "Outstanding" for recent high value
+                        if (daysSince < 45 && amount > 500 && Math.random() > 0.3) {
                             thankedAt = null;
                         }
 
-                        try {
-                            await query(`
-                                INSERT INTO "Donations" 
-                                ("ClientID", "BatchID", "DonorID", "GiftAmount", "GiftDate", "GiftMethod", "GiftPlatform", "CampaignID", "ThankYouSentAt", "GiftType", "CreatedBy")
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Individual', $10)
-                            `, [
-                                clientId,
-                                batchId,
-                                donorId,
-                                amount,
-                                batchDate.toISOString(),
-                                method,
-                                platform,
-                                faker.helpers.arrayElement(CAMPAIGNS),
-                                thankedAt ? thankedAt.toISOString() : null,
-                                userID
-                            ]);
-                        } catch (err) { }
+                        const year = batchDate.getFullYear();
+                        const q = Math.ceil((batchDate.getMonth() + 1) / 3);
+                        const quarter = `Q${q}`;
+                        const mailCode = faker.helpers.arrayElement(CAMPAIGNS);
+                        const designation = 'General Fund';
+
+                        donationValues.push(`($${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, 'Donation', $${dIdx++}, $${dIdx++}, $${dIdx++}, 'Individual', $${dIdx++})`);
+                        donationParams.push(clientId, batchId, donorId, amount, batchDate.toISOString(), method, platform, mailCode, designation, year, quarter, thankedAt ? thankedAt.toISOString() : null, userID);
+                    }
+
+                    if (donationValues.length > 0) {
+                        // Cols: ClientID, BatchID, DonorID, GiftAmount, GiftDate, GiftMethod, GiftPlatform, MailCode, Designation, TransactionType, GiftYear, GiftQuarter, ThankYouSentAt, GiftType, CreatedBy
+                        await query(`
+                            INSERT INTO "Donations" 
+                            ("ClientID", "BatchID", "DonorID", "GiftAmount", "GiftDate", "GiftMethod", "GiftPlatform", "MailCode", "Designation", "TransactionType", "GiftYear", "GiftQuarter", "ThankYouSentAt", "GiftType", "CreatedBy")
+                            VALUES ${donationValues.join(', ')}
+                        `, donationParams);
                     }
                 }
             }
+
+            // D. Import Logs (Mock)
+            for (let i = 0; i < 5; i++) {
+                const sName = `upload_${faker.date.recent().toISOString().slice(0, 10)}.csv`;
+                try {
+                    const sessRes = await query(`INSERT INTO "import_sessions" ("filename", "source_system", "status", "created_by", "row_count", "processed_count") VALUES ($1, $2, 'Completed', $3, 500, 500) RETURNING id`, [sName, 'WinRed', userID]);
+                    // Add some dummy rows? Maybe not needed for high level demo, just the log entry.
+                } catch (e) { }
+            }
         }
+
+        // E. Audit Logs (System Wide)
+        const ACTIONS = ['LOGIN', 'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'EXPORT'];
+        const valuesAudit = [];
+        const paramsAudit = [];
+        let aIdx = 1;
+
+        for (let i = 0; i < 200; i++) {
+            const action = faker.helpers.arrayElement(ACTIONS);
+            const ip = faker.internet.ip();
+            const date = faker.date.recent({ days: 30 });
+            const actor = 'alyssa@compass.com';
+            valuesAudit.push(`($${aIdx++}, 'USER', 'Action performed on entity', $${aIdx++}, $${aIdx++}, $${aIdx++})`);
+            paramsAudit.push(action, actor, date.toISOString(), ip);
+        }
+
+        await query(`
+             INSERT INTO "AuditLogs" ("Action", "EntityType", "Details", "Actor", "CreatedAt", "IPAddress")
+             VALUES ${valuesAudit.join(', ')}
+        `, paramsAudit);
+
+
 
         return NextResponse.json({ success: true, message: 'Database populated successfully!' });
     } catch (error: any) {
