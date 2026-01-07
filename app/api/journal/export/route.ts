@@ -26,11 +26,13 @@ export async function POST(req: NextRequest) {
                 d.*,
                 b."BatchCode",
                 don."FirstName", don."LastName",
-                c."ClientCode"
+                c."ClientCode",
+                a."AccountName", a."AccountNumber"
             FROM "Donations" d
             JOIN "Batches" b ON d."BatchID" = b."BatchID"
             LEFT JOIN "Donors" don ON d."DonorID" = don."DonorID"
             JOIN "Clients" c ON d."ClientID" = c."ClientID"
+            LEFT JOIN "ClientBankAccounts" a ON b."AccountID" = a."AccountID"
             WHERE b."Status" = 'Reconciled'
         `;
         const params: any[] = [];

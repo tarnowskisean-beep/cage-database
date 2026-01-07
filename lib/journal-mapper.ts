@@ -42,7 +42,9 @@ export function generateJournalRows(donations: any[], template: Template) {
                 .replace(/{Platform}/g, donation.GiftPlatform || '')
                 .replace(/{TransactionType}/g, donation.TransactionType || '')
                 .replace(/{Fund}/g, '') // Placeholder for future
-                .replace(/{Campaign}/g, ''); // Placeholder for future
+                .replace(/{Campaign}/g, '') // Placeholder for future
+                .replace(/{AccountName}/g, donation.AccountName || '')
+                .replace(/{AccountNumber}/g, donation.AccountNumber || '');
         };
 
         for (const rowDef of template.mappings) {
