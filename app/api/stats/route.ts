@@ -114,22 +114,28 @@ export async function GET(request: Request) {
             // 7. Unique Donors
             query(`SELECT COUNT(DISTINCT d."DonorID") as count FROM "Donations" d ${whereClause}`, params),
 
-            // 8. Chart Data (Zero-Filled using generate_series)
+            // 8. Chart Data (Clean Params Logic)
             (() => {
                 const diffTime = Math.abs(end.getTime() - start.getTime());
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 const interval = diffDays > 60 ? '1 month' : '1 day';
                 const dateFormat = diffDays > 60 ? 'Mon YY' : 'MM/DD';
 
-                // We need strictly safe string injection for the interval in generate_series, 
-                // but since we control the 'interval' variable above, it is safe.
-                // We pass start/end as fixed dates to generate_series.
+                // Construct specific params for this complex query to avoid index confusion
+                const chartParams: any[] = [start.toISOString(), end.toISOString()];
+                let clientClause = '';
 
+                if (clientId) {
+                    chartParams.push(clientId);
+                    clientClause = 'AND d."ClientID" = $3';
+                }
+
+                // $1 = Start, $2 = End, $3 = ClientID (optional)
                 return query(`
                     WITH date_series AS (
                         SELECT generate_series(
-                            $${paramIndex}::timestamp, 
-                            $${paramIndex + 1}::timestamp, 
+                            $1::timestamp, 
+                            $2::timestamp, 
                             '${interval}'::interval
                         ) as day
                     )
@@ -139,17 +145,10 @@ export async function GET(request: Request) {
                         COUNT(d."DonationID") as count
                     FROM date_series ds
                     LEFT JOIN "Donations" d ON DATE_TRUNC('${diffDays > 60 ? 'month' : 'day'}', d."GiftDate") = ds.day
-                    ${clientId ? `AND d."ClientID" = $1` : ''} 
+                    ${clientClause}
                     GROUP BY ds.day
                     ORDER BY ds.day
-                `, [...params, start.toISOString(), end.toISOString()]);
-                // Note: We append start/end to params. 
-                // CAUTION: 'params' array is used for the WHERE clause variables ($1..$N).
-                // generate_series uses the NEXT available indices.
-                // clientId is $1 if present.
-                // The LEFT JOIN condition `AND d."ClientID" = $1` reuses the FIRST parameter if it exists.
-                // This logic is slightly fragile if param order changes.
-                // Let's ensure params are clean.
+                `, chartParams);
             })(),
 
             // 9. Recent Logs (Filtered)
