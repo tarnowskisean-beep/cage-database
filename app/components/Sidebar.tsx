@@ -104,13 +104,7 @@ export default function Sidebar() {
 
                     <NavItem href="/people" icon="👥" label="People" active={pathname.startsWith('/people')} collapsed={isCollapsed} />
 
-                    {session?.user?.role !== 'ClientUser' && !isCollapsed && pathname.startsWith('/people') && (
-                        <div className="ml-10 mt-1 space-y-1 border-l border-white/10 pl-3">
-                            <Link href="/people/acknowledgements" className={`block text-xs uppercase tracking-wider font-bold hover:text-white transition-colors py-1 ${pathname === '/people/acknowledgements' ? 'text-emerald-400' : 'text-gray-500'}`}>
-                                Unthanked Gifts
-                            </Link>
-                        </div>
-                    )}
+
                 </ul>
             </nav>
 
