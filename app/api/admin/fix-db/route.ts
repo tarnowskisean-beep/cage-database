@@ -42,6 +42,20 @@ export async function GET() {
         await query(`CREATE INDEX IF NOT EXISTS idx_donors_cagingid ON "Donors" ("CagingID");`);
         results.push('Index idx_donors_cagingid verified.');
 
+        // 4. Create AuditLogs if missing
+        await query(`
+            CREATE TABLE IF NOT EXISTS "AuditLogs" (
+                "LogID" SERIAL PRIMARY KEY,
+                "UserID" INT,
+                "Action" TEXT NOT NULL,
+                "EntityID" TEXT,
+                "Details" TEXT,
+                "IPAddress" TEXT,
+                "CreatedAt" TIMESTAMP DEFAULT NOW()
+            );
+        `);
+        results.push('AuditLogs table verified.');
+
         return NextResponse.json({ success: true, log: results });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
