@@ -117,11 +117,11 @@ function ReportContent() {
         // 1. Try ScanString split
         // 2. Try CampaignID field
         // 3. Fallback
-        let mailCode = 'No Campaign';
+        let campaignId = 'No Campaign';
         if (r.ScanString && r.ScanString.includes('\t')) {
-            mailCode = r.ScanString.split('\t')[0];
+            campaignId = r.ScanString.split('\t')[0];
         } else if (r.CampaignID) {
-            mailCode = r.CampaignID;
+            campaignId = r.CampaignID;
         }
 
         // --- Activity Window ---
@@ -167,15 +167,15 @@ function ReportContent() {
         // If it's Non-Caged (Online/EFT), typically NOT in Caging Activity Matrix?
         // User requested Check/Cash/CC only cols, implying this table is for Caging items.
         if (isRowCaged || isRowZero) {
-            if (!matrix[mailCode]) {
-                matrix[mailCode] = {
+            if (!matrix[campaignId]) {
+                matrix[campaignId] = {
                     donors: 0, nonDonors: 0, amount: 0,
                     check: { count: 0, sum: 0 },
                     cash: { count: 0, sum: 0 },
                     cc: { count: 0, sum: 0 }
                 };
             }
-            const row = matrix[mailCode];
+            const row = matrix[campaignId];
             row.amount += amount;
 
             if (isRowZero) {
@@ -398,7 +398,7 @@ function ReportContent() {
                 <table className="report-table">
                     <thead>
                         <tr className="bg-gray">
-                            <th className="text-left">Mailcode</th>
+                            <th className="text-left">Campaign ID</th>
                             <th>Donors</th>
                             <th>Non-Donors</th>
                             <th>Total $$</th>
@@ -414,11 +414,11 @@ function ReportContent() {
                         </tr>
                     </thead>
                     <tbody>
-                        {Object.keys(matrix).sort().map(mailCode => {
-                            const row = matrix[mailCode];
+                        {Object.keys(matrix).sort().map(campaignId => {
+                            const row = matrix[campaignId];
                             return (
-                                <tr key={mailCode}>
-                                    <td className="font-bold">{mailCode}</td>
+                                <tr key={campaignId}>
+                                    <td className="font-bold">{campaignId}</td>
                                     <td className="text-center">{num(row.donors)}</td>
                                     <td className="text-center">{num(row.nonDonors)}</td>
                                     <td className="text-right font-bold">{fmt(row.amount)}</td>

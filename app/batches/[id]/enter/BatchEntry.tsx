@@ -45,7 +45,7 @@ export default function BatchEntry({ id }: { id: string }) {
             organizationName: faker.company.name(),
             amount: faker.finance.amount({ min: 10, max: 1000, dec: 2 }),
             checkNumber: faker.finance.accountNumber(),
-            mailCode: faker.string.alphanumeric(6).toUpperCase(),
+            campaignId: faker.string.alphanumeric(6).toUpperCase(),
         };
         setFormData(prev => ({
             ...prev,
@@ -67,7 +67,7 @@ export default function BatchEntry({ id }: { id: string }) {
 
                 const fakePayload = {
                     scanString: '',
-                    mailCode: faker.string.alphanumeric(6).toUpperCase(), // KEY for report
+                    campaignId: faker.string.alphanumeric(6).toUpperCase(), // KEY for report
                     donorPrefix: faker.person.prefix(),
                     donorFirstName: faker.person.firstName(),
                     donorMiddleName: '',
@@ -180,19 +180,7 @@ export default function BatchEntry({ id }: { id: string }) {
                             {batch?.Status === 'Open' ? '🔒 Close Batch' : '🔓 Reopen Batch'}
                         </button>
                     )}
-                    <button
-                        onClick={handleBulkAdd}
-                        disabled={batch?.Status === 'Reconciled'}
-                        style={{
-                            background: 'transparent',
-                            border: `1px solid ${batch?.Status === 'Reconciled' ? 'var(--color-text-muted)' : '#8b5cf6'}`,
-                            color: batch?.Status === 'Reconciled' ? 'var(--color-text-muted)' : '#8b5cf6',
-                            padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '1rem',
-                            cursor: batch?.Status === 'Reconciled' ? 'not-allowed' : 'pointer',
-                        }}
-                    >
-                        ⚡ Bulk Add 25
-                    </button>
+
                     <button
                         onClick={handleFillFakeData}
                         disabled={batch?.Status === 'Reconciled'}
@@ -284,8 +272,8 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Campaign ID</Label>
                                     <Input
                                         ref={manualEntryRef}
-                                        value={formData.mailCode}
-                                        onChange={handleChange('mailCode')}
+                                        value={formData.campaignId}
+                                        onChange={handleChange('campaignId')}
                                         autoFocus={batch?.EntryMode === 'Manual'}
                                     />
                                 </div>
@@ -333,6 +321,14 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Zip</Label>
                                     <Input value={formData.donorZip} onChange={handleChange('donorZip')} />
                                 </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Phone</Label>
+                                    <Input value={formData.donorPhone} onChange={handleChange('donorPhone')} />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Email</Label>
+                                    <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} />
+                                </div>
 
                             </div>
 
@@ -372,14 +368,16 @@ export default function BatchEntry({ id }: { id: string }) {
                                         {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                                     </Select>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Check Number</Label>
-                                    <Input
-                                        value={formData.checkNumber}
-                                        onChange={handleChange('checkNumber')}
-                                        placeholder="(Auto-captured by AI)"
-                                    />
-                                </div>
+                                {formData.method === 'Check' && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Check Number</Label>
+                                        <Input
+                                            value={formData.checkNumber}
+                                            onChange={handleChange('checkNumber')}
+                                            placeholder="(Auto-captured by AI)"
+                                        />
+                                    </div>
+                                )}
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Yes Inactive</Label>
                                     <Select value={formData.isInactive} onChange={handleChange('isInactive')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
@@ -437,19 +435,9 @@ export default function BatchEntry({ id }: { id: string }) {
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Pledge Amount</Label>
                                     <Input type="number" value={formData.pledgeAmount} onChange={handleChange('pledgeAmount')} />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Phone</Label>
-                                    <Input value={formData.donorPhone} onChange={handleChange('donorPhone')} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Email</Label>
-                                    <Input value={formData.donorEmail} onChange={handleChange('donorEmail')} />
-                                </div>
+
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Campaign ID</Label>
-                                <Input value={formData.mailCode} onChange={handleChange('mailCode')} />
-                            </div>
+
                             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                 <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Comment</Label>
                                 <textarea
@@ -458,6 +446,19 @@ export default function BatchEntry({ id }: { id: string }) {
                                     value={formData.comment}
                                     onChange={handleChange('comment')}
                                 />
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <input
+                                    type="checkbox"
+                                    id="flagResolution"
+                                    checked={formData.resolutionStatus === 'Pending'}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, resolutionStatus: e.target.checked ? 'Pending' : 'Resolved' }))}
+                                    style={{ width: '16px', height: '16px', accentColor: 'var(--color-warning)' }}
+                                />
+                                <label htmlFor="flagResolution" style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>
+                                    🚩 Flag for Resolution (Ambiguous)
+                                </label>
                             </div>
 
                             <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', gridColumn: 'span 2' }}>

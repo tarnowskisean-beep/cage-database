@@ -23,7 +23,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
     const initialFormState = {
         // DONOR
         scanString: '',
-        mailCode: '',
+        campaignId: '',
         donorPrefix: '',
         donorFirstName: '',
         donorMiddleName: '',
@@ -58,6 +58,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         checkNumber: '',
         giftYear: '',
         giftQuarter: '',
+        resolutionStatus: 'Resolved' as 'Resolved' | 'Pending',
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -171,7 +172,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
 
             setFormData(prev => ({
                 ...prev,
-                mailCode: mailCode || '',
+                campaignId: mailCode || '',
                 // If CagingID is present, we might technically lookup more info, 
                 // but usually the scan contains the Truth.
                 // We'll also treat CagingID as the checkNumber fallback if needed? 
@@ -204,6 +205,12 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 const data = await res.json();
                 if (data.found && data.record) {
                     const rec = data.record;
+
+                    // CHECK FOR ALERTS
+                    if (rec.HasAlert || rec.AlertMessage) {
+                        alert(`🚨 DONOR ALERT 🚨\n\n${rec.AlertMessage || 'This donor has a flagged alert.'}`);
+                    }
+
                     setFormData(prev => ({
                         ...prev,
                         donorFirstName: rec.FirstName || '',
@@ -212,7 +219,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                         donorCity: rec.City || '',
                         donorState: rec.State || '',
                         donorZip: rec.Zip || '',
-                        mailCode: rec.MailCode || '',
+                        campaignId: rec.CampaignID || '',
                     }));
                 } else {
                     alert(`No prospect found for ID: ${scan.trim()}`);
@@ -254,7 +261,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
             giftConduit: record.GiftConduit || '',
 
             // Donor
-            mailCode: '', // Assuming mailCode is transient or parsed from scan
+            campaignId: record.CampaignID || '', // Renamed from mailCode
             donorPrefix: record.DonorPrefix || '',
             donorFirstName: record.DonorFirstName || '',
             donorMiddleName: record.DonorMiddleName || '',
@@ -271,7 +278,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
 
             // Hidden
             giftYear: record.GiftYear?.toString() || '',
-            giftQuarter: record.GiftQuarter || ''
+            giftQuarter: record.GiftQuarter || '',
+            resolutionStatus: record.ResolutionStatus || 'Resolved'
         });
 
         // Focus first field
@@ -340,7 +348,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 ReceiptQuarter: formData.postMarkQuarter,
                 IsInactive: formData.isInactive === 'True',
                 Comment: formData.comment,
-                CampaignID: formData.mailCode
+                CampaignID: formData.campaignId
             };
 
             let res;

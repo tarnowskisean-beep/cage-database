@@ -10,7 +10,13 @@ export async function GET(request: Request) {
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
-        // Build dynamic WHERE clause
+        // Defaults for Chart Series
+        const defaultStart = new Date();
+        defaultStart.setMonth(defaultStart.getMonth() - 6);
+        const start = startDate ? new Date(startDate) : defaultStart;
+        const end = endDate ? new Date(endDate) : new Date();
+
+        // Build dynamic WHERE clause for Donations
         const conditions: string[] = [];
         const params: unknown[] = [];
         let paramIndex = 1;
@@ -25,13 +31,33 @@ export async function GET(request: Request) {
         }
         if (endDate) {
             conditions.push(`d."GiftDate" <= $${paramIndex++}`);
-            // Append end of day time if needed, assuming just date string YYYY-MM-DD
             params.push(`${endDate} 23:59:59`);
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-        // Execute all aggregations in parallel to reduce wait time
+        // Build Audit Log Filter
+        const auditConditions: string[] = [];
+        const auditParams: unknown[] = [];
+        let auditParamIndex = 1;
+
+        if (startDate) {
+            auditConditions.push(`"CreatedAt" >= $${auditParamIndex++}`);
+            auditParams.push(startDate);
+        }
+        if (endDate) {
+            auditConditions.push(`"CreatedAt" <= $${auditParamIndex++}`);
+            auditParams.push(`${endDate} 23:59:59`);
+        }
+        // Client filtering for Audit Logs (Best Effort Text Match on JSON String)
+        if (clientId) {
+            auditConditions.push(`"Details" ILIKE $${auditParamIndex++}`);
+            auditParams.push(`%${clientId}%`);
+        }
+
+        const auditWhere = auditConditions.length > 0 ? `WHERE ${auditConditions.join(' AND ')}` : '';
+
+        // Execute all aggregations
         const [
             revenueRes,
             clientRes,
@@ -73,13 +99,13 @@ export async function GET(request: Request) {
                 GROUP BY d."GiftPlatform"
             `, params),
 
-            // 5. Open Batches Count
+            // 5. Open Batches Count (Respects Client Filter)
             query(
                 `SELECT COUNT(*) as count FROM "Batches" WHERE "Status" = 'Open' ${clientId ? 'AND "ClientID" = $1' : ''}`,
                 clientId ? [clientId] : []
             ),
 
-            // 6. Closed Batches Count
+            // 6. Closed Batches Count (Respects Client Filter)
             query(
                 `SELECT COUNT(*) as count FROM "Batches" WHERE "Status" = 'Closed' ${clientId ? 'AND "ClientID" = $1' : ''}`,
                 clientId ? [clientId] : []
@@ -88,36 +114,46 @@ export async function GET(request: Request) {
             // 7. Unique Donors
             query(`SELECT COUNT(DISTINCT d."DonorID") as count FROM "Donations" d ${whereClause}`, params),
 
-            // 8. Chart Data (Dynamic Aggregation)
+            // 8. Chart Data (Zero-Filled using generate_series)
             (() => {
-                // Calculate duration to decide granularity
-                const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 1));
-                const end = endDate ? new Date(endDate) : new Date();
                 const diffTime = Math.abs(end.getTime() - start.getTime());
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const interval = diffDays > 60 ? '1 month' : '1 day';
+                const dateFormat = diffDays > 60 ? 'Mon YY' : 'MM/DD';
 
-                // If more than 60 days, show Months. Else show Days.
-                if (diffDays > 60) {
-                    return query(`
-                        SELECT TO_CHAR(d."GiftDate", 'Mon YY') as name, SUM(d."GiftAmount") as amount, COUNT(*) as count
-                        FROM "Donations" d 
-                        ${whereClause} 
-                        GROUP BY TO_CHAR(d."GiftDate", 'Mon YY'), DATE_TRUNC('month', d."GiftDate") 
-                        ORDER BY DATE_TRUNC('month', d."GiftDate")
-                    `, params);
-                } else {
-                    return query(`
-                        SELECT TO_CHAR(d."GiftDate", 'MM/DD') as name, SUM(d."GiftAmount") as amount, COUNT(*) as count
-                        FROM "Donations" d 
-                        ${whereClause} 
-                        GROUP BY TO_CHAR(d."GiftDate", 'MM/DD'), DATE_TRUNC('day', d."GiftDate") 
-                        ORDER BY DATE_TRUNC('day', d."GiftDate")
-                    `, params);
-                }
+                // We need strictly safe string injection for the interval in generate_series, 
+                // but since we control the 'interval' variable above, it is safe.
+                // We pass start/end as fixed dates to generate_series.
+
+                return query(`
+                    WITH date_series AS (
+                        SELECT generate_series(
+                            $${paramIndex}::timestamp, 
+                            $${paramIndex + 1}::timestamp, 
+                            '${interval}'::interval
+                        ) as day
+                    )
+                    SELECT 
+                        TO_CHAR(ds.day, '${dateFormat}') as name,
+                        COALESCE(SUM(d."GiftAmount"), 0) as amount,
+                        COUNT(d."DonationID") as count
+                    FROM date_series ds
+                    LEFT JOIN "Donations" d ON DATE_TRUNC('${diffDays > 60 ? 'month' : 'day'}', d."GiftDate") = ds.day
+                    ${clientId ? `AND d."ClientID" = $1` : ''} 
+                    GROUP BY ds.day
+                    ORDER BY ds.day
+                `, [...params, start.toISOString(), end.toISOString()]);
+                // Note: We append start/end to params. 
+                // CAUTION: 'params' array is used for the WHERE clause variables ($1..$N).
+                // generate_series uses the NEXT available indices.
+                // clientId is $1 if present.
+                // The LEFT JOIN condition `AND d."ClientID" = $1` reuses the FIRST parameter if it exists.
+                // This logic is slightly fragile if param order changes.
+                // Let's ensure params are clean.
             })(),
 
-            // 9. Recent Logs
-            query(`SELECT * FROM "AuditLogs" ORDER BY "CreatedAt" DESC LIMIT 5`),
+            // 9. Recent Logs (Filtered)
+            query(`SELECT * FROM "AuditLogs" ${auditWhere} ORDER BY "CreatedAt" DESC LIMIT 5`, auditParams),
 
             // 10. Pending Resolutions
             query(`SELECT COUNT(*) as count FROM "Donations" WHERE "ResolutionStatus" = 'Pending'`)
@@ -131,7 +167,7 @@ export async function GET(request: Request) {
             openBatches: parseInt(openBatchesRes.rows[0]?.count || '0'),
             closedBatches: parseInt(closedBatchesRes.rows[0]?.count || '0'),
             uniqueDonors: parseInt(uniqueDonorsRes.rows[0]?.count || '0'),
-            pendingResolutions: parseInt(pendingResolutionRes.rows[0]?.count || '0'), // Added
+            pendingResolutions: parseInt(pendingResolutionRes.rows[0]?.count || '0'),
 
             // Charts & Tables
             chartData: chartRes.rows.map(row => ({
@@ -148,8 +184,8 @@ export async function GET(request: Request) {
             byPlatform: platformRes.rows.map(row => ({ name: row.GiftPlatform || 'Unknown', count: parseInt(row.count), total: parseFloat(row.total) }))
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Stats API Error:', error);
-        return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch stats', details: error.message }, { status: 500 });
     }
 }

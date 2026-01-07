@@ -77,7 +77,7 @@ export default async function DebugFull() {
                     'Acme Inc', 'Developer', // Employer/Occ
                     0, 0, 'Cust', 'Cond', // Pledge/Fee...
                     2024, 'Q1', false, 'Test Comment', // Postmark/Inactive...
-                    'MAIL123' // MailCode
+                    'MAIL123' // CampaignID
                 ]
             );
             log(`✅ Insert Success! ID: ${resInsert.rows[0].DonationID}`);

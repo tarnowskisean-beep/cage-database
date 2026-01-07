@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
         // RE-WRITING QUERY CONSTRUCTION TO HANDLE FILTERS IN JOIN
         // If we want LTV to be "Total Giving *Matching Filters*", we put filters in the ON or WHERE of the JOIN/Subquery.
         // Current query: LEFT JOIN "Donations" don ON d."DonorID" = don."DonorID" WHERE ...
-        // If we add `AND don."MailCode" = $Campaign` to WHERE, it filters Rows. Inner Join-like behavior for Aggregates.
+        // If we add `AND don."CampaignID" = $Campaign` to WHERE, it filters Rows. Inner Join-like behavior for Aggregates.
         // If a donor didn't give to campaign, they vanish (TotalGifts=0, LTV=null -> likely filtered out if we use Inner Join or Having > 0).
 
         // Let's stick to the current structure but add the condition to WHERE. 

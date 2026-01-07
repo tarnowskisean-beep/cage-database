@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             if (!cagingId) { skipCount++; continue; }
 
             const mailerId = getVal('mailer');
-            const mailCode = getVal('code');
+            const campaignId = getVal('campaign') || getVal('code');
             const firstName = getVal('first');
             const lastName = getVal('last');
             const address = getVal('address');
@@ -64,11 +64,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
                     ON CONFLICT ("ClientID", "CagingID") 
                     DO UPDATE SET 
-                        "FirstName" = EXCLUDED."FirstName",
-                        "LastName" = EXCLUDED."LastName",
                         "Address" = EXCLUDED."Address",
                         "ImportedAt" = NOW()
-                `, [id, cagingId, mailerId, mailCode, firstName, lastName, address, city, state, zip]);
+                `, [id, cagingId, mailerId, campaignId, firstName, lastName, address, city, state, zip]);
                 successCount++;
             } catch (e) {
                 console.error('Row error:', e);

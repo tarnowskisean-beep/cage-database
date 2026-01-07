@@ -196,18 +196,18 @@ export async function GET(request: Request) {
                         const year = batchDate.getFullYear();
                         const q = Math.ceil((batchDate.getMonth() + 1) / 3);
                         const quarter = `Q${q}`;
-                        const mailCode = faker.helpers.arrayElement(CAMPAIGNS);
+                        const campaignId = faker.helpers.arrayElement(CAMPAIGNS);
                         const designation = 'General Fund';
 
                         donationValues.push(`($${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, $${dIdx++}, 'Donation', $${dIdx++}, $${dIdx++}, $${dIdx++}, 'Individual', $${dIdx++})`);
-                        donationParams.push(clientId, batchId, donorId, amount, batchDate.toISOString(), method, platform, mailCode, designation, year, quarter, thankedAt ? thankedAt.toISOString() : null, userID);
+                        donationParams.push(clientId, batchId, donorId, amount, batchDate.toISOString(), method, platform, campaignId, designation, year, quarter, thankedAt ? thankedAt.toISOString() : null, userID);
                     }
 
                     if (donationValues.length > 0) {
-                        // Cols: ClientID, BatchID, DonorID, GiftAmount, GiftDate, GiftMethod, GiftPlatform, MailCode, Designation, TransactionType, GiftYear, GiftQuarter, ThankYouSentAt, GiftType, CreatedBy
+                        // Cols: ClientID, BatchID, DonorID, GiftAmount, GiftDate, GiftMethod, GiftPlatform, CampaignID, Designation, TransactionType, GiftYear, GiftQuarter, ThankYouSentAt, GiftType, CreatedBy
                         await query(`
                             INSERT INTO "Donations" 
-                            ("ClientID", "BatchID", "DonorID", "GiftAmount", "GiftDate", "GiftMethod", "GiftPlatform", "MailCode", "Designation", "TransactionType", "GiftYear", "GiftQuarter", "ThankYouSentAt", "GiftType", "CreatedBy")
+                            ("ClientID", "BatchID", "DonorID", "GiftAmount", "GiftDate", "GiftMethod", "GiftPlatform", "CampaignID", "Designation", "TransactionType", "GiftYear", "GiftQuarter", "ThankYouSentAt", "GiftType", "CreatedBy")
                             VALUES ${donationValues.join(', ')}
                         `, donationParams);
                     }

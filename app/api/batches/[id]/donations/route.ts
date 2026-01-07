@@ -67,7 +67,7 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
             donorPrefix,
             giftPledgeAmount, giftFee, giftCustodian, giftConduit,
             postMarkYear, postMarkQuarter, isInactive, comment,
-            mailCode
+            campaignId
         } = body;
         const { id: batchId } = await params; // Await params before destructuring
 
@@ -127,7 +127,8 @@ async function POST(request: Request, { params }: { params: Promise<{ id: string
                 donorEmployer, donorOccupation,
                 giftPledgeAmount || 0, giftFee || 0, giftCustodian, giftConduit,
                 postMarkYear, postMarkQuarter, isInactive || false, comment,
-                mailCode || '' // Fail-safe
+                postMarkYear, postMarkQuarter, isInactive || false, comment,
+                campaignId || '' // Fail-safe
             ]
         );
 

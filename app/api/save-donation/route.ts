@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             donorPrefix,
             giftPledgeAmount, giftFee, giftCustodian, giftConduit,
             postMarkYear, postMarkQuarter, isInactive, comment,
-            mailCode,
+            campaignId,
             // EXTRACT BATCH ID FROM BODY
             batchId
         } = body;
@@ -73,9 +73,10 @@ export async function POST(request: Request) {
              "DonorEmployer", "DonorOccupation",
              "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
              "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
-             "CampaignID"
+             "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
+             "CampaignID", "ResolutionStatus"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37)
             RETURNING *`,
             [
                 batch.ClientID,
@@ -100,7 +101,9 @@ export async function POST(request: Request) {
                 donorEmployer, donorOccupation,
                 giftPledgeAmount || 0, giftFee || 0, giftCustodian, giftConduit,
                 postMarkYear, postMarkQuarter, isInactive || false, comment,
-                mailCode || '' // Fail-safe (Mapped to CampaignID)
+                postMarkYear, postMarkQuarter, isInactive || false, comment,
+                campaignId || '', // Fail-safe (Mapped to CampaignID)
+                body.resolutionStatus === 'Pending' ? 'Pending' : 'Resolved'
             ]
         );
 

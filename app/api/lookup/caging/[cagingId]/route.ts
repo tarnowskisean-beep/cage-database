@@ -9,6 +9,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ cagi
         // In real world, we might need ClientID context too to ensure unique lookup if CagingIDs collide across clients.
         // But for now, let's search globally or assume CagingID includes client prefix.
 
+        // 1. Check Donors Table (Primary Source for Alerts)
+        const donorRes = await query(`
+            SELECT "DonorID", "FirstName", "LastName", "Address", "City", "State", "Zip", "CampaignID", "AlertMessage", "HasAlert", "CagingID"
+            FROM "Donors" 
+            WHERE "CagingID" = $1 OR "DonorID"::text = $1
+            LIMIT 1
+        `, [cagingId]);
+
+        if (donorRes.rows.length > 0) {
+            return NextResponse.json({ found: true, record: donorRes.rows[0], type: 'Donor' });
+        }
+
+        // 2. Check Prospects Table (Fallback)
         const res = await query(`
             SELECT * FROM "Prospects" WHERE "CagingID" = $1 LIMIT 1
         `, [cagingId]);
@@ -17,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ cagi
             return NextResponse.json({ found: false }, { status: 404 });
         }
 
-        return NextResponse.json({ found: true, record: res.rows[0] });
+        return NextResponse.json({ found: true, record: res.rows[0], type: 'Prospect' });
     } catch (e) {
         console.error(e);
         return NextResponse.json({ error: 'Lookup failed' }, { status: 500 });

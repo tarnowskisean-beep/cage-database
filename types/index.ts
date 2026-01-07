@@ -65,5 +65,6 @@ export interface DonationRecord {
     Comment?: string;
     GiftCustodian?: string;
     GiftConduit?: string;
-    CampaignID?: string; // Renamed from MailCode
+    CampaignID?: string;
+    ResolutionStatus?: 'Resolved' | 'Pending';
 }

@@ -129,7 +129,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     try {
         const body = await req.json();
-        const { FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID, ProfilePicture } = body;
+        const { FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID, ProfilePicture, AlertMessage, HasAlert } = body;
+
+        // Ensure HasAlert is boolean
+        const alertEnabled = HasAlert === true || HasAlert === 'true';
 
         await query(`
             UPDATE "Donors"
@@ -137,9 +140,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 "Address" = $5, "City" = $6, "State" = $7, "Zip" = $8,
                 "Bio" = $9, "AssignedStafferID" = $10,
                 "ProfilePicture" = COALESCE($12, "ProfilePicture"),
+                "AlertMessage" = $13,
+                "HasAlert" = $14,
                 "UpdatedAt" = NOW()
             WHERE "DonorID" = $11
-        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID || null, id, ProfilePicture]);
+        `, [FirstName, LastName, Email, Phone, Address, City, State, Zip, Bio, AssignedStafferID || null, id, ProfilePicture, AlertMessage, alertEnabled]);
 
         return NextResponse.json({ success: true });
     } catch (e: any) {

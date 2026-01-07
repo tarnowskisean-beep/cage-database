@@ -171,7 +171,7 @@ function ImportFinderModal({ client, onClose }: { client: any, onClose: () => vo
     const [result, setResult] = useState<any>(null);
 
     const downloadTemplate = () => {
-        const headers = ['CagingID', 'MailerID', 'MailCode', 'FirstName', 'LastName', 'Address', 'City', 'State', 'Zip'];
+        const headers = ['CagingID', 'MailerID', 'CampaignID', 'FirstName', 'LastName', 'Address', 'City', 'State', 'Zip'];
         const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -239,7 +239,7 @@ function ImportFinderModal({ client, onClose }: { client: any, onClose: () => vo
                                 PROSPECTS will be matched/updated based on <b>CagingID</b>. New records will be inserted.
                             </p>
                             <div className="flex flex-wrap gap-1">
-                                {['CagingID', 'MailerID', 'MailCode', 'First', 'Last', 'Address', 'City', 'State', 'Zip'].map(h => (
+                                {['CagingID', 'MailerID', 'CampaignID', 'First', 'Last', 'Address', 'City', 'State', 'Zip'].map(h => (
                                     <span key={h} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-gray-400 font-mono">
                                         {h}
                                     </span>

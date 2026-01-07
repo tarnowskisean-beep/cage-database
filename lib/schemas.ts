@@ -31,7 +31,7 @@ export const CreateDonationSchema = z.object({
     amount: z.union([z.string(), z.number()]).transform(v => parseFloat(String(v))),
     checkNumber: z.string().optional().nullable(),
     scanString: z.string().optional().nullable(),
-    mailCode: z.string().optional().nullable(), // Deprecated input key, mapped to CampaignID in API if present
+    campaignId: z.string().optional().nullable(), // Renamed from MailCode
 
     // Coding
     giftMethod: z.string().optional(), // Flexible string or Enum?

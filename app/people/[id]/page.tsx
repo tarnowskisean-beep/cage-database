@@ -144,6 +144,12 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                             Assigned to: <span className="font-bold">{donor.AssignedStafferName || 'Unassigned'}</span>
                                         </span>
                                     </div>
+                                    {donor.HasAlert && (
+                                        <div className="mt-2 bg-red-500/20 border border-red-500/50 text-red-100 px-3 py-2 rounded text-sm font-bold flex items-center gap-2 animate-pulse">
+                                            <span>🚨 PRIORITY ALERT:</span>
+                                            <span className="font-normal text-red-200">{donor.AlertMessage}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Recency Indicators */}
@@ -436,9 +442,29 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">
-                                                #{h.BatchID}
-                                            </span>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <span className="bg-zinc-800 border border-zinc-700 text-gray-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wide">
+                                                    #{h.BatchID}
+                                                </span>
+                                                {h.ResolutionStatus !== 'Pending' && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!confirm('Flag this donation for resolution?')) return;
+                                                            await fetch(`/api/donations/${h.DonationID}/flag`, { method: 'POST' });
+                                                            fetchData();
+                                                        }}
+                                                        className="text-[10px] text-gray-600 hover:text-yellow-500 transition-colors opacity-0 group-hover:opacity-100 uppercase tracking-wider font-bold"
+                                                        title="Flag as Ambiguous"
+                                                    >
+                                                        🚩 Flag
+                                                    </button>
+                                                )}
+                                                {h.ResolutionStatus === 'Pending' && (
+                                                    <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-wider">
+                                                        ⚠️ Pending
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-center flex gap-1 justify-center">
                                             <button
@@ -584,8 +610,11 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
         City: donor.City || '',
         State: donor.State || '',
         Zip: donor.Zip || '',
+
         Bio: donor.Bio || '',
-        AssignedStafferID: donor.AssignedStafferID || ''
+        AssignedStafferID: donor.AssignedStafferID || '',
+        AlertMessage: donor.AlertMessage || '',
+        HasAlert: donor.HasAlert || false
     });
     const [saving, setSaving] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
@@ -675,6 +704,31 @@ function EditProfileModal({ donor, onClose, onSave }: any) {
                             placeholder="Donor background..."
                         />
                     </div>
+
+                    {/* Donor Alert Section */}
+                    <div className="bg-red-500/10 border border-red-500/30 p-3 rounded">
+                        <div className="flex items-center gap-2 mb-2">
+                            <input
+                                type="checkbox"
+                                id="hasAlert"
+                                checked={formData.HasAlert}
+                                onChange={e => setFormData({ ...formData, HasAlert: e.target.checked })}
+                                className="w-4 h-4 accent-red-500"
+                            />
+                            <label htmlFor="hasAlert" className="text-sm font-bold text-red-400 cursor-pointer uppercase tracking-wider">
+                                Enable High-Priority Alert
+                            </label>
+                        </div>
+                        {formData.HasAlert && (
+                            <textarea
+                                className="input-field w-full h-20 border-red-500/30 focus:border-red-500"
+                                value={formData.AlertMessage}
+                                onChange={e => setFormData({ ...formData, AlertMessage: e.target.value })}
+                                placeholder="Alert Message (e.g. VIP Donor, Do Not Call)..."
+                            />
+                        )}
+                    </div>
+
                     <div>
                         <label className="block text-xs uppercase text-gray-500 mb-1">Assigned Staffer</label>
                         <select
