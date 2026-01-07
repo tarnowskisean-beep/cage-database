@@ -38,11 +38,12 @@ async function debugStats() {
         const interval = diffDays > 60 ? '1 month' : '1 day';
         const dateFormat = diffDays > 60 ? 'Mon YY' : 'MM/DD';
 
-        await query(`
+        const truncUnit = diffDays > 60 ? 'month' : 'day';
+        const res = await query(`
             WITH date_series AS (
                 SELECT generate_series(
-                    $1::timestamp, 
-                    $2::timestamp, 
+                    DATE_TRUNC('${truncUnit}', $1::timestamp), 
+                    DATE_TRUNC('${truncUnit}', $2::timestamp), 
                     '${interval}'::interval
                 ) as day
             )
@@ -51,10 +52,19 @@ async function debugStats() {
                 COALESCE(SUM(d."GiftAmount"), 0) as amount,
                 COUNT(d."DonationID") as count
             FROM date_series ds
-            LEFT JOIN "Donations" d ON DATE_TRUNC('${diffDays > 60 ? 'month' : 'day'}', d."GiftDate") = ds.day
+            LEFT JOIN "Donations" d ON DATE_TRUNC('${truncUnit}', d."GiftDate") = ds.day
             GROUP BY ds.day
             ORDER BY ds.day
         `, [start.toISOString(), end.toISOString()]);
+
+        const rows = res.rows;
+        console.log(`Chart Rows Returned: ${rows.length}`);
+        const totalChartRevenue = rows.reduce((sum: number, r: any) => sum + parseFloat(r.amount), 0);
+        console.log(`Total Chart Revenue: $${totalChartRevenue}`);
+        if (rows.length > 0) {
+            console.log('Sample Row:', rows[0]);
+            console.log('Sample Row (Non-Zero):', rows.find((r: any) => parseFloat(r.amount) > 0));
+        }
 
         // Query 10: Pending Resolutions (The new one)
         console.log('10. Testing Resolution Status...');

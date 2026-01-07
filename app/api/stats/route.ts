@@ -131,11 +131,12 @@ export async function GET(request: Request) {
                 }
 
                 // $1 = Start, $2 = End, $3 = ClientID (optional)
+                const truncUnit = diffDays > 60 ? 'month' : 'day';
                 return query(`
                     WITH date_series AS (
                         SELECT generate_series(
-                            $1::timestamp, 
-                            $2::timestamp, 
+                            DATE_TRUNC('${truncUnit}', $1::timestamp), 
+                            DATE_TRUNC('${truncUnit}', $2::timestamp), 
                             '${interval}'::interval
                         ) as day
                     )
@@ -144,7 +145,7 @@ export async function GET(request: Request) {
                         COALESCE(SUM(d."GiftAmount"), 0) as amount,
                         COUNT(d."DonationID") as count
                     FROM date_series ds
-                    LEFT JOIN "Donations" d ON DATE_TRUNC('${diffDays > 60 ? 'month' : 'day'}', d."GiftDate") = ds.day
+                    LEFT JOIN "Donations" d ON DATE_TRUNC('${truncUnit}', d."GiftDate") = ds.day
                     ${clientClause}
                     GROUP BY ds.day
                     ORDER BY ds.day
