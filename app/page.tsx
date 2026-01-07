@@ -11,7 +11,7 @@ import { DashboardStats, ChartDataPoint } from '@/types/dashboard';
 
 function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<boolean | string>(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -51,8 +51,11 @@ function DashboardContent() {
     if (endDate) params.append('endDate', endDate);
 
     fetch(`/api/stats?${params.toString()}`)
-      .then(res => {
-        if (!res.ok) throw new Error('API Failed');
+      .then(async res => {
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.details || errData.error || `Server Error ${res.status}`);
+        }
         return res.json();
       })
       .then(data => {
@@ -61,7 +64,7 @@ function DashboardContent() {
       })
       .catch(err => {
         console.error(err);
-        setError(true);
+        setError(err.message || 'Unknown Error');
       })
       .finally(() => setLoading(false));
   }, [selectedClient, startDate, endDate]);
@@ -77,7 +80,7 @@ function DashboardContent() {
           </svg>
           <h3 className="text-lg font-medium text-white">Dashboard Unavailable</h3>
           <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-            Unable to load analytics at this time. The server might be busy or unreachable.
+            {typeof error === 'string' ? error : 'Unable to load analytics at this time.'}
           </p>
         </div>
         <button onClick={() => window.location.reload()} className="mt-6 btn-primary">
