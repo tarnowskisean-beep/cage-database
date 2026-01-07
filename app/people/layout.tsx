@@ -7,14 +7,14 @@ import { useState, useEffect } from 'react';
 
 export default function PeopleLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const [stats, setStats] = useState({ review: 0, acknowledgements: 0 });
+    const [stats, setStats] = useState({ review: 0, acknowledgements: 0, alerts: 0, directory: 0 });
 
     useEffect(() => {
         fetch('/api/people/stats')
             .then(res => res.json())
             .then(data => {
-                if (data && typeof data.review === 'number') {
-                    setStats(data);
+                if (data) {
+                    setStats(prev => ({ ...prev, ...data }));
                 }
             })
             .catch(console.error);
@@ -30,12 +30,17 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                 <div className="flex gap-1 mt-6 border-b border-white/10">
                     <Link
                         href="/people"
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${pathname === '/people'
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${pathname === '/people'
                             ? 'border-white text-white'
                             : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
                             }`}
                     >
                         Directory
+                        {stats.directory > 0 && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 text-gray-400">
+                                {stats.directory.toLocaleString()}
+                            </span>
+                        )}
                     </Link>
                     <Link
                         href="/people/resolution"
@@ -54,12 +59,16 @@ export default function PeopleLayout({ children }: { children: React.ReactNode }
                     <Link
                         href="/people/alerts"
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${pathname === '/people/alerts'
-                            ? 'border-blue-500 text-blue-500' // Blue for alerts
+                            ? 'border-red-500 text-red-500' // Red for alerts (matches dashboard)
                             : 'border-transparent text-gray-400 hover:text-white hover:border-white/20'
                             }`}
                     >
                         My Alerts
-                        {/* We can add a count badge here later if we have a specific count for 'My Alerts' vs general review */}
+                        {stats.alerts > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${pathname === '/people/alerts' ? 'bg-red-500/20 text-red-300' : 'bg-red-900/30 text-red-600 group-hover:text-red-500'}`}>
+                                {stats.alerts}
+                            </span>
+                        )}
                     </Link>
                     <Link
                         href="/people/acknowledgements"

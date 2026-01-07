@@ -49,9 +49,28 @@ export async function GET(req: NextRequest) {
             ${whereClause}
         `, params);
 
+        // 3. Count Flagged Alerts
+        const alertsRes = await query(`
+            SELECT COUNT(*) as count 
+            FROM "Donations" d 
+            WHERE d."IsFlagged" = TRUE
+            ${whereClause}
+        `, params);
+
+        // 4. Count Total Directory (Unique Donors)
+        // Using Email as primary unifier for approximate count
+        const directoryRes = await query(`
+            SELECT COUNT(DISTINCT "DonorEmail") as count 
+            FROM "Donations" d 
+            WHERE 1=1
+            ${whereClause}
+        `, params);
+
         return NextResponse.json({
             review: parseInt(resolutionRes.rows[0].count),
-            acknowledgements: parseInt(ackRes.rows[0].count)
+            acknowledgements: parseInt(ackRes.rows[0].count),
+            alerts: parseInt(alertsRes.rows[0].count),
+            directory: parseInt(directoryRes.rows[0].count)
         });
 
     } catch (e: any) {

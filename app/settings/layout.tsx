@@ -25,7 +25,8 @@ export default function SettingsLayout({
             <div style={{ display: 'flex', gap: '2rem', height: '100%', alignItems: 'flex-start' }}>
                 {/* Settings Sidebar */}
                 <div style={{ width: '220px', display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
-                    <SettingsLink href="/settings/users" label="Users" active={isActive('/settings/users')} icon="👥" />
+                    <SettingsLink href="/settings/users" label="User Management" active={isActive('/settings/users')} icon="👥" />
+                    <SettingsLink href="/settings/assignment-rules" label="Assignment Rules" active={isActive('/settings/assignment-rules')} icon="📋" />
                     <SettingsLink href="/settings/security" label="Security" active={isActive('/settings/security')} icon="🔒" />
                     <SettingsLink href="/settings/mappings" label="Import Mappings" active={isActive('/settings/mappings')} icon="🔄" />
                     <SettingsLink href="/settings/export-templates" label="Export Templates" active={isActive('/settings/export-templates')} icon="📤" />
