@@ -259,4 +259,3 @@ export async function generateICL(batchId: string): Promise<Buffer> {
 
     return Buffer.concat(chunks);
 }
-```
