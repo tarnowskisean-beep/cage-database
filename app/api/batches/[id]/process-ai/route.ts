@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
         // 1. Fetch Batch Context (for AI Hinting)
         const batchRes = await query(
-            'SELECT "PaymentCategory", "DefaultGiftMethod" FROM "Batches" WHERE "BatchID" = $1',
+            'SELECT "PaymentCategory", "DefaultGiftMethod", "CreatedBy" FROM "Batches" WHERE "BatchID" = $1',
             [batchId]
         );
         if (batchRes.rows.length === 0) return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
@@ -148,11 +148,38 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                         if (insertRes.rows.length > 0) {
                             const newDonationId = insertRes.rows[0].DonationID;
 
-                            // Link Image
+
+                            // 3a. Save Cropped Image (Front)
+                            // We need to persist the buffer for ICL generation
+                            const cropDocRes = await query(`
+                                INSERT INTO "BatchDocuments" 
+                                ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent")
+                                VALUES ($1, 'CheckFront', $2, 'db:blob', $3, $4)
+                                RETURNING "BatchDocumentID"
+                            `, [
+                                batchId,
+                                `donation_${newDonationId}_front.jpg`,
+                                batch.CreatedBy || 1, // Fallback to ID 1 if system
+                                imgData.image
+                            ]);
+
+                            const croppedDocId = cropDocRes.rows[0].BatchDocumentID;
+
+                            // 3b. Link Image
                             await query(`
                                 INSERT INTO "DonationImages" 
                                 ("DonationID", "BatchDocumentID", "PageNumber", "Type", "StorageKey")
-                                VALUES ($1, $2, $3, 'Check', $4)
+                                VALUES ($1, $2, 1, 'CheckFront', 'db:blob')
+                            `, [
+                                newDonationId,
+                                croppedDocId
+                            ]);
+
+                            // Also link the original PDF page for reference (optional, or as 'Source')
+                            await query(`
+                                INSERT INTO "DonationImages" 
+                                ("DonationID", "BatchDocumentID", "PageNumber", "Type", "StorageKey")
+                                VALUES ($1, $2, $3, 'SourcePDF', $4)
                             `, [
                                 newDonationId,
                                 doc.BatchDocumentID,
