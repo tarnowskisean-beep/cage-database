@@ -76,15 +76,9 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
 
         let totalProcessed = 0;
         let totalMatched = 0;
-        let errors = 0;
+        let lastError = '';
 
         for (const doc of documents) {
-            // Skip Deposit Slips from analysis usually? Or just let AI handle it? 
-            // Deposit slips (generated) shouldn't be analyzed to find donors, but if user uploaded one, maybe?
-            // User said "read the related documents". 
-            // Let's analyze EVERYTHING except perhaps generated ones if we can distinguish.
-            // But existing type check was only ReplySlips/Checks. 
-            // We will analyze ALL types now.
             try {
                 const res = await fetch('/api/processing/link-scans', {
                     method: 'POST',
@@ -97,15 +91,20 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
                     totalMatched += data.matched || 0;
                 } else {
                     console.error(`Failed to analyze doc ${doc.BatchDocumentID}`, data.error);
+                    lastError = data.error || 'Unknown Error';
                     errors++;
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error(e);
+                lastError = e.message;
                 errors++;
             }
         }
 
-        alert(`Analysis Complete!\nProcessed Docs: ${documents.length}\nMatched Records: ${totalMatched}\nErrors: ${errors}`);
+        let msg = `Analysis Complete!\nProcessed Docs: ${documents.length}\nMatched Records: ${totalMatched}`;
+        if (errors > 0) msg += `\nErrors: ${errors}\nLast Error: ${lastError}`;
+
+        alert(msg);
         window.location.reload();
     };
 
