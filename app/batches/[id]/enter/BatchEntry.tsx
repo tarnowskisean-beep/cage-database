@@ -268,6 +268,26 @@ export default function BatchEntry({ id }: { id: string }) {
                         </button>
                     )}
 
+                    {/* DEPOSIT SLIP BUTTON */}
+                    {['Checks', 'Cash', 'Mixed'].includes(batch?.PaymentCategory || '') && (
+                        <a
+                            href={`/api/batches/${id}/deposit-slip`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary"
+                            style={{
+                                marginRight: '1rem',
+                                fontSize: '0.8rem',
+                                padding: '0.2rem 0.6rem',
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                            }}
+                        >
+                            📄 Deposit Slip
+                        </a>
+                    )}
+
                     <button
                         onClick={handleFillFakeData}
                         disabled={batch?.Status === 'Reconciled'}
