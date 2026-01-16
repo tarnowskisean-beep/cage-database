@@ -1,7 +1,10 @@
 import OpenAI from 'openai';
 import jpeg from 'jpeg-js';
+import { PDFDocument, PDFName, PDFRawStream, PDFDict } from 'pdf-lib';
 
-// Lazy load OpenAI to prevent build-time errors when env var is missing
+/**
+ * Lazy load OpenAI to prevent build-time errors when env var is missing
+ */
 function getOpenAI() {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -11,16 +14,11 @@ function getOpenAI() {
     return new OpenAI({ apiKey: apiKey || 'dummy-key-for-build' });
 }
 
-
-/**
- * Extracts raw image data from a PDF buffer by parsing internal operators.
- * This avoids the need for Canvas/DOM dependencies.
- */
-import { PDFDocument, PDFName, PDFRawStream } from 'pdf-lib';
-
 /**
  * Extracts raw image data from a PDF buffer using pdf-lib.
  * This looks for XObject Images in the PDF resources.
+ * 
+ * NOTE: This replaces pdfjs-dist usage which proved incompatible with Vercel Serverless.
  */
 export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNumber: number, image: Buffer }[]> {
     const pdfDoc = await PDFDocument.load(pdfBuffer);
@@ -29,15 +27,17 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
 
     for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
-        const { Resources } = page.node;
-        if (!Resources) continue;
+
+        // Resources() is a method on PDFPageLeaf
+        const resources = page.node.Resources();
+        if (!resources || !(resources instanceof PDFDict)) continue;
 
         // Resources is a PDFDictionary
-        const xObjects = Resources.lookup(PDFName.of('XObject'));
-        if (!xObjects) continue;
+        const xObjects = resources.lookup(PDFName.of('XObject'));
+        if (!xObjects || !(xObjects instanceof PDFDict)) continue;
 
         // Iterate through XObjects keys
-        const keys = xObjects.dict.keys();
+        const keys = xObjects.keys();
         for (const key of keys) {
             const xObject = xObjects.lookup(key);
 
@@ -59,7 +59,7 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
                         image: Buffer.from(data)
                     });
 
-                    // One image per page is typical for scans
+                    // One image per page is typical for scans - prevent loading too many icons
                     if (extractedImages.filter(e => e.pageNumber === i + 1).length > 2) break;
                 }
             }
@@ -130,5 +130,3 @@ export async function extractDonationData(imageBuffer: Buffer, pageNumber: numbe
         return null;
     }
 }
-
-// ... rest of AI logic
