@@ -89,20 +89,41 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                 }
 
                 try {
-                    const res = await fetch(fetchUrl);
+                    let res = await fetch(fetchUrl);
                     if (!res.ok) {
                         return { error: `Download failed: ${res.statusText}`, status: 400 };
                     }
-                    const arrayBuffer = await res.arrayBuffer();
-                    fileBuffer = Buffer.from(arrayBuffer);
+                    let arrayBuffer = await res.arrayBuffer();
+                    let buffer = Buffer.from(arrayBuffer);
+
+                    // Check for Drive Virus Warning (HTML)
+                    // If the file is "Too Large", google returns an HTML page with a 'confirm' link
+                    const tempHeader = buffer.slice(0, 100).toString('ascii');
+                    if (driveFileId && (tempHeader.trim().toLowerCase().startsWith('<!doctype html') || tempHeader.trim().toLowerCase().startsWith('<html'))) {
+                        const html = buffer.toString('utf-8');
+                        // Regex to find confirm token in the download link: href="/uc?export=download&id=...&confirm=XXXX" or similar
+                        const confirmMatch = html.match(/confirm=([a-zA-Z0-9_]+)/);
+                        if (confirmMatch && confirmMatch[1]) {
+                            // Retry with confirm token
+                            const confirmUrl = fetchUrl + '&confirm=' + confirmMatch[1];
+                            res = await fetch(confirmUrl);
+                            if (res.ok) {
+                                arrayBuffer = await res.arrayBuffer();
+                                buffer = Buffer.from(arrayBuffer);
+                            }
+                        }
+                    }
+
+                    fileBuffer = buffer;
                 } catch (fetchErr: any) {
                     return { error: `Could not download file: ${fetchErr.message}`, status: 400 };
                 }
             }
+
         } else if (StorageKey.startsWith('gcs:')) {
             const bucketName = process.env.GCS_BUCKET_NAME!;
             const filePath = StorageKey.replace('gcs:', '');
-            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!); // Assuming GCS uses same creds or env var structure as previously set
+            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!); // Assuming GCS uses same creds
             const storage = new Storage({ projectId: credentials.project_id, credentials });
             const [file] = await storage.bucket(bucketName).file(filePath).download();
             fileBuffer = file;
