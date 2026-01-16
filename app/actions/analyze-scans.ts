@@ -120,19 +120,29 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
         // We will send ALL extracted images to OpenAI so it can cross-reference Check + Reply Slip
         let imagesToSend: { base64: string, page: number }[] = [];
 
-        if (originalMimeType === 'application/pdf') {
-            const extracted = await extractImagesFromPdf(fileBuffer);
-            if (extracted.length === 0) {
-                // Fallback: Use simple base64 of file if it's small? No, PDF content needs extraction.
-                // Actually maybe throw error.
-                return { error: 'Could not extract images from PDF for AI analysis.', status: 400 };
+        // Check for PDF signature to avoid crashing pdf-lib
+        const isPdf = fileBuffer.slice(0, 5).toString('ascii') === '%PDF-';
+
+        if (isPdf) {
+            try {
+                const extracted = await extractImagesFromPdf(fileBuffer);
+                if (extracted.length === 0) {
+                    // If PDF has no images (text only?) or failed, fallback?
+                    // For now, if valid PDF but no images, it's an error for this workflow.
+                    return { error: 'Could not extract images from PDF for AI analysis.', status: 400 };
+                }
+                imagesToSend = extracted.map(img => ({
+                    base64: img.image.toString('base64'),
+                    page: img.pageNumber
+                }));
+            } catch (pdfErr: any) {
+                console.warn('PDF Extraction failed, attempting fallback to raw file', pdfErr);
+                // Fallback: If pdf-lib fails (e.g. encrypted or weird format), 
+                // we *could* try treating the whole file as an image if it's small, but likely it won't work.
+                return { error: `PDF Processing Error: ${pdfErr.message}`, status: 400 };
             }
-            imagesToSend = extracted.map(img => ({
-                base64: img.image.toString('base64'),
-                page: img.pageNumber
-            }));
         } else {
-            // Single image file
+            // Single image file (JPEG, PNG, etc.)
             imagesToSend.push({
                 base64: fileBuffer.toString('base64'),
                 page: 1
