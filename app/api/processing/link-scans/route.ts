@@ -80,23 +80,23 @@ export async function POST(request: Request) {
             if (!fileBuffer) {
                 let fetchUrl = url;
                 if (driveFileId) {
-                    fetchUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+                    fetchUrl = 'https://drive.google.com/uc?export=download&id=' + driveFileId;
                 }
 
 try {
     const res = await fetch(fetchUrl);
     if (!res.ok) {
-        if (res.status === 403 || res.status === 401) throw new Error(`Access Denied (Status ${res.status}).`);
-        if (res.status === 404) throw new Error(`File not found (Status 404).`);
-        throw new Error(`Download failed: ${res.statusText}`);
+        if (res.status === 403 || res.status === 401) throw new Error(`Access Denied(Status ${ res.status }).`);
+        if (res.status === 404) throw new Error(`File not found(Status 404).`);
+        throw new Error(`Download failed: ${ res.statusText } `);
     }
     const arrayBuffer = await res.arrayBuffer();
     fileBuffer = Buffer.from(arrayBuffer);
 } catch (fetchErr: any) {
     if (driveFileId) {
-        return NextResponse.json({ error: `Could not access Google Drive file. ${fetchErr.message}` }, { status: 400 });
+        return NextResponse.json({ error: `Could not access Google Drive file.${ fetchErr.message } ` }, { status: 400 });
     }
-    return NextResponse.json({ error: `Could not download file. ${fetchErr.message}` }, { status: 400 });
+    return NextResponse.json({ error: `Could not download file.${ fetchErr.message } ` }, { status: 400 });
 }
             }
         } else if (StorageKey.startsWith('gcs:')) {
@@ -135,28 +135,28 @@ if (originalMimeType === 'application/pdf') {
 
 const prompt = `
             Analyze this document of donation scans.
-            Extract a list of all distinct donations/checks found.
+            Extract a list of all distinct donations / checks found.
             
             For each donation, extract:
-            1. Donor Name (best guess)
-            2. Amount (exact number)
-            3. Check Number (if visible)
-            4. Memo / Notes (handwritten)
-            5. Address (full donor address if visible)
-            6. Confidence Score (0.0 to 1.0)
+1. Donor Name(best guess)
+2. Amount(exact number)
+3. Check Number(if visible)
+    4. Memo / Notes(handwritten)
+5. Address(full donor address if visible)
+    6. Confidence Score(0.0 to 1.0)
 
             Return ONLY a valid JSON array of objects:
-            [
-                { 
-                    "name": "John Doe", 
-                    "amount": 100.00, 
-                    "page": 1, 
-                    "check_number": "1234", 
-                    "memo": "Note",
-                    "address": "123 Main St",
-                    "confidence": 0.95
-                }
-            ]
+[
+    {
+        "name": "John Doe",
+        "amount": 100.00,
+        "page": 1,
+        "check_number": "1234",
+        "memo": "Note",
+        "address": "123 Main St",
+        "confidence": 0.95
+    }
+]
         `;
 
 const response = await openai.chat.completions.create({
@@ -169,7 +169,7 @@ const response = await openai.chat.completions.create({
                 {
                     type: "image_url",
                     image_url: {
-                        url: `data:${imageMimeType};base64,${base64Image}`,
+                        url: `data:${ imageMimeType }; base64, ${ base64Image } `,
                         detail: "high",
                     },
                 },
@@ -190,7 +190,7 @@ try {
     // Our prompt example is an array, but json_object enforces top-level object usually? 
     // Actually gpt-4o with json_object requires the output to be valid JSON.
     // If the model outputs a raw array `[...]`, that IS valid JSON.
-    // But let's handle `{ donations: [...] }` case just in case.
+    // But let's handle `{ donations: [...] } ` case just in case.
     if (Array.isArray(parsed)) extractedData = parsed;
     else if (parsed.donations && Array.isArray(parsed.donations)) extractedData = parsed.donations;
     else if (parsed.checks && Array.isArray(parsed.checks)) extractedData = parsed.checks;
@@ -231,13 +231,13 @@ for (const extracted of extractedData) {
             if (isNameMatch) {
                 await query(
                     `UPDATE "Donations" 
-                              SET "ScanDocumentID" = $1, 
-                                  "ScanPageNumber" = $2,
-                                  "CheckNumber" = COALESCE(NULLIF($3, ''), "CheckNumber"),
-                                  "Comment" = CASE 
+                              SET "ScanDocumentID" = $1,
+    "ScanPageNumber" = $2,
+    "CheckNumber" = COALESCE(NULLIF($3, ''), "CheckNumber"),
+    "Comment" = CASE 
                                       WHEN "Comment" IS NULL OR "Comment" = '' THEN $4 
-                                      ELSE "Comment" || ' | ' || $4 
-                                  END
+                                      ELSE "Comment" || ' | ' || $4
+END
                               WHERE "DonationID" = $5`,
                     [documentId, extracted.page || 1, extracted.check_number || null, extracted.memo || null, donation.DonationID]
                 );
@@ -251,33 +251,33 @@ for (const extracted of extractedData) {
     // B. CREATE NEW IF NOT MATCHED
     if (!matched) {
         const status = confidence < 0.8 ? 'Flagged' : 'Pending';
-        let note = extracted.memo ? `[AI Note]: ${extracted.memo}` : '';
-        if (status === 'Flagged') note += ` | [AI Low Confidence: ${Math.round(confidence * 100)}%]`;
+        let note = extracted.memo ? `[AI Note]: ${ extracted.memo } ` : '';
+        if (status === 'Flagged') note += ` | [AI Low Confidence: ${ Math.round(confidence * 100) } %]`;
 
         await query(`
-                    INSERT INTO "Donations" 
-                    (
-                        "ClientID", "BatchID", "GiftAmount", 
-                        "DonorFirstName", "DonorLastName", 
-                        "CheckNumber", "SecondaryID",
-                        "DonorAddress", 
-                        "Comment",
-                        "ResolutionStatus",
-                        "ScanDocumentID", "ScanPageNumber",
-                        "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate", "TransactionType", "GiftType"
-                    )
-                    SELECT 
-                        b."ClientID", $1, $2,
-                        $3, '',
-                        $4, $4,
-                        $5, 
-                        $6,
-                        $7,
-                        $8, $9,
-                        $10, 'Cage', NOW(), b."Date", 'Donation', 'Individual'
+                    INSERT INTO "Donations"
+    (
+        "ClientID", "BatchID", "GiftAmount",
+        "DonorFirstName", "DonorLastName",
+        "CheckNumber", "SecondaryID",
+        "DonorAddress",
+        "Comment",
+        "ResolutionStatus",
+        "ScanDocumentID", "ScanPageNumber",
+        "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate", "TransactionType", "GiftType"
+    )
+SELECT
+b."ClientID", $1, $2,
+    $3, '',
+    $4, $4,
+    $5,
+    $6,
+    $7,
+    $8, $9,
+    $10, 'Cage', NOW(), b."Date", 'Donation', 'Individual'
                     FROM "Batches" b
                     WHERE b."BatchID" = $1
-                `, [
+    `, [
             batchId, extAmount,
             extracted.name || 'Unknown',
             extracted.check_number || null,
