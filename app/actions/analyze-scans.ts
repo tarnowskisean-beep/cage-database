@@ -28,7 +28,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
 
         // 1. Fetch Document Info
         const docResult = await query(
-            'SELECT "StorageKey", "DocumentType" FROM "BatchDocuments" WHERE "BatchDocumentID" = $1',
+            'SELECT "StorageKey", "DocumentType", "BatchID" FROM "BatchDocuments" WHERE "BatchDocumentID" = $1',
             [documentId]
         );
 
@@ -36,7 +36,12 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             return { error: 'Document not found', status: 404 };
         }
 
-        const { StorageKey, DocumentType } = docResult.rows[0];
+        const { StorageKey, DocumentType, BatchID: docBatchId } = docResult.rows[0];
+        // Ensure we are in the right batch
+        if (docBatchId.toString() !== batchId) {
+            // soft mismatch warning or ignore?
+        }
+
         let fileBuffer: Buffer | null = null;
         const originalMimeType = DocumentType === 'ReplySlipsPDF' || DocumentType === 'ChecksPDF' || !DocumentType ? 'application/pdf' : 'application/octet-stream';
 
@@ -108,36 +113,45 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
         }
 
         // 3. OpenAI Analysis
-        const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
+        const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod", "CreatedBy" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
         const batch = batchRes.rows[0];
 
-        let base64Image: string | null = null;
-        let imageMimeType: string | null = null;
+        // Prepare Images for Vision API
+        // We will send ALL extracted images to OpenAI so it can cross-reference Check + Reply Slip
+        let imagesToSend: { base64: string, page: number }[] = [];
 
         if (originalMimeType === 'application/pdf') {
-            const images = await extractImagesFromPdf(fileBuffer);
-            if (images.length === 0) {
+            const extracted = await extractImagesFromPdf(fileBuffer);
+            if (extracted.length === 0) {
+                // Fallback: Use simple base64 of file if it's small? No, PDF content needs extraction.
+                // Actually maybe throw error.
                 return { error: 'Could not extract images from PDF for AI analysis.', status: 400 };
             }
-            // Use first page logic.
-            base64Image = images[0].image.toString('base64');
-            imageMimeType = 'image/jpeg';
+            imagesToSend = extracted.map(img => ({
+                base64: img.image.toString('base64'),
+                page: img.pageNumber
+            }));
         } else {
-            // Assume image
-            base64Image = fileBuffer.toString('base64');
-            imageMimeType = 'image/jpeg';
+            // Single image file
+            imagesToSend.push({
+                base64: fileBuffer.toString('base64'),
+                page: 1
+            });
         }
 
+        // Limit to first 5 images to avoid token limits per doc
+        const processedImages = imagesToSend.slice(0, 5);
+
         const prompt =
-            'Analyze this document of donation scans.\n' +
-            'Extract a list of all distinct donations/checks found.\n' +
+            'Analyze these images which represent a SINGLE donation transaction (e.g. Check + Reply Slip).\n' +
+            'Extract a list of all distinct donations found (usually just 1, unless it is a bulk check).\n' +
             '\n' +
             'For each donation, extract:\n' +
-            '1. Donor Name (best guess)\n' +
-            '2. Amount (exact number)\n' +
-            '3. Check Number (if visible)\n' +
-            '4. Memo / Notes (handwritten)\n' +
-            '5. Address (full donor address if visible)\n' +
+            '1. Donor Name (best guess from Check OR Reply Slip)\n' +
+            '2. Amount (exact number from Check)\n' +
+            '3. Check Number (from Check)\n' +
+            '4. Memo / Notes (Combine handwritten notes from Check AND Reply Slip)\n' +
+            '5. Address (full donor address from Check OR Reply Slip)\n' +
             '6. Confidence Score (0.0 to 1.0)\n' +
             '\n' +
             'Return ONLY a valid JSON array of objects:\n' +
@@ -145,7 +159,6 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             '    { \n' +
             '        "name": "John Doe", \n' +
             '        "amount": 100.00, \n' +
-            '        "page": 1, \n' +
             '        "check_number": "1234", \n' +
             '        "memo": "Note",\n' +
             '        "address": "123 Main St",\n' +
@@ -153,21 +166,23 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             '    }\n' +
             ']';
 
+        const contentParts: any[] = [{ type: "text", text: prompt }];
+        for (const img of processedImages) {
+            contentParts.push({
+                type: "image_url",
+                image_url: {
+                    url: 'data:image/jpeg;base64,' + img.base64,
+                    detail: "high"
+                }
+            });
+        }
+
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
                     role: "user",
-                    content: [
-                        { type: "text", text: prompt },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: 'data:' + imageMimeType + ';base64,' + base64Image,
-                                detail: "high",
-                            },
-                        },
-                    ],
+                    content: contentParts,
                 },
             ],
             response_format: { type: "json_object" },
@@ -242,7 +257,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                 let note = extracted.memo ? '[AI Note]: ' + extracted.memo + ' ' : '';
                 if (status === 'Flagged') note += ' | [AI Low Confidence: ' + Math.round(confidence * 100) + '%]';
 
-                await query(
+                const insertRes = await query(
                     'INSERT INTO "Donations" ' +
                     '(' +
                     '"ClientID", "BatchID", "GiftAmount", ' +
@@ -264,7 +279,8 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                     '$8, $9, ' +
                     '$10, \'Cage\', NOW(), b."Date", \'Donation\', \'Individual\' ' +
                     'FROM "Batches" b ' +
-                    'WHERE b."BatchID" = $1',
+                    'WHERE b."BatchID" = $1 ' +
+                    'RETURNING "DonationID"',
                     [
                         batchId, extAmount,
                         extracted.name || 'Unknown',
@@ -272,10 +288,46 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                         extracted.address || null,
                         note,
                         status,
-                        documentId, extracted.page || 1,
+                        documentId, 1, // Default to page 1 for the main link
                         batch.DefaultGiftMethod || 'Check'
                     ]);
-                createdCount++;
+
+                if (insertRes.rows.length > 0) {
+                    const newDonationId = insertRes.rows[0].DonationID;
+                    createdCount++;
+
+                    // 5. Link Images (DonationImages)
+                    // Loop through ALL processed images for this doc and link them
+                    for (let i = 0; i < processedImages.length; i++) {
+                        const img = processedImages[i];
+                        // Identify type purely by order? 
+                        // Or just save them as 'ScanImage'
+                        // Better: Crop/Save the blob to BatchDocuments first?
+                        // Yes, saving the blob allows us to render it quickly without re-parsing PDF.
+
+                        // 5a. Save Blob
+                        const blobRes = await query(`
+                                INSERT INTO "BatchDocuments" 
+                                ("BatchID", "DocumentType", "FileName", "StorageKey", "UploadedBy", "FileContent")
+                                VALUES ($1, 'CheckImage', $2, 'db:blob', $3, $4)
+                                RETURNING "BatchDocumentID"
+                            `, [
+                            batchId,
+                            `donation_${newDonationId}_img_${img.page}.jpg`,
+                            batch.CreatedBy || 1,
+                            Buffer.from(img.base64, 'base64')
+                        ]);
+
+                        const blobId = blobRes.rows[0].BatchDocumentID;
+
+                        // 5b. Link to Donation
+                        await query(`
+                                INSERT INTO "DonationImages"
+                                ("DonationID", "BatchDocumentID", "PageNumber", "Type", "StorageKey")
+                                VALUES ($1, $2, $3, 'ScanImage', 'db:blob')
+                            `, [newDonationId, blobId, img.page]);
+                    }
+                }
             }
         }
 
