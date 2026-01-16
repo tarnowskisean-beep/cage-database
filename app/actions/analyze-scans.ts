@@ -43,6 +43,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
         }
 
         let fileBuffer: Buffer | null = null;
+        let authError = '';
         const originalMimeType = DocumentType === 'ReplySlipsPDF' || DocumentType === 'ChecksPDF' || !DocumentType ? 'application/pdf' : 'application/octet-stream';
 
         // 2. Download File
@@ -79,6 +80,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
 
                 } catch (authErr: any) {
                     console.warn('Authenticated Drive download failed:', authErr.message);
+                    authError = authErr.message;
                 }
             }
 
@@ -91,7 +93,8 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                 try {
                     let res = await fetch(fetchUrl);
                     if (!res.ok) {
-                        return { error: `Download failed: ${res.statusText}`, status: 400 };
+                        const extraMsg = authError ? ` (Authenticated attempt failed: ${authError})` : '';
+                        return { error: `Download failed: ${res.statusText}${extraMsg}`, status: 400 };
                     }
                     let arrayBuffer = await res.arrayBuffer();
                     let buffer = Buffer.from(arrayBuffer);
@@ -160,6 +163,12 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
         // Check for HTML error page (Google Drive virus warning, login, 404, etc.)
         if (headerAscii.trim().toLowerCase().startsWith('<!doctype html') || headerAscii.trim().toLowerCase().startsWith('<html')) {
             const htmlTitle = fileBuffer.toString('utf-8').match(/<title>(.*?)<\/title>/)?.[1] || headerAscii.slice(0, 50);
+
+            // Check for Sign-in specifically (Private File)
+            if (fileBuffer.toString('utf-8').includes('Sign-in') || fileBuffer.toString('utf-8').includes('ServiceLogin')) {
+                return { error: `Access Denied: The file is private (Redirected to Sign-in). Please ensure the file is shared with the system service account or set to "Anyone with the link". (Auth Error: ${authError || 'None'})`, status: 400 };
+            }
+
             return { error: `Download failed: The system retrieved a web page instead of the file. content: ${htmlTitle}`, status: 400 };
         }
 
