@@ -82,7 +82,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
 
         for (const doc of documents) {
             try {
-                const res = await fetch('/api/processing/link-scans', {
+                const res = await fetch('/api/batches/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ batchId, documentId: doc.BatchDocumentID })
