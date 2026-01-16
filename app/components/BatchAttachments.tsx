@@ -109,10 +109,29 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
                                     <a href={`/api/documents/${uploaded.BatchDocumentID}`} target="_blank"
                                         style={{
                                             fontSize: '0.75rem', color: 'var(--color-primary)',
-                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px'
+                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px'
                                         }}>
                                         {uploaded.FileName}
                                     </a>
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm("Are you sure you want to remove this link?")) return;
+                                            try {
+                                                const res = await fetch(`/api/documents/${uploaded.BatchDocumentID}`, { method: 'DELETE' });
+                                                if (res.ok) {
+                                                    fetchDocuments();
+                                                } else {
+                                                    alert("Failed to delete");
+                                                }
+                                            } catch (e) { alert("Error deleting"); }
+                                        }}
+                                        style={{
+                                            background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.8rem', opacity: 0.6
+                                        }}
+                                        title="Remove Link"
+                                    >
+                                        🗑️
+                                    </button>
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>

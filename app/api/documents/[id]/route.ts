@@ -91,3 +91,37 @@ export async function GET(
         }, { status: 500 });
     }
 }
+
+// Delete Document (Unlink)
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
+
+    // Auth Check
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        // Check existence
+        const checkRes = await query('SELECT "BatchID", "FileName" FROM "BatchDocuments" WHERE "BatchDocumentID" = $1', [id]);
+        if (checkRes.rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+        const doc = checkRes.rows[0];
+
+        // Perform Delete
+        await query('DELETE FROM "BatchDocuments" WHERE "BatchDocumentID" = $1', [id]);
+
+        // Audit
+        await logAudit('DELETE_DOCUMENT', 'BATCH_DOCUMENT', doc.BatchID, `Deleted/Unlinked document: ${doc.FileName}`, session.user.name || 'System');
+
+        return NextResponse.json({ success: true });
+
+    } catch (e: any) {
+        console.error("Delete failed", e);
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}
