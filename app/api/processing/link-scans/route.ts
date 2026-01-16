@@ -8,6 +8,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { extractImagesFromPdf } from '@/lib/ai'; // Import the helper
 
+// Allow up to 60 seconds for AI processing (Vercel Hobby Limit)
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);

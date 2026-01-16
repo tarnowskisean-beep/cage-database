@@ -87,7 +87,16 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ batchId, documentId: doc.BatchDocumentID })
                 });
-                const data = await res.json();
+
+                let data;
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await res.json();
+                } else {
+                    const text = await res.text();
+                    throw new Error(`Server returned ${res.status} ${res.statusText}: ${text.substring(0, 100)}`);
+                }
+
                 if (res.ok) {
                     totalProcessed += data.processed || 0;
                     totalMatched += data.matched || 0;
