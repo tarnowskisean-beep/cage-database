@@ -116,36 +116,43 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
         const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod", "CreatedBy" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
         const batch = batchRes.rows[0];
 
-        // Prepare Images for Vision API
         // We will send ALL extracted images to OpenAI so it can cross-reference Check + Reply Slip
-        let imagesToSend: { base64: string, page: number }[] = [];
+        let imagesToSend: { base64: string, page: number, mimeType?: string }[] = [];
 
         // Check for PDF signature to avoid crashing pdf-lib
-        const isPdf = fileBuffer.slice(0, 5).toString('ascii') === '%PDF-';
+        const header = fileBuffer.slice(0, 12).toString('hex');
+        const isPdf = header.startsWith('25504446'); // %PDF-
 
         if (isPdf) {
             try {
                 const extracted = await extractImagesFromPdf(fileBuffer);
                 if (extracted.length === 0) {
-                    // If PDF has no images (text only?) or failed, fallback?
-                    // For now, if valid PDF but no images, it's an error for this workflow.
                     return { error: 'Could not extract images from PDF for AI analysis.', status: 400 };
                 }
                 imagesToSend = extracted.map(img => ({
                     base64: img.image.toString('base64'),
-                    page: img.pageNumber
+                    page: img.pageNumber,
+                    mimeType: 'image/jpeg' // Extracted images are converted to JPEG in lib/ai.ts
                 }));
             } catch (pdfErr: any) {
                 console.warn('PDF Extraction failed, attempting fallback to raw file', pdfErr);
-                // Fallback: If pdf-lib fails (e.g. encrypted or weird format), 
-                // we *could* try treating the whole file as an image if it's small, but likely it won't work.
                 return { error: `PDF Processing Error: ${pdfErr.message}`, status: 400 };
             }
         } else {
-            // Single image file (JPEG, PNG, etc.)
+            // Single image file detection
+            let mimeType = 'image/jpeg';
+            if (header.startsWith('89504e47')) mimeType = 'image/png';
+            else if (header.startsWith('ffd8ff')) mimeType = 'image/jpeg';
+            else if (header.startsWith('47494638')) mimeType = 'image/gif';
+            else if (header.startsWith('52494646') && header.slice(16, 24).startsWith('57454250')) mimeType = 'image/webp'; // WEBP...
+            else if (header.startsWith('49492a00') || header.startsWith('4d4d002a')) {
+                return { error: 'TIFF images are not supported by AI. Please convert to JPEG/PNG/PDF.', status: 400 };
+            }
+
             imagesToSend.push({
                 base64: fileBuffer.toString('base64'),
-                page: 1
+                page: 1,
+                mimeType: mimeType
             });
         }
 
@@ -184,7 +191,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             contentParts.push({
                 type: "image_url",
                 image_url: {
-                    url: 'data:image/jpeg;base64,' + img.base64,
+                    url: `data:${img.mimeType};base64,` + img.base64,
                     detail: "high"
                 }
             });
