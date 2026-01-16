@@ -18,10 +18,6 @@ function getOpenAI() {
  * This avoids the need for Canvas/DOM dependencies.
  */
 export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNumber: number, image: Buffer }[]> {
-    // Dynamic import to prevent top-level crashes in Serverless/Edge
-    // @ts-ignore
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-
     // Polyfill for DOMMatrix and DOMPoint which are needed by pdfjs-dist in Node < 22 or serverless
     if (typeof global.DOMMatrix === 'undefined') {
         // @ts-ignore
@@ -46,6 +42,10 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
             matrixTransform(matrix: any) { return new global.DOMPoint(this.x, this.y, this.z, this.w); }
         };
     }
+
+    // Dynamic import to prevent top-level crashes in Serverless/Edge
+    // @ts-ignore
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
     // Standard Node.js worker setup for pdfjs-dist if needed
     // In legacy build, it might not be strictly required for getOperatorList, but good to fallback
