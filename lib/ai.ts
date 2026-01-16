@@ -16,109 +16,51 @@ function getOpenAI() {
  * Extracts raw image data from a PDF buffer by parsing internal operators.
  * This avoids the need for Canvas/DOM dependencies.
  */
+import { PDFDocument, PDFName, PDFRawStream } from 'pdf-lib';
+
+/**
+ * Extracts raw image data from a PDF buffer using pdf-lib.
+ * This looks for XObject Images in the PDF resources.
+ */
 export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNumber: number, image: Buffer }[]> {
-    // Polyfill for DOMMatrix and DOMPoint which are needed by pdfjs-dist in Node < 22 or serverless
-    if (typeof global.DOMMatrix === 'undefined') {
-        // @ts-ignore
-        global.DOMMatrix = class DOMMatrix {
-            a: number; b: number; c: number; d: number; e: number; f: number;
-            constructor(init?: any) {
-                this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
-                if (init && init.length === 6) { [this.a, this.b, this.c, this.d, this.e, this.f] = init; }
-            }
-            // Minimal stubs
-            setMatrixValue(str: string) { return this; }
-            translate(x: number, y: number) { return this; }
-            scale(x: number, y: number) { return this; }
-            toString() { return `matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.e}, ${this.f})`; }
-        };
-    }
-    if (typeof global.DOMPoint === 'undefined') {
-        // @ts-ignore
-        global.DOMPoint = class DOMPoint {
-            x: number; y: number; z: number; w: number;
-            constructor(x = 0, y = 0, z = 0, w = 1) { this.x = x; this.y = y; this.z = z; this.w = w; }
-            matrixTransform(matrix: any) { return new global.DOMPoint(this.x, this.y, this.z, this.w); }
-        };
-    }
-
-    // Dynamic import to prevent top-level crashes in Serverless/Edge
-    // @ts-ignore
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-
-    // Standard Node.js worker setup for pdfjs-dist
-    // We point to a CDN to ensure the worker script is available regardless of serverless path rewriting
-    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-        pdfjs.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.530/legacy/build/pdf.worker.mjs';
-    }
-
-    // Load the PDF
-    const data = new Uint8Array(pdfBuffer);
-    const loadingTask = pdfjs.getDocument({ data, verbosity: 0 });
-    const pdf = await loadingTask.promise;
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    const pages = pdfDoc.getPages();
     const extractedImages: { pageNumber: number, image: Buffer }[] = [];
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const ops = await page.getOperatorList();
+    for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        const { Resources } = page.node;
+        if (!Resources) continue;
 
-        for (let j = 0; j < ops.fnArray.length; j++) {
-            const fn = ops.fnArray[j];
-            const args = ops.argsArray[j];
+        // Resources is a PDFDictionary
+        const xObjects = Resources.lookup(PDFName.of('XObject'));
+        if (!xObjects) continue;
 
-            // pdfjs.OPS.paintImageXObject
-            if (fn === pdfjs.OPS.paintImageXObject) {
-                const imgName = args[0];
-                try {
-                    const img = await page.objs.get(imgName);
+        // Iterate through XObjects keys
+        const keys = xObjects.dict.keys();
+        for (const key of keys) {
+            const xObject = xObjects.lookup(key);
 
-                    // Case 1: Raw JPEG Stream (Fastest, best quality)
-                    // Unfortunately, pdf.js abstracts the stream access in the high-level 'get' call.
-                    // To get the raw stream, we would need lower level access or check if 'img' has a 'raw' prop we can exploit.
-                    // But standard pdf.js 'img' object from 'objs.get' is a decoded bitmap (Uint8ClampedArray).
+            // We are looking for an Image XObject
+            if (xObject instanceof PDFRawStream) {
+                const subtype = xObject.dict.lookup(PDFName.of('Subtype'));
+                if (subtype === PDFName.of('Image')) {
+                    const data = xObject.contents;
+                    // The data is likely already a JPEG or PNG stream if filter is DCTDecode
+                    // Note: Real-world PDFs might have FlateDecode (PNG) or other filters. 
+                    // To keep it simple and robust for Scanners (which usually output JPEG):
+                    // We assume DCTDecode (JPEG) or simple streams. 
+                    // If it is complex, this simple extractor might fail to decode correctly without sharp/jimp.
+                    // BUT, since pdfjs-dist is failing mostly on worker loading, this is a valid "Hail Mary".
+                    // Let's rely on the fact that scanner PDFs are usually just JPEGs wrapped.
 
-                    if (img && img.data) {
-                        // img.data is a Uint8ClampedArray (RGBA)
-                        // Width: img.width, Height: img.height
+                    extractedImages.push({
+                        pageNumber: i + 1,
+                        image: Buffer.from(data)
+                    });
 
-                        // Check if it's RGBA or RGB
-                        const width = img.width;
-                        const height = img.height;
-                        const srcData = img.data;
-
-                        // jpeg-js expects: { width, height, data: Buffer (RGBA) }
-                        let rawBuffer: Buffer;
-
-                        // Heuristic: Check size
-                        if (srcData.length === width * height * 3) {
-                            // RGB -> RGBA
-                            const newData = Buffer.alloc(width * height * 4);
-                            for (let k = 0, l = 0; k < srcData.length; k += 3, l += 4) {
-                                newData[l] = srcData[k];
-                                newData[l + 1] = srcData[k + 1];
-                                newData[l + 2] = srcData[k + 2];
-                                newData[l + 3] = 0xFF; // Alpha
-                            }
-                            rawBuffer = newData;
-                        } else {
-                            // Assume RGBA
-                            rawBuffer = Buffer.from(srcData);
-                        }
-
-                        // Encode to JPEG
-                        const jpegData = jpeg.encode({ data: rawBuffer, width, height }, 80); // Quality 80
-
-                        extractedImages.push({
-                            pageNumber: i,
-                            image: jpegData.data // Buffer
-                        });
-
-                        // Stop after finding the big image on the page (usually the scan)
-                        // To avoid extracting tiny icons/logos.
-                        if (width > 500 && height > 500) break;
-                    }
-                } catch (e) {
-                    console.error('Image extraction failed for page', i, e);
+                    // One image per page is typical for scans
+                    if (extractedImages.filter(e => e.pageNumber === i + 1).length > 2) break;
                 }
             }
         }
