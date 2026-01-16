@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 import { Storage } from '@google-cloud/storage';
 import { google } from 'googleapis';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { extractImagesFromPdf } from '@/lib/ai';
 
 // Allow up to 60 seconds for AI processing
