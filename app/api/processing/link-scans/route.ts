@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
         const prompt = `
-            Analyze this PDF document of donation scans (checks and reply slips).
+            Analyze this PDF document of donation scans (checks, reply slips, or correspondence/letters).
             Extract a list of all distinct donations found.
             For each donation, identify:
             1. Donor Name (fuzzy)

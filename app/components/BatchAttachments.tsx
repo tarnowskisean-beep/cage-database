@@ -70,11 +70,72 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
 
     const requirements = getRequirements();
 
+    const handleAnalyzeAll = async () => {
+        if (documents.length === 0) return alert("No documents to analyze.");
+        if (!confirm(`Run AI Analysis on ALL ${documents.length} attached documents?`)) return;
+
+        let totalProcessed = 0;
+        let totalMatched = 0;
+        let errors = 0;
+
+        for (const doc of documents) {
+            // Skip Deposit Slips from analysis usually? Or just let AI handle it? 
+            // Deposit slips (generated) shouldn't be analyzed to find donors, but if user uploaded one, maybe?
+            // User said "read the related documents". 
+            // Let's analyze EVERYTHING except perhaps generated ones if we can distinguish.
+            // But existing type check was only ReplySlips/Checks. 
+            // We will analyze ALL types now.
+            try {
+                const res = await fetch('/api/processing/link-scans', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ batchId, documentId: doc.BatchDocumentID })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    totalProcessed += data.processed || 0;
+                    totalMatched += data.matched || 0;
+                } else {
+                    console.error(`Failed to analyze doc ${doc.BatchDocumentID}`, data.error);
+                    errors++;
+                }
+            } catch (e) {
+                console.error(e);
+                errors++;
+            }
+        }
+
+        alert(`Analysis Complete!\nProcessed Docs: ${documents.length}\nMatched Records: ${totalMatched}\nErrors: ${errors}`);
+        window.location.reload();
+    };
+
     if (loading) return <div>Loading attachments...</div>;
 
     return (
         <div className="glass-panel" style={{ padding: '1rem', marginTop: '1rem' }}>
-            <h3 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>ATTACHMENTS</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>ATTACHMENTS</h3>
+                {documents.length > 0 && (
+                    <button
+                        onClick={handleAnalyzeAll}
+                        style={{
+                            fontSize: '0.75rem',
+                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            fontWeight: 600
+                        }}
+                    >
+                        ✨ Analyze All
+                    </button>
+                )}
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {requirements.map(req => {
@@ -165,45 +226,6 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
                                         }}
                                     >
                                         {uploading ? '...' : 'Save'}
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* AI ANALYZE BUTTON - Only for PDFs */}
-                            {uploaded && (req.type === 'ReplySlipsPDF' || req.type === 'ChecksPDF') && (
-                                <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                                    <button
-                                        onClick={async () => {
-                                            if (!confirm("Run AI Analysis on this document? This may take a minute.")) return;
-                                            try {
-                                                const res = await fetch('/api/processing/link-scans', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ batchId, documentId: uploaded.BatchDocumentID })
-                                                });
-                                                const data = await res.json();
-                                                if (res.ok) {
-                                                    alert(`Analysis Complete!\nProcessed: ${data.processed}\nMatched: ${data.matched}`);
-                                                    window.location.reload(); // Reload to see linkages
-                                                } else {
-                                                    alert('Analysis failed: ' + data.error);
-                                                }
-                                            } catch (e: any) { alert('Error: ' + e.message); }
-                                        }}
-                                        style={{
-                                            fontSize: '0.7rem',
-                                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '0.25rem 0.5rem',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.25rem'
-                                        }}
-                                    >
-                                        <span>✨</span> Analyze
                                     </button>
                                 </div>
                             )}
