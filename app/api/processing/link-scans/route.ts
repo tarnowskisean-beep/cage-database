@@ -229,15 +229,15 @@ for (const extracted of extractedData) {
 
             if (isNameMatch) {
                 await query(
-                    `UPDATE "Donations" 
-                              SET "ScanDocumentID" = $1,
-    "ScanPageNumber" = $2,
-    "CheckNumber" = COALESCE(NULLIF($3, ''), "CheckNumber"),
-    "Comment" = CASE 
-                                      WHEN "Comment" IS NULL OR "Comment" = '' THEN $4 
-                                      ELSE "Comment" || ' | ' || $4
-END
-                              WHERE "DonationID" = $5`,
+                    'UPDATE "Donations" ' +
+                    'SET "ScanDocumentID" = $1, ' +
+                    '"ScanPageNumber" = $2, ' +
+                    '"CheckNumber" = COALESCE(NULLIF($3, \'\'), "CheckNumber"), ' +
+                    '"Comment" = CASE ' +
+                    'WHEN "Comment" IS NULL OR "Comment" = \'\' THEN $4 ' +
+                    'ELSE "Comment" || \' | \' || $4 ' +
+                    'END ' +
+                    'WHERE "DonationID" = $5',
                     [documentId, extracted.page || 1, extracted.check_number || null, extracted.memo || null, donation.DonationID]
                 );
                 matched = true;
@@ -250,33 +250,33 @@ END
     // B. CREATE NEW IF NOT MATCHED
     if (!matched) {
         const status = confidence < 0.8 ? 'Flagged' : 'Pending';
-        let note = extracted.memo ? `[AI Note]: ${ extracted.memo } ` : '';
-        if (status === 'Flagged') note += ` | [AI Low Confidence: ${ Math.round(confidence * 100) } %]`;
+        let note = extracted.memo ? '[AI Note]: ' + extracted.memo + ' ' : '';
+        if (status === 'Flagged') note += ' | [AI Low Confidence: ' + Math.round(confidence * 100) + '%]';
 
-        await query(`
-                    INSERT INTO "Donations"
-    (
-        "ClientID", "BatchID", "GiftAmount",
-        "DonorFirstName", "DonorLastName",
-        "CheckNumber", "SecondaryID",
-        "DonorAddress",
-        "Comment",
-        "ResolutionStatus",
-        "ScanDocumentID", "ScanPageNumber",
-        "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate", "TransactionType", "GiftType"
-    )
-SELECT
-b."ClientID", $1, $2,
-    $3, '',
-    $4, $4,
-    $5,
-    $6,
-    $7,
-    $8, $9,
-    $10, 'Cage', NOW(), b."Date", 'Donation', 'Individual'
-                    FROM "Batches" b
-                    WHERE b."BatchID" = $1
-    `, [
+        await query(
+            'INSERT INTO "Donations" ' +
+            '(' +
+            '"ClientID", "BatchID", "GiftAmount", ' +
+            '"DonorFirstName", "DonorLastName", ' +
+            '"CheckNumber", "SecondaryID", ' +
+            '"DonorAddress", ' +
+            '"Comment", ' +
+            '"ResolutionStatus", ' +
+            '"ScanDocumentID", "ScanPageNumber", ' +
+            '"GiftMethod", "GiftPlatform", "GiftDate", "BatchDate", "TransactionType", "GiftType" ' +
+            ') ' +
+            'SELECT ' +
+            'b."ClientID", $1, $2, ' +
+            '$3, \'\', ' +
+            '$4, $4, ' +
+            '$5, ' +
+            '$6, ' +
+            '$7, ' +
+            '$8, $9, ' +
+            '$10, \'Cage\', NOW(), b."Date", \'Donation\', \'Individual\' ' +
+            'FROM "Batches" b ' +
+            'WHERE b."BatchID" = $1',
+            [
             batchId, extAmount,
             extracted.name || 'Unknown',
             extracted.check_number || null,
