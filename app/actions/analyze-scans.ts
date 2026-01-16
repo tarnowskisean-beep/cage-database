@@ -9,7 +9,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { extractImagesFromPdf } from '@/lib/ai';
 
 // Allow up to 60 seconds for AI processing
-export const maxDuration = 60;
+
 
 export async function analyzeScanAction(batchId: string, documentId: number) {
     try {
