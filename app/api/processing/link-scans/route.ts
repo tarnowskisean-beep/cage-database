@@ -189,11 +189,7 @@ if (!text) throw new Error("AI did not return content.");
 let extractedData: any[] = [];
 try {
     const parsed = JSON.parse(text);
-    // OpenAI in json_object mode might wrap in a key if prompt isn't perfect, or return explicit keys.
-    // Our prompt example is an array, but json_object enforces top-level object usually? 
-    // Actually gpt-4o with json_object requires the output to be valid JSON.
-    // If the model outputs a raw array `[...]`, that IS valid JSON.
-    // But let's handle `{ donations: [...] } ` case just in case.
+    // Parse the response from OpenAI
     if (Array.isArray(parsed)) extractedData = parsed;
     else if (parsed.donations && Array.isArray(parsed.donations)) extractedData = parsed.donations;
     else if (parsed.checks && Array.isArray(parsed.checks)) extractedData = parsed.checks;
