@@ -1,13 +1,17 @@
+```javascript
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { Storage } from '@google-cloud/storage';
 import { google } from 'googleapis';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { extractImagesFromPdf } from '@/lib/ai'; // Import the helper
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize OpenAI
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: Request) {
     try {
@@ -18,8 +22,8 @@ export async function POST(request: Request) {
 
         const { batchId, documentId } = await request.json();
 
-        if (!process.env.GEMINI_API_KEY) {
-            return NextResponse.json({ error: 'GEMINI_API_KEY is missing' }, { status: 500 });
+        if (!process.env.OPENAI_API_KEY) {
+            return NextResponse.json({ error: 'OPENAI_API_KEY is missing' }, { status: 500 });
         }
 
         // 1. Fetch Document Info
@@ -32,23 +36,19 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Document not found' }, { status: 404 });
         }
 
-        const { StorageKey } = docResult.rows[0];
+        const { StorageKey, DocumentType } = docResult.rows[0];
         let fileBuffer: Buffer | null = null;
-        const mimeType = 'application/pdf'; // Assuming PDF for scans
+        const originalMimeType = DocumentType === 'ReplySlipsPDF' || DocumentType === 'ChecksPDF' || !DocumentType ? 'application/pdf' : 'application/octet-stream';
 
-
-
-        // 2. Download File
         // 2. Download File
         if (StorageKey.startsWith('link:')) {
             const url = StorageKey.replace('link:', '');
             let driveFileId = '';
 
-            // ROBUST DRIVE ID EXTRACTION
             const patterns = [
-                /\/file\/d\/([a-zA-Z0-9_-]+)/, // /file/d/ID
-                /id=([a-zA-Z0-9_-]+)/,          // ?id=ID
-                /\/d\/([a-zA-Z0-9_-]+)/         // /d/ID
+                /\/file\/d\/([a-zA-Z0-9_-]+)/, 
+                /id=([a-zA-Z0-9_-]+)/,          
+                /\/d\/([a-zA-Z0-9_-]+)/         
             ];
             for (const p of patterns) {
                 const match = url.match(p);
@@ -59,7 +59,6 @@ export async function POST(request: Request) {
             }
 
             if (driveFileId && process.env.GDRIVE_CREDENTIALS) {
-                // Authenticated Google Drive Access
                 try {
                     const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
                     const auth = google.auth.fromJSON(credentials);
@@ -79,69 +78,72 @@ export async function POST(request: Request) {
             }
 
             if (!fileBuffer) {
-                // Fallback or Public Link
                 let fetchUrl = url;
                 if (driveFileId) {
-                    // Convert to reliable export link
                     fetchUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
                 }
 
-                try {
-                    const res = await fetch(fetchUrl);
-                    if (!res.ok) {
-                        // More specific error
-                        if (res.status === 403 || res.status === 401) {
-                            throw new Error(`Access Denied (Status ${res.status}). Please ensure the link is 'Anyone with the link' OR shared with the system email.`);
-                        }
-                        if (res.status === 404) {
-                            throw new Error(`File not found (Status 404). Check the link.`);
-                        }
-                        throw new Error(`Download failed: ${res.statusText}`);
-                    }
-                    const arrayBuffer = await res.arrayBuffer();
-                    fileBuffer = Buffer.from(arrayBuffer);
-                } catch (fetchErr: any) {
-                    console.error("Public Fetch Error:", fetchErr);
-                    // If we have a drive ID but failed, report likely cause
-                    if (driveFileId) {
-                        return NextResponse.json({ error: `Could not access Google Drive file. Ensure link is public or shared. Error: ${fetchErr.message}` }, { status: 400 });
-                    }
-                    return NextResponse.json({ error: `Could not download file. Error: ${fetchErr.message}` }, { status: 400 });
-                }
+try {
+    const res = await fetch(fetchUrl);
+    if (!res.ok) {
+        if (res.status === 403 || res.status === 401) throw new Error(`Access Denied (Status ${res.status}).`);
+        if (res.status === 404) throw new Error(`File not found (Status 404).`);
+        throw new Error(`Download failed: ${res.statusText}`);
+    }
+    const arrayBuffer = await res.arrayBuffer();
+    fileBuffer = Buffer.from(arrayBuffer);
+} catch (fetchErr: any) {
+    if (driveFileId) {
+        return NextResponse.json({ error: `Could not access Google Drive file. ${fetchErr.message}` }, { status: 400 });
+    }
+    return NextResponse.json({ error: `Could not download file. ${fetchErr.message}` }, { status: 400 });
+}
             }
         } else if (StorageKey.startsWith('gcs:')) {
-            const bucketName = process.env.GCS_BUCKET_NAME!;
-            const filePath = StorageKey.replace('gcs:', '');
-            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!);
-            const storage = new Storage({ projectId: credentials.project_id, credentials });
-            const [file] = await storage.bucket(bucketName).file(filePath).download();
-            fileBuffer = file;
-        }
+    const bucketName = process.env.GCS_BUCKET_NAME!;
+    const filePath = StorageKey.replace('gcs:', '');
+    const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!);
+    const storage = new Storage({ projectId: credentials.project_id, credentials });
+    const [file] = await storage.bucket(bucketName).file(filePath).download();
+    fileBuffer = file;
+}
 
-        if (!fileBuffer) {
-            return NextResponse.json({ error: 'System could not retrieve file content (Unknown Storage Type or Empty)' }, { status: 400 });
-        }
+if (!fileBuffer) {
+    return NextResponse.json({ error: 'System could not retrieve file content' }, { status: 400 });
+}
 
-        // 3. Gemini Analysis
-        // generic 'gemini-1.5-flash' alias can sometimes 404 on v1beta. Using specific version -001.
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+// 3. OpenAI Analysis
+const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
+const batch = batchRes.rows[0];
 
-        // Retrieve Batch Context
-        const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
-        const batch = batchRes.rows[0];
+let base64Image: string | null = null;
+let imageMimeType: string | null = null;
 
-        const prompt = `
-            Analyze this PDF document of donation scans (checks, reply slips, or correspondence/letters).
+if (originalMimeType === 'application/pdf') {
+    const images = await extractImagesFromPdf(fileBuffer);
+    if (images.length === 0) {
+        return NextResponse.json({ error: 'Could not extract images from PDF for AI analysis.' }, { status: 400 });
+    }
+    // Use first page for now
+    base64Image = images[0].data;
+    imageMimeType = images[0].mimeType;
+} else {
+    // Assume image
+    base64Image = fileBuffer.toString('base64');
+    imageMimeType = 'image/jpeg'; // Default assumption if not PDF logic, though explicit check is better
+}
+
+const prompt = `
+            Analyze this document of donation scans.
             Extract a list of all distinct donations/checks found.
             
             For each donation, extract:
             1. Donor Name (best guess)
             2. Amount (exact number)
-            3. Page Number (1-indexed)
-            4. Check Number (if visible)
-            5. Memo / Notes (handwritten)
-            6. Address (full donor address if visible)
-            7. Confidence Score (0.0 to 1.0) - How confident are you in the Amount and Name?
+            3. Check Number (if visible)
+            4. Memo / Notes (handwritten)
+            5. Address (full donor address if visible)
+            6. Confidence Score (0.0 to 1.0)
 
             Return ONLY a valid JSON array of objects:
             [
@@ -150,92 +152,109 @@ export async function POST(request: Request) {
                     "amount": 100.00, 
                     "page": 1, 
                     "check_number": "1234", 
-                    "memo": "In memory of X",
+                    "memo": "Note",
                     "address": "123 Main St",
                     "confidence": 0.95
                 }
             ]
         `;
 
-        const result = await model.generateContent([
-            prompt,
-            {
-                inlineData: {
-                    data: fileBuffer.toString('base64'),
-                    mimeType: mimeType
-                }
-            }
-        ]);
+const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+        {
+            role: "user",
+            content: [
+                { type: "text", text: prompt },
+                {
+                    type: "image_url",
+                    image_url: {
+                        url: `data:${imageMimeType};base64,${base64Image}`,
+                        detail: "high",
+                    },
+                },
+            ],
+        },
+    ],
+    response_format: { type: "json_object" },
+    max_tokens: 4000,
+});
 
-        const response = await result.response;
-        const text = response.text();
+const text = response.choices[0].message.content;
+if (!text) throw new Error("AI did not return content.");
 
-        // Clean markdown code blocks if present
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        let extractedData;
-        try {
-            extractedData = JSON.parse(jsonStr);
-        } catch (e) {
-            console.error("JSON Parse Failed", text);
-            throw new Error("AI returned invalid JSON");
-        }
+let extractedData: any[] = [];
+try {
+    const parsed = JSON.parse(text);
+    // OpenAI in json_object mode might wrap in a key if prompt isn't perfect, or return explicit keys.
+    // Our prompt example is an array, but json_object enforces top-level object usually? 
+    // Actually gpt-4o with json_object requires the output to be valid JSON.
+    // If the model outputs a raw array `[...]`, that IS valid JSON.
+    // But let's handle `{ donations: [...] }` case just in case.
+    if (Array.isArray(parsed)) extractedData = parsed;
+    else if (parsed.donations && Array.isArray(parsed.donations)) extractedData = parsed.donations;
+    else if (parsed.checks && Array.isArray(parsed.checks)) extractedData = parsed.checks;
+    else {
+        // Fallback: try to find any array in the values
+        const val = Object.values(parsed).find(v => Array.isArray(v));
+        if (val) extractedData = val as any[];
+        else throw new Error("Could not find array in JSON response");
+    }
+} catch (e) {
+    console.error("JSON Parse Failed", text);
+    throw new Error("AI returned invalid JSON structure");
+}
 
-        // 4. Match OR Create
-        const batchDonations = await query(
-            'SELECT "DonationID", "DonorName", "Amount" FROM "Donations" WHERE "BatchID" = $1',
-            [batchId]
-        );
+// 4. Match OR Create
+const batchDonations = await query(
+    'SELECT "DonationID", "DonorName", "Amount" FROM "Donations" WHERE "BatchID" = $1',
+    [batchId]
+);
 
-        let matchCount = 0;
-        let createdCount = 0;
+let matchCount = 0;
+let createdCount = 0;
 
-        for (const extracted of extractedData) {
-            const extAmount = parseFloat(extracted.amount.toString().replace(/[^0-9.]/g, ''));
-            const confidence = extracted.confidence || 0.5;
-            let matched = false;
+for (const extracted of extractedData) {
+    const extAmount = parseFloat((extracted.amount || 0).toString().replace(/[^0-9.]/g, ''));
+    const confidence = extracted.confidence || 0.5;
+    let matched = false;
 
-            // A. TRY TO MATCH
-            for (const donation of batchDonations.rows) {
-                const dbAmount = parseFloat(donation.Amount);
-                if (Math.abs(dbAmount - extAmount) < 0.01) {
-                    const dbName = (donation.DonorName || '').toLowerCase();
-                    const extName = (extracted.name || '').toLowerCase();
-                    // Basic name match
-                    const dbParts = dbName.split(' ');
-                    const isNameMatch = dbParts.some((part: string) => part.length > 2 && extName.includes(part));
+    // A. TRY TO MATCH
+    for (const donation of batchDonations.rows) {
+        const dbAmount = parseFloat(donation.Amount);
+        if (Math.abs(dbAmount - extAmount) < 0.01) {
+            const dbName = (donation.DonorName || '').toLowerCase();
+            const extName = (extracted.name || '').toLowerCase();
+            const dbParts = dbName.split(' ');
+            const isNameMatch = dbParts.some((part: string) => part.length > 2 && extName.includes(part));
 
-                    if (isNameMatch) {
-                        // UPDATE Existing
-                        await query(
-                            `UPDATE "Donations" 
+            if (isNameMatch) {
+                await query(
+                    `UPDATE "Donations" 
                               SET "ScanDocumentID" = $1, 
                                   "ScanPageNumber" = $2,
-                                  "SecondaryID" = COALESCE(NULLIF($3, ''), "SecondaryID"),
                                   "CheckNumber" = COALESCE(NULLIF($3, ''), "CheckNumber"),
                                   "Comment" = CASE 
                                       WHEN "Comment" IS NULL OR "Comment" = '' THEN $4 
                                       ELSE "Comment" || ' | ' || $4 
                                   END
                               WHERE "DonationID" = $5`,
-                            [documentId, extracted.page, extracted.check_number || null, extracted.memo || null, donation.DonationID]
-                        );
-                        matched = true;
-                        matchCount++;
-                        break;
-                    }
-                }
+                    [documentId, extracted.page || 1, extracted.check_number || null, extracted.memo || null, donation.DonationID]
+                );
+                matched = true;
+                matchCount++;
+                break;
             }
+        }
+    }
 
-            // B. CREATE NEW IF NOT MATCHED
-            if (!matched) {
-                // Resolution Status: 'Pending' normally, 'Flagged' if low confidence
-                const status = confidence < 0.8 ? 'Flagged' : 'Pending';
+    // B. CREATE NEW IF NOT MATCHED
+    if (!matched) {
+        const status = confidence < 0.8 ? 'Flagged' : 'Pending';
+        let note = extracted.memo ? `[AI Note]: ${extracted.memo}` : '';
+        if (status === 'Flagged') note += ` | [AI Low Confidence: ${Math.round(confidence * 100)}%]`;
 
-                // Construct Note
-                let note = extracted.memo ? `[AI Note]: ${extracted.memo}` : '';
-                if (status === 'Flagged') note += ` | [AI Low Confidence: ${Math.round(confidence * 100)}%]`;
-
-                await query(`
+        await query(`
                     INSERT INTO "Donations" 
                     (
                         "ClientID", "BatchID", "GiftAmount", 
@@ -249,39 +268,40 @@ export async function POST(request: Request) {
                     )
                     SELECT 
                         b."ClientID", $1, $2,
-                        $3, '', -- Name logic
+                        $3, '',
                         $4, $4,
                         $5, 
                         $6,
-                        $7, -- Status
+                        $7,
                         $8, $9,
                         $10, 'Cage', NOW(), b."Date", 'Donation', 'Individual'
                     FROM "Batches" b
                     WHERE b."BatchID" = $1
                 `, [
-                    batchId, extAmount,
-                    extracted.name || 'Unknown',
-                    extracted.check_number || null,
-                    extracted.address || null,
-                    note,
-                    status,
-                    documentId, extracted.page,
-                    batch.DefaultGiftMethod || 'Check'
-                ]);
-                createdCount++;
-            }
-        }
-
-        return NextResponse.json({
-            success: true,
-            processed: extractedData.length,
-            matched: matchCount,
-            created: createdCount,
-            extracted: extractedData
-        });
-
-    } catch (e: any) {
-        console.error('AI Processing Error:', e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+            batchId, extAmount,
+            extracted.name || 'Unknown',
+            extracted.check_number || null,
+            extracted.address || null,
+            note,
+            status,
+            documentId, extracted.page || 1,
+            batch.DefaultGiftMethod || 'Check'
+        ]);
+        createdCount++;
     }
 }
+
+return NextResponse.json({
+    success: true,
+    processed: extractedData.length,
+    matched: matchCount,
+    created: createdCount,
+    extracted: extractedData
+});
+
+    } catch (e: any) {
+    console.error('AI Processing Error:', e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
+}
+}
+```
