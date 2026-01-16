@@ -123,7 +123,8 @@ export async function POST(request: Request) {
         }
 
         // 3. Gemini Analysis
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // generic 'gemini-1.5-flash' alias can sometimes 404 on v1beta. Using specific version -001.
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
         // Retrieve Batch Context
         const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
