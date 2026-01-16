@@ -8,7 +8,7 @@ import MainLayout from './components/MainLayout';
 import PolicyEnforcement from './components/PolicyEnforcement';
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from './api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { getPendingPolicies } from '@/lib/policy';
 
 const inter = Inter_Tight({ subsets: ['latin'], variable: '--font-inter' });
