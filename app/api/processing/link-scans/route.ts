@@ -125,20 +125,34 @@ export async function POST(request: Request) {
         // 3. Gemini Analysis
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+        // Retrieve Batch Context
+        const batchRes = await query('SELECT "PaymentCategory", "DefaultGiftMethod" FROM "Batches" WHERE "BatchID" = $1', [batchId]);
+        const batch = batchRes.rows[0];
+
         const prompt = `
             Analyze this PDF document of donation scans (checks, reply slips, or correspondence/letters).
-            Extract a list of all distinct donations found.
-            For each donation, identify:
-            1. Donor Name (fuzzy)
-            2. Amount (exact)
-            3. Page Number where this donation appears (1-indexed).
-            4. Check Number (if visible/applicable)
-            5. Memo line or Handwritten notes (capture exactly as written)
+            Extract a list of all distinct donations/checks found.
+            
+            For each donation, extract:
+            1. Donor Name (best guess)
+            2. Amount (exact number)
+            3. Page Number (1-indexed)
+            4. Check Number (if visible)
+            5. Memo / Notes (handwritten)
+            6. Address (full donor address if visible)
+            7. Confidence Score (0.0 to 1.0) - How confident are you in the Amount and Name?
 
             Return ONLY a valid JSON array of objects:
             [
-                { "name": "John Doe", "amount": 100.00, "page": 1, "check_number": "1234", "memo": "In memory of X" },
-                ...
+                { 
+                    "name": "John Doe", 
+                    "amount": 100.00, 
+                    "page": 1, 
+                    "check_number": "1234", 
+                    "memo": "In memory of X",
+                    "address": "123 Main St",
+                    "confidence": 0.95
+                }
             ]
         `;
 
@@ -157,36 +171,40 @@ export async function POST(request: Request) {
 
         // Clean markdown code blocks if present
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const extractedData = JSON.parse(jsonStr);
+        let extractedData;
+        try {
+            extractedData = JSON.parse(jsonStr);
+        } catch (e) {
+            console.error("JSON Parse Failed", text);
+            throw new Error("AI returned invalid JSON");
+        }
 
-        // 4. Match and Update Database
+        // 4. Match OR Create
         const batchDonations = await query(
             'SELECT "DonationID", "DonorName", "Amount" FROM "Donations" WHERE "BatchID" = $1',
             [batchId]
         );
 
         let matchCount = 0;
+        let createdCount = 0;
 
         for (const extracted of extractedData) {
-            // Simple Logic: Match Amount exactly + Name loosely
-            // Clean extracted amount
             const extAmount = parseFloat(extracted.amount.toString().replace(/[^0-9.]/g, ''));
+            const confidence = extracted.confidence || 0.5;
+            let matched = false;
 
+            // A. TRY TO MATCH
             for (const donation of batchDonations.rows) {
                 const dbAmount = parseFloat(donation.Amount);
-
-                // Check Amount match
                 if (Math.abs(dbAmount - extAmount) < 0.01) {
-                    // Check Name match (Very basic substring check for now)
                     const dbName = (donation.DonorName || '').toLowerCase();
                     const extName = (extracted.name || '').toLowerCase();
-
-                    // Identify if parts of name match
+                    // Basic name match
                     const dbParts = dbName.split(' ');
                     const isNameMatch = dbParts.some((part: string) => part.length > 2 && extName.includes(part));
 
                     if (isNameMatch) {
-                        // UPDATE with Check Number and Memo
+                        // UPDATE Existing
                         await query(
                             `UPDATE "Donations" 
                               SET "ScanDocumentID" = $1, 
@@ -200,10 +218,56 @@ export async function POST(request: Request) {
                               WHERE "DonationID" = $5`,
                             [documentId, extracted.page, extracted.check_number || null, extracted.memo || null, donation.DonationID]
                         );
+                        matched = true;
                         matchCount++;
-                        break; // Don't match same extraction to multiple checks (simplistic)
+                        break;
                     }
                 }
+            }
+
+            // B. CREATE NEW IF NOT MATCHED
+            if (!matched) {
+                // Resolution Status: 'Pending' normally, 'Flagged' if low confidence
+                const status = confidence < 0.8 ? 'Flagged' : 'Pending';
+
+                // Construct Note
+                let note = extracted.memo ? `[AI Note]: ${extracted.memo}` : '';
+                if (status === 'Flagged') note += ` | [AI Low Confidence: ${Math.round(confidence * 100)}%]`;
+
+                await query(`
+                    INSERT INTO "Donations" 
+                    (
+                        "ClientID", "BatchID", "GiftAmount", 
+                        "DonorFirstName", "DonorLastName", 
+                        "CheckNumber", "SecondaryID",
+                        "DonorAddress", 
+                        "Comment",
+                        "ResolutionStatus",
+                        "ScanDocumentID", "ScanPageNumber",
+                        "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate", "TransactionType", "GiftType"
+                    )
+                    SELECT 
+                        b."ClientID", $1, $2,
+                        $3, '', -- Name logic
+                        $4, $4,
+                        $5, 
+                        $6,
+                        $7, -- Status
+                        $8, $9,
+                        $10, 'Cage', NOW(), b."Date", 'Donation', 'Individual'
+                    FROM "Batches" b
+                    WHERE b."BatchID" = $1
+                `, [
+                    batchId, extAmount,
+                    extracted.name || 'Unknown',
+                    extracted.check_number || null,
+                    extracted.address || null,
+                    note,
+                    status,
+                    documentId, extracted.page,
+                    batch.DefaultGiftMethod || 'Check'
+                ]);
+                createdCount++;
             }
         }
 
@@ -211,6 +275,7 @@ export async function POST(request: Request) {
             success: true,
             processed: extractedData.length,
             matched: matchCount,
+            created: createdCount,
             extracted: extractedData
         });
 

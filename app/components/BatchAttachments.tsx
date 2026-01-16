@@ -76,6 +76,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
 
         let totalProcessed = 0;
         let totalMatched = 0;
+        let totalCreated = 0;
         let errors = 0;
         let lastError = '';
 
@@ -90,6 +91,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
                 if (res.ok) {
                     totalProcessed += data.processed || 0;
                     totalMatched += data.matched || 0;
+                    totalCreated += data.created || 0;
                 } else {
                     console.error(`Failed to analyze doc ${doc.BatchDocumentID}`, data.error);
                     lastError = data.error || 'Unknown Error';
@@ -102,7 +104,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
             }
         }
 
-        let msg = `Analysis Complete!\nProcessed Docs: ${documents.length}\nMatched Records: ${totalMatched}`;
+        let msg = `Analysis Complete!\nProcessed Docs: ${documents.length}\nMatched (Linked): ${totalMatched}\nCreated (New): ${totalCreated}`;
         if (errors > 0) msg += `\nErrors: ${errors}\nLast Error: ${lastError}`;
 
         alert(msg);
