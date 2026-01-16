@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { CreateBatchSchema } from '@/lib/schemas';
 import { logAudit } from '@/lib/audit';
 

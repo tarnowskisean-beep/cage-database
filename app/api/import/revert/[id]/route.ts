@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {

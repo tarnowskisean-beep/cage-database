@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { generateDepositSlip } from '@/lib/deposit-slips';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 

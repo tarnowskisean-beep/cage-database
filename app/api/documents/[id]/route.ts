@@ -5,7 +5,7 @@ import { logAudit } from '@/lib/audit';
 import { Storage } from '@google-cloud/storage';
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(
     request: Request,

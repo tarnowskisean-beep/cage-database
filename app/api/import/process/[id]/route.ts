@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { formatName, formatAddress, formatState, formatZip, formatEmail, formatPhone } from '@/lib/cleaners';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 // Helper: Normalize Keys (remove spaces, lowercase) for robust matching
 const cleanKey = (k: string) => k.toLowerCase().replace(/[^a-z0-9]/g, '');

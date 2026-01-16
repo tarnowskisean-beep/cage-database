@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import jpeg from 'jpeg-js';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export const maxDuration = 60; // Helper for serverless
 
