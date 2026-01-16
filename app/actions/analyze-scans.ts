@@ -120,33 +120,54 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
         let imagesToSend: { base64: string, page: number, mimeType?: string }[] = [];
 
         // Check for PDF signature to avoid crashing pdf-lib
-        const header = fileBuffer.slice(0, 12).toString('hex');
-        const isPdf = header.startsWith('25504446'); // %PDF-
+        // Sometimes GDrive or other sources add a preamble, or we get a 'download warning' HTML page.
+
+        const headerHex = fileBuffer.slice(0, 20).toString('hex');
+        const headerAscii = fileBuffer.slice(0, 50).toString('ascii');
+
+        // Check for HTML error page (Google Drive virus warning, login, 404, etc.)
+        if (headerAscii.trim().toLowerCase().startsWith('<!doctype html') || headerAscii.trim().toLowerCase().startsWith('<html')) {
+            return { error: 'Download failed: The system retrieved a web page (likely an error or login page) instead of the file. Please check the file link permissions.', status: 400 };
+        }
+
+        // Search for %PDF- in the first 1024 bytes to handle offsets
+        const pdfSignatureIndex = fileBuffer.indexOf('%PDF-', 0, 'ascii');
+        const isPdf = pdfSignatureIndex !== -1 && pdfSignatureIndex < 1024;
 
         if (isPdf) {
+            // Trim buffer if signature is not at 0
+            const pdfBuffer = pdfSignatureIndex > 0 ? fileBuffer.subarray(pdfSignatureIndex) : fileBuffer;
+
             try {
-                const extracted = await extractImagesFromPdf(fileBuffer);
+                const extracted = await extractImagesFromPdf(pdfBuffer);
                 if (extracted.length === 0) {
-                    return { error: 'Could not extract images from PDF for AI analysis.', status: 400 };
+                    return { error: 'Could not extract images from PDF for AI analysis. The PDF might be text-only or password protected.', status: 400 };
                 }
                 imagesToSend = extracted.map(img => ({
                     base64: img.image.toString('base64'),
                     page: img.pageNumber,
-                    mimeType: 'image/jpeg' // Extracted images are converted to JPEG in lib/ai.ts
+                    mimeType: 'image/jpeg'
                 }));
             } catch (pdfErr: any) {
-                console.warn('PDF Extraction failed, attempting fallback to raw file', pdfErr);
+                console.warn('PDF Extraction failed', pdfErr);
                 return { error: `PDF Processing Error: ${pdfErr.message}`, status: 400 };
             }
         } else {
             // Single image file detection
-            let mimeType = 'image/jpeg';
-            if (header.startsWith('89504e47')) mimeType = 'image/png';
-            else if (header.startsWith('ffd8ff')) mimeType = 'image/jpeg';
-            else if (header.startsWith('47494638')) mimeType = 'image/gif';
-            else if (header.startsWith('52494646') && header.slice(16, 24).startsWith('57454250')) mimeType = 'image/webp'; // WEBP...
-            else if (header.startsWith('49492a00') || header.startsWith('4d4d002a')) {
+            let mimeType = '';
+            if (headerHex.startsWith('89504e47')) mimeType = 'image/png';
+            else if (headerHex.startsWith('ffd8ff')) mimeType = 'image/jpeg';
+            else if (headerHex.startsWith('47494638')) mimeType = 'image/gif';
+            else if (headerHex.startsWith('52494646') && headerHex.slice(16, 24).startsWith('57454250')) mimeType = 'image/webp';
+            else if (headerHex.startsWith('49492a00') || headerHex.startsWith('4d4d002a')) {
                 return { error: 'TIFF images are not supported by AI. Please convert to JPEG/PNG/PDF.', status: 400 };
+            }
+
+            if (!mimeType) {
+                // It's not a PDF and not a recognized image.
+                // Log a snippet for debugging
+                console.error('Unknown file format. Header (hex):', headerHex, 'ASCII:', headerAscii);
+                return { error: 'Unsupported file format. Please upload a PDF, JPEG, PNG, or GIF.', status: 400 };
             }
 
             imagesToSend.push({
