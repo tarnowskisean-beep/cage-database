@@ -1,10 +1,12 @@
 
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { convertPdfToImages } from '@/lib/ai';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import jpeg from 'jpeg-js';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import fs from 'fs'; // For temp reading if needed, but we'll try buffer first
+
+export const maxDuration = 60; // Helper for serverless
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string, page: string }> }) {
     try {
@@ -20,10 +22,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         if (res.rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
         const storageKey = res.rows[0].StorageKey;
-
-        // Fetch File Content (Reuse logic from link-scans or similar)
-        // For speed, let's assume it's a public link for now or handle simple fetch
-        // In prod, this needs the full GCS/Drive logic
         let pdfBuffer: Buffer | null = null;
 
         if (storageKey.startsWith('http')) {
@@ -31,35 +29,100 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             const arr = await fRes.arrayBuffer();
             pdfBuffer = Buffer.from(arr);
         } else {
-            // Hande GCS... for now error if not link
-            return NextResponse.json({ error: 'Only HTTP links supported for page rendering currently' }, { status: 501 });
+            // Basic GCS Simulation if needed, or error
+            // For now we error if strict
+            // But existing code had fallback logic? Assuming only public/drive links for this specific viewer for now.
+            return NextResponse.json({ error: 'Storage type not supported for direct page view' }, { status: 501 });
         }
 
         if (!pdfBuffer) return NextResponse.json({ error: 'Empty file' }, { status: 500 });
 
-        // Convert Specific Page
-        // pdf-img-convert converts ALL by default or range. 
-        // We really should cache this or be careful. 
-        // For a demo/MVP, converting the specific page array is okay (it might process whole doc though).
-        // Optimization: slice PDF first? 
-        // Let's just use convert(pdf, { page_numbers: [pageNum] })
+        // --- PDFJS RENDER LOGIC (Pure JS) ---
+        // We only want ONE page.
 
-        const { convert } = await import('pdf-img-convert');
-        const images = await convert(pdfBuffer, {
-            page_numbers: [pageNum],
-            scale: 1.5
-        });
+        const data = new Uint8Array(pdfBuffer);
+        const loadingTask = pdfjs.getDocument({ data, verbosity: 0 });
+        const pdf = await loadingTask.promise;
 
-        if (images.length === 0) return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+        if (pageNum < 1 || pageNum > pdf.numPages) {
+            return NextResponse.json({ error: 'Page out of bounds' }, { status: 404 });
+        }
 
-        const imgBuffer = Buffer.from(images[0]);
+        const pdfPage = await pdf.getPage(pageNum);
+        const viewport = pdfPage.getViewport({ scale: 1.5 });
 
-        return new NextResponse(imgBuffer, {
-            headers: {
-                'Content-Type': 'image/png',
-                'Cache-Control': 'public, max-age=3600'
+        // Rasterize? 
+        // PDF.js in Node usually requires a Canvas polyfill.
+        // HOWEVER, we avoided Canvas in "lib/ai.ts" by extracting embedded images.
+        // Here we want to RENDER the page (text + images). 
+        // We MUST use a Canvas polyfill or similar if we want to "view" the page.
+        // BUT Vercel has issues with 'canvas' package.
+        // Alternative: Return the PDF itself? Or redirect to it with #page=N?
+        // But the user UI wants an IMage tag source.
+
+        // If we cannot use Canvas easily, we might be stuck.
+        // BUT wait, `pdf-img-convert` uses puppeteer or canvas usually.
+        // Given dependencies, maybe we fall back to just returning the raw PDF with content-disposition inline?
+        // Browser <embed> or <iframe> can show PDF page.
+
+        // UI says: <img src="/api/documents/..." />
+        // <img /> cannot show PDF.
+
+        // STRATEGY SHIFT:
+        // Use `pdfjs-dist` to find the "Main Image" on that page and return it (like extractImagesFromPdf).
+        // This is safer than rendering text.
+        // Most "Scans" are just full-page images anyway.
+
+        const ops = await pdfPage.getOperatorList();
+        let bestImage: Buffer | null = null;
+        let maxArea = 0;
+
+        for (let j = 0; j < ops.fnArray.length; j++) {
+            if (ops.fnArray[j] === pdfjs.OPS.paintImageXObject) {
+                const imgName = ops.argsArray[j][0];
+                try {
+                    const img = await pdfPage.objs.get(imgName);
+                    if (img && img.data) {
+                        const width = img.width;
+                        const height = img.height;
+                        if (width * height > maxArea) {
+                            maxArea = width * height;
+
+                            // Convert to JPEG Buffer (Reusing logic from lib/ai.ts)
+                            const srcData = img.data;
+                            let rawBuffer = Buffer.from(srcData);
+                            if (srcData.length === width * height * 3) {
+                                // RGB -> RGBA manual padding
+                                const newData = Buffer.alloc(width * height * 4);
+                                for (let k = 0, l = 0; k < srcData.length; k += 3, l += 4) {
+                                    newData[l] = srcData[k];
+                                    newData[l + 1] = srcData[k + 1];
+                                    newData[l + 2] = srcData[k + 2];
+                                    newData[l + 3] = 0xFF;
+                                }
+                                rawBuffer = newData;
+                            }
+
+                            const jpegData = jpeg.encode({ data: rawBuffer, width, height }, 80);
+                            bestImage = jpegData.data;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore specific image access errors
+                }
             }
-        });
+        }
+
+        if (bestImage) {
+            return new NextResponse(bestImage, {
+                headers: {
+                    'Content-Type': 'image/jpeg',
+                    'Cache-Control': 'public, max-age=3600'
+                }
+            });
+        }
+
+        return NextResponse.json({ error: 'No scan image found on this page' }, { status: 404 });
 
     } catch (e: any) {
         console.error(e);
