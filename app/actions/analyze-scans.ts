@@ -139,20 +139,22 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             });
         }
 
-        // Limit to first 5 images to avoid token limits per doc
-        const processedImages = imagesToSend.slice(0, 5);
+        // Limit to first 12 images to ensure we stay within Vercel's 60s timeout.
+        const processedImages = imagesToSend.slice(0, 12);
 
         const prompt =
-            'Analyze these images which represent a SINGLE donation transaction (e.g. Check + Reply Slip).\n' +
-            'Extract a list of all distinct donations found (usually just 1, unless it is a bulk check).\n' +
+            'Analyze this sequence of scanned images from a donation batch.\n' +
+            'The images are sequential (Page 1, 2, 3...).\n' +
+            'Group them into distinct donation transactions.\n' +
+            'A single transaction typically consists of:\n' +
+            '- Check Front\n' +
+            '- Check Back (usually immediately following the front)\n' +
+            '- Optional Reply Slip or Envelope (associated with the check)\n' +
             '\n' +
-            'For each donation, extract:\n' +
-            '1. Donor Name (best guess from Check OR Reply Slip)\n' +
-            '2. Amount (exact number from Check)\n' +
-            '3. Check Number (from Check)\n' +
-            '4. Memo / Notes (Combine handwritten notes from Check AND Reply Slip)\n' +
-            '5. Address (full donor address from Check OR Reply Slip)\n' +
-            '6. Confidence Score (0.0 to 1.0)\n' +
+            'For EACH distinct donation transaction found:\n' +
+            '1. Extract Donor Name, Amount, Check Number, Address, etc.\n' +
+            '2. Combine notes/memos from ALL pages in the transaction.\n' +
+            '3. List the logically associated `page_indices` (1-based) that belong to this transaction.\n' +
             '\n' +
             'Return ONLY a valid JSON array of objects:\n' +
             '[\n' +
@@ -162,7 +164,8 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             '        "check_number": "1234", \n' +
             '        "memo": "Note",\n' +
             '        "address": "123 Main St",\n' +
-            '        "confidence": 0.95\n' +
+            '        "confidence": 0.95,\n' +
+            '        "page_indices": [1, 2, 3]  // e.g. Front, Back, Reply\n' +
             '    }\n' +
             ']';
 
@@ -222,6 +225,12 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
             const confidence = extracted.confidence || 0.5;
             let matched = false;
 
+            // Determine which pages belong to this transaction
+            // Default to [extracted.page] if AI returned it, or [1]
+            const relatedPageIndices: number[] = (extracted.page_indices && Array.isArray(extracted.page_indices))
+                ? extracted.page_indices
+                : (extracted.page ? [extracted.page] : [1]);
+
             // A. TRY TO MATCH
             for (const donation of batchDonations.rows) {
                 const dbAmount = parseFloat(donation.Amount);
@@ -242,7 +251,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                             'ELSE "Comment" || \' | \' || $4 ' +
                             'END ' +
                             'WHERE "DonationID" = $5',
-                            [documentId, extracted.page || 1, extracted.check_number || null, extracted.memo || null, donation.DonationID]
+                            [documentId, relatedPageIndices[0], extracted.check_number || null, extracted.memo || null, donation.DonationID]
                         );
                         matched = true;
                         matchCount++;
