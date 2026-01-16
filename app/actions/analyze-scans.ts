@@ -97,19 +97,30 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
                     let buffer = Buffer.from(arrayBuffer);
 
                     // Check for Drive Virus Warning (HTML)
-                    // If the file is "Too Large", google returns an HTML page with a 'confirm' link
                     const tempHeader = buffer.slice(0, 100).toString('ascii');
                     if (driveFileId && (tempHeader.trim().toLowerCase().startsWith('<!doctype html') || tempHeader.trim().toLowerCase().startsWith('<html'))) {
                         const html = buffer.toString('utf-8');
-                        // Regex to find confirm token in the download link: href="/uc?export=download&id=...&confirm=XXXX" or similar
-                        const confirmMatch = html.match(/confirm=([a-zA-Z0-9_]+)/);
+
+                        // Try to find the confirm token
+                        // Pattern 1: Simple query param
+                        let confirmMatch = html.match(/confirm=([^&"']+)/);
+
+                        // Pattern 2: Hidden in the 'download anyway' link
+                        if (!confirmMatch) {
+                            confirmMatch = html.match(/id="uc-download-link".*?href=".*?confirm=([^&"']+)/);
+                        }
+
                         if (confirmMatch && confirmMatch[1]) {
                             // Retry with confirm token
                             const confirmUrl = fetchUrl + '&confirm=' + confirmMatch[1];
                             res = await fetch(confirmUrl);
                             if (res.ok) {
-                                arrayBuffer = await res.arrayBuffer();
-                                buffer = Buffer.from(arrayBuffer);
+                                const retryBuffer = await res.arrayBuffer(); // read as arraybuffer first
+                                const retryHeader = Buffer.from(retryBuffer).slice(0, 50).toString('ascii');
+                                // Check if retry also returned HTML (e.g. failed again)
+                                if (!retryHeader.trim().toLowerCase().startsWith('<!doctype') && !retryHeader.trim().toLowerCase().startsWith('<html')) {
+                                    buffer = Buffer.from(retryBuffer);
+                                }
                             }
                         }
                     }
@@ -148,7 +159,8 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
 
         // Check for HTML error page (Google Drive virus warning, login, 404, etc.)
         if (headerAscii.trim().toLowerCase().startsWith('<!doctype html') || headerAscii.trim().toLowerCase().startsWith('<html')) {
-            return { error: 'Download failed: The system retrieved a web page (likely an error or login page) instead of the file. Please check the file link permissions.', status: 400 };
+            const htmlTitle = fileBuffer.toString('utf-8').match(/<title>(.*?)<\/title>/)?.[1] || headerAscii.slice(0, 50);
+            return { error: `Download failed: The system retrieved a web page instead of the file. content: ${htmlTitle}`, status: 400 };
         }
 
         // Search for %PDF- in the first 1024 bytes to handle offsets
