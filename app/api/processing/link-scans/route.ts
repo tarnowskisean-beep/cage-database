@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         }
 
         // 3. Gemini Analysis
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `
             Analyze this PDF document of donation scans (checks, reply slips, or correspondence/letters).
