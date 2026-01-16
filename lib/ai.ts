@@ -1,0 +1,154 @@
+import OpenAI from 'openai';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import jpeg from 'jpeg-js';
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+
+/**
+ * Extracts raw image data from a PDF buffer by parsing internal operators.
+ * This avoids the need for Canvas/DOM dependencies.
+ */
+export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNumber: number, image: Buffer }[]> {
+    // Load the PDF
+    const data = new Uint8Array(pdfBuffer);
+    const loadingTask = pdfjs.getDocument({ data, verbosity: 0 });
+    const pdf = await loadingTask.promise;
+    const extractedImages: { pageNumber: number, image: Buffer }[] = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const ops = await page.getOperatorList();
+
+        for (let j = 0; j < ops.fnArray.length; j++) {
+            const fn = ops.fnArray[j];
+            const args = ops.argsArray[j];
+
+            // pdfjs.OPS.paintImageXObject
+            if (fn === pdfjs.OPS.paintImageXObject) {
+                const imgName = args[0];
+                try {
+                    const img = await page.objs.get(imgName);
+
+                    // Case 1: Raw JPEG Stream (Fastest, best quality)
+                    // Unfortunately, pdf.js abstracts the stream access in the high-level 'get' call.
+                    // To get the raw stream, we would need lower level access or check if 'img' has a 'raw' prop we can exploit.
+                    // But standard pdf.js 'img' object from 'objs.get' is a decoded bitmap (Uint8ClampedArray).
+
+                    if (img && img.data) {
+                        // img.data is a Uint8ClampedArray (RGBA)
+                        // Width: img.width, Height: img.height
+
+                        // Check if it's RGBA or RGB
+                        const width = img.width;
+                        const height = img.height;
+                        const srcData = img.data;
+
+                        // jpeg-js expects: { width, height, data: Buffer (RGBA) }
+                        // If srcData is RGB (3 bytes), we need to convert to RGBA (4 bytes) for jpeg-js?
+                        // Actually jpeg-js encodes FROM: { data: Buffer, width, height } where data is [r,g,b,a,...]
+
+                        let rawBuffer: Buffer;
+
+                        // Heuristic: Check size
+                        if (srcData.length === width * height * 3) {
+                            // RGB -> RGBA
+                            const newData = Buffer.alloc(width * height * 4);
+                            for (let k = 0, l = 0; k < srcData.length; k += 3, l += 4) {
+                                newData[l] = srcData[k];
+                                newData[l + 1] = srcData[k + 1];
+                                newData[l + 2] = srcData[k + 2];
+                                newData[l + 3] = 0xFF; // Alpha
+                            }
+                            rawBuffer = newData;
+                        } else {
+                            // Assume RGBA
+                            rawBuffer = Buffer.from(srcData);
+                        }
+
+                        // Encode to JPEG
+                        const jpegData = jpeg.encode({ data: rawBuffer, width, height }, 80); // Quality 80
+
+                        extractedImages.push({
+                            pageNumber: i,
+                            image: jpegData.data // Buffer
+                        });
+
+                        // Stop after finding the big image on the page (usually the scan)
+                        // To avoid extracting tiny icons/logos.
+                        if (width > 500 && height > 500) break;
+                    }
+                } catch (e) {
+                    console.error('Image extraction failed for page', i, e);
+                }
+            }
+        }
+    }
+
+    return extractedImages;
+}
+
+export async function extractDonationData(imageBuffer: Buffer, pageNumber: number, batchType: string = 'Check'): Promise<any> {
+    const base64Image = imageBuffer.toString('base64');
+    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+
+    const contextInstructions = {
+        'Check': 'Focus on extracting Check Number, Amount, and Donor Name. Look for "Memo" or handwritten notes on the check/slip.',
+        'Cash': 'Focus on Cash/Coin amounts written on the slip. Amount might be handwritten.',
+        'Credit': 'Focus on Credit Card info (Last 4) and total amount authorized.',
+        'Zero': 'Focus on finding the Donor Name. CRITICAL: Look for keywords indicating removal like "Remove me", "Deceased", "Stop mail", "Kill list". If found, set isKillList=true.'
+    }[batchType] || '';
+
+    const prompt = `
+    Analyze this image of a donation document (Check, Reply Slip, or Correspondence) for a "${batchType}" batch.
+    ${contextInstructions}
+
+    Extract the following fields in JSON format:
+    - donorName (string, best guess)
+    - amount (number, 0.00 if none)
+    - checkNumber (string, if visible)
+    - last4 (string, if CC)
+    - routingNumber (string, 9 digits)
+    - accountNumber (string)
+    - address (string, full address if visible)
+    - email (string)
+    - campaign (string, e.g. "24GEN")
+    - notes (string, Capture ANY handwritten notes, prayer requests, or comments exactly as written)
+    - isKillList (boolean, true ONLY if user explicitly asks to be removed/stop mail)
+    - confidence (number, 0-1 score of how readable this is)
+    
+    If the image is blank or irrelevant, return { "isIrrelevant": true }.
+    Output ONLY JSON.
+    `;
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                "url": dataUrl,
+                            },
+                        },
+                    ],
+                },
+            ],
+            response_format: { type: "json_object" },
+        });
+
+        const content = response.choices[0].message.content;
+        if (!content) return null;
+        return { ...JSON.parse(content), pageNumber };
+    } catch (e) {
+        console.error("OpenAI Error:", e);
+        return null;
+    }
+}
+
+// ... rest of AI logic

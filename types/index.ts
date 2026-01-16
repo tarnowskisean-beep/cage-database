@@ -64,8 +64,24 @@ export interface DonationRecord {
     DonorEmail?: string;
     OrganizationName?: string;
     Comment?: string;
+    RoutingNumber?: string;
+    AccountNumber?: string;
+    CheckSequenceNumber?: string;
+    AuxOnUs?: string;
+    EPC?: string;
     GiftCustodian?: string;
     GiftConduit?: string;
     CampaignID?: string;
     ResolutionStatus?: 'Resolved' | 'Pending';
+    Images?: DonationImage[];
+}
+
+export interface DonationImage {
+    ImageID: number;
+    DonationID: number;
+    BatchDocumentID?: number;
+    StorageKey: string;
+    PageNumber?: number;
+    Type?: string;
+    CreatedAt: string;
 }

@@ -18,7 +18,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
                "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
                "CampaignID",
-               "ScanDocumentID", "ScanPageNumber"
+               "ScanDocumentID", "ScanPageNumber",
+               COALESCE(
+                 (SELECT json_agg(img) FROM "DonationImages" img WHERE img."DonationID" = "Donations"."DonationID"),
+                 '[]'::json
+               ) as "Images"
         FROM "Donations" 
         WHERE "BatchID" = $1 
         ORDER BY "CreatedAt" DESC

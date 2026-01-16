@@ -81,9 +81,10 @@ export async function POST(request: Request) {
              "DonorEmployer", "DonorOccupation",
              "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
              "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
-             "CampaignID", "ResolutionStatus", "AssignedToUserID", "IsFlagged"
+             "CampaignID", "ResolutionStatus", "AssignedToUserID", "IsFlagged",
+             "RoutingNumber", "AccountNumber", "CheckSequenceNumber", "AuxOnUs", "EPC"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
             RETURNING *`,
             [
                 batch.ClientID,
@@ -111,7 +112,12 @@ export async function POST(request: Request) {
                 campaignId || '', // Fail-safe (Mapped to CampaignID)
                 'Resolved', // ResolutionStatus defaults to Resolved, Dedup logic is separate process
                 assignedToUserID, // $38
-                body.resolutionStatus === 'Pending' // $39 IsFlagged (Checkbox sends 'Pending' if checked)
+                body.resolutionStatus === 'Pending', // $39 IsFlagged
+                body.routingNumber, // $40
+                body.accountNumber, // $41
+                body.checkSequenceNumber, // $42
+                body.auxOnUs, // $43
+                body.epc // $44
             ]
         );
 

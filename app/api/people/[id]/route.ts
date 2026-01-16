@@ -58,7 +58,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 d."Designation", d."ThankYouSentAt", d."TaxReceiptSentAt",
                 c."ClientName", c."ClientCode",
                 a."AccountName",
-                b."BatchCode"
+                b."BatchCode",
+                COALESCE(
+                    (SELECT json_agg(img) FROM "DonationImages" img WHERE img."DonationID" = d."DonationID"),
+                    '[]'::json
+                ) as "Images"
             FROM "Donations" d
             LEFT JOIN "Clients" c ON d."ClientID" = c."ClientID"
             LEFT JOIN "Batches" b ON d."BatchID" = b."BatchID"

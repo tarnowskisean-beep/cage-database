@@ -20,6 +20,7 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
     // Modals State
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [showAddPledge, setShowAddPledge] = useState(false);
+    const [viewingImages, setViewingImages] = useState<any[] | null>(null);
 
     // Sidebar/Tabs
     const [activeTab, setActiveTab] = useState<'notes' | 'tasks' | 'files'>('notes');
@@ -412,6 +413,15 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                                         </td>
                                         <td className="px-6 py-4 text-gray-400">
                                             {h.GiftMethod || 'Check'}
+                                            {h.Images && h.Images.length > 0 && (
+                                                <button
+                                                    onClick={() => setViewingImages(h.Images)}
+                                                    className="ml-2 text-gray-500 hover:text-white transition-colors text-xs"
+                                                    title="View Scan"
+                                                >
+                                                    📷
+                                                </button>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             {h.CampaignID ? (
@@ -513,6 +523,34 @@ export default function PeopleProfile({ params }: { params: Promise<{ id: string
                 />
             )}
 
+            {/* Image Viewer Modal */}
+            {viewingImages && (
+                <DonationImageModal
+                    images={viewingImages}
+                    onClose={() => setViewingImages(null)}
+                />
+            )}
+
+        </div>
+    );
+}
+
+function DonationImageModal({ images, onClose }: { images: any[], onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-8" onClick={onClose}>
+            <div className="relative max-w-5xl w-full max-h-full flex gap-4 overflow-x-auto p-4" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-0 right-0 text-white text-2xl bg-black/50 p-2 rounded-full hover:bg-white/20">✕</button>
+                {images.map((img: any) => (
+                    <div key={img.ImageID} className="flex-shrink-0 flex flex-col items-center">
+                        <img
+                            src={img.BatchDocumentID ? `/api/documents/${img.BatchDocumentID}` : img.StorageKey.startsWith('http') ? img.StorageKey : `https://placehold.co/400x200?text=${img.Type || 'Image'}`}
+                            alt={img.Type || 'Scan'}
+                            className="max-h-[80vh] rounded border border-gray-700 shadow-2xl"
+                        />
+                        <p className="text-white mt-2 font-mono text-sm">{img.Type} (Page {img.PageNumber})</p>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

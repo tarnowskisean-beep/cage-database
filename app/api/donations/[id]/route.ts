@@ -113,8 +113,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 "IsInactive" = $29,
                 "Comment" = $30,
                 "TransactionType" = COALESCE($31, "TransactionType"),
+                "RoutingNumber" = COALESCE($32, "RoutingNumber"),
+                "AccountNumber" = COALESCE($33, "AccountNumber"),
+                "CheckSequenceNumber" = COALESCE($34, "CheckSequenceNumber"),
+                "AuxOnUs" = COALESCE($35, "AuxOnUs"),
+                "EPC" = COALESCE($36, "EPC"),
                 "Version" = COALESCE("Version", 1) + 1  -- Increment Version
-            WHERE "DonationID" = $32
+            WHERE "DonationID" = $37
             RETURNING *`,
             [
                 val(GiftAmount, current.GiftAmount),
@@ -148,9 +153,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 val(PostMarkQuarter, current.PostMarkQuarter),
                 val(IsInactive, current.IsInactive),
                 val(Comment, current.Comment),
-                val(DonorPhone, current.DonorPhone),
-                val(DonorEmail, current.DonorEmail),
-                val(OrganizationName, current.OrganizationName),
+                val(TransactionType, current.TransactionType),
+                val(body.RoutingNumber, current.RoutingNumber),
+                val(body.AccountNumber, current.AccountNumber),
+                val(body.CheckSequenceNumber, current.CheckSequenceNumber),
+                val(body.AuxOnUs, current.AuxOnUs),
+                val(body.EPC, current.EPC),
                 id
             ]
         );

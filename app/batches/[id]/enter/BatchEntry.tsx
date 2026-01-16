@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from 'react';
+
 import Link from 'next/link';
 import { METHODS, PLATFORMS, GIFT_TYPES, TRANSACTION_TYPES, YES_NO_OPTIONS } from '@/lib/constants';
 import { Label } from '@/app/components/ui/Label';
@@ -221,6 +223,29 @@ export default function BatchEntry({ id }: { id: string }) {
                     {/* LEFT: PDF VIEWER REMOVED BY USER REQUEST */}
                     <div style={{ flex: 1, minWidth: '800px', padding: '1.5rem', overflowY: 'auto', background: 'var(--color-bg-base)', borderRight: '1px solid var(--color-border)' }}>
 
+                        {/* IMAGE VIEWER */}
+                        {editingId && (() => {
+                            const rec = records.find(r => r.DonationID === editingId);
+                            if (rec?.Images && rec.Images.length > 0) {
+                                return (
+                                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#111', borderRadius: '8px', overflowX: 'auto', display: 'flex', gap: '1rem', border: '1px solid var(--color-border)' }}>
+                                        {rec.Images.map(img => (
+                                            <div key={img.ImageID} style={{ flexShrink: 0, textAlign: 'center' }}>
+                                                {/* Use specific API if BatchDocumentID exists, otherwise placeholder */}
+                                                <img
+                                                    src={img.BatchDocumentID ? `/api/documents/${img.BatchDocumentID}` : img.StorageKey.startsWith('http') ? img.StorageKey : `https://placehold.co/400x200?text=${img.Type || 'Image'}`}
+                                                    alt={img.Type || 'Scan'}
+                                                    style={{ height: '300px', border: '1px solid #333', borderRadius: '4px' }}
+                                                />
+                                                <div style={{ color: '#ccc', fontSize: '0.75rem', marginTop: '0.5rem' }}>{img.Type} - Page {img.PageNumber || 1}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
+
                         {/* FORM CONTAINER */}
                         <div style={{
                             maxWidth: '1200px',
@@ -379,18 +404,63 @@ export default function BatchEntry({ id }: { id: string }) {
                                     </Select>
                                 </div>
                                 {formData.method === 'Check' && (
+                                    <>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Check Number</Label>
+                                            <Input
+                                                value={formData.checkNumber}
+                                                onChange={handleChange('checkNumber')}
+                                                placeholder="(Auto-captured by AI)"
+                                            />
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Routing #</Label>
+                                            <Input
+                                                value={formData.routingNumber}
+                                                onChange={handleChange('routingNumber')}
+                                                placeholder="9 Digits"
+                                                style={{ borderColor: formData.routingNumber && formData.routingNumber.length !== 9 ? 'var(--color-error)' : 'var(--color-border)' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Account #</Label>
+                                            <Input
+                                                value={formData.accountNumber}
+                                                onChange={handleChange('accountNumber')}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                                {(formData.method === 'Check' || formData.scanString) && (
                                     <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Check Number</Label>
-                                        <Input
-                                            value={formData.checkNumber}
-                                            onChange={handleChange('checkNumber')}
-                                            placeholder="(Auto-captured by AI)"
-                                        />
+                                        <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>AuxOnUs / EPC</Label>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <Input
+                                                value={formData.auxOnUs}
+                                                onChange={handleChange('auxOnUs')}
+                                                placeholder="AuxOnUs"
+                                                style={{ flex: 1 }}
+                                            />
+                                            <Input
+                                                value={formData.epc}
+                                                onChange={handleChange('epc')}
+                                                placeholder="EPC"
+                                                style={{ width: '60px' }}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '0.5rem' }}>
                                     <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Yes Inactive</Label>
-                                    <Select value={formData.isInactive} onChange={handleChange('isInactive')} style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
+                                    <Select
+                                        value={formData.isInactive}
+                                        onChange={handleChange('isInactive')}
+                                        style={{
+                                            background: formData.isInactive === 'True' ? 'var(--color-error)' : 'var(--color-bg-surface)',
+                                            borderColor: formData.isInactive === 'True' ? 'var(--color-error)' : 'var(--color-border)',
+                                            color: formData.isInactive === 'True' ? 'white' : 'var(--color-text-main)'
+                                        }}
+                                    >
                                         {YES_NO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                                     </Select>
                                 </div>
@@ -452,7 +522,15 @@ export default function BatchEntry({ id }: { id: string }) {
                                 <Label style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Comment</Label>
                                 <textarea
                                     className="input-field"
-                                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem', marginBottom: '0.5rem', height: '60px' }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.4rem',
+                                        fontSize: '0.9rem',
+                                        marginBottom: '0.5rem',
+                                        height: '60px',
+                                        borderColor: formData.comment.includes('[AI Note]') ? 'var(--color-warning)' : 'var(--color-border)',
+                                        background: formData.comment.includes('[AI Note]') ? 'rgba(255, 170, 0, 0.05)' : 'white'
+                                    }}
                                     value={formData.comment}
                                     onChange={handleChange('comment')}
                                 />
@@ -482,13 +560,13 @@ export default function BatchEntry({ id }: { id: string }) {
                                         className="btn-primary"
                                         style={{
                                             flex: 2,
-                                            background: editingId ? '#3b82f6' : 'var(--color-success)',
+                                            background: editingId ? (formData.resolutionStatus === 'Pending' ? 'var(--color-warning)' : '#3b82f6') : 'var(--color-success)',
                                             color: 'white'
                                         }}
                                         onClick={handleSave}
                                         disabled={saving}
                                     >
-                                        {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save')}
+                                        {saving ? 'Saving...' : (editingId ? (formData.resolutionStatus === 'Pending' ? '✅ Confirm & Validate' : 'Update Record') : 'Save')}
                                     </button>
                                 )}
                             </div>
@@ -516,7 +594,12 @@ export default function BatchEntry({ id }: { id: string }) {
 
                     <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 600, marginTop: '1rem' }}>RECENT SCANS</div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
-                        {records.map(r => (
+                        {[...records].sort((a, b) => {
+                            if (a.ResolutionStatus === 'Pending' && b.ResolutionStatus !== 'Pending') return -1;
+                            if (a.ResolutionStatus !== 'Pending' && b.ResolutionStatus === 'Pending') return 1;
+                            // Default to new at top
+                            return new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime();
+                        }).map(r => (
                             <div
                                 key={r.DonationID}
                                 onClick={() => loadRecord(r)}
@@ -540,6 +623,20 @@ export default function BatchEntry({ id }: { id: string }) {
                                         {(r.DonorAddress || r.DonorCity) && (
                                             <span style={{ fontSize: '0.7rem', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                 {[r.DonorAddress, r.DonorCity, r.DonorState, r.DonorZip].filter(Boolean).join(', ')}
+                                            </span>
+                                        )}
+                                        {r.ResolutionStatus === 'Pending' && (
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                background: 'var(--color-warning)',
+                                                color: '#000',
+                                                padding: '0.1rem 0.4rem',
+                                                borderRadius: '4px',
+                                                fontWeight: 'bold',
+                                                marginTop: '0.25rem',
+                                                display: 'inline-block'
+                                            }}>
+                                                🟠 DRAFT
                                             </span>
                                         )}
                                     </div>

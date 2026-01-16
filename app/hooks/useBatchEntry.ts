@@ -57,6 +57,11 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
 
         // Hidden / System
         checkNumber: '',
+        routingNumber: '',
+        accountNumber: '',
+        checkSequenceNumber: '',
+        auxOnUs: '',
+        epc: '',
         giftYear: '',
         giftQuarter: '',
         resolutionStatus: 'Resolved' as 'Resolved' | 'Pending',
@@ -255,6 +260,11 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
 
             // Transaction
             checkNumber: record.SecondaryID || '',
+            routingNumber: record.RoutingNumber || '',
+            accountNumber: record.AccountNumber || '',
+            checkSequenceNumber: record.CheckSequenceNumber || '',
+            auxOnUs: record.AuxOnUs || '',
+            epc: record.EPC || '',
             scanString: record.ScanString || '',
             platform: record.GiftPlatform || batch?.DefaultGiftPlatform || '',
             giftType: record.GiftType || batch?.DefaultGiftType || '',
@@ -323,11 +333,21 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 giftFee: parseFloat(formData.giftFee) || 0,
                 isInactive: formData.isInactive === 'True',
                 checkNumber: formData.checkNumber || formData.scanString,
+                routingNumber: formData.routingNumber,
+                accountNumber: formData.accountNumber,
+                checkSequenceNumber: formData.checkSequenceNumber,
+                auxOnUs: formData.auxOnUs,
+                epc: formData.epc,
 
                 // Mapped for Backend API
                 GiftAmount: parseFloat(formData.amount),
                 SecondaryID: formData.checkNumber || formData.scanString,
                 CheckNumber: formData.checkNumber || formData.scanString,
+                RoutingNumber: formData.routingNumber,
+                AccountNumber: formData.accountNumber,
+                CheckSequenceNumber: formData.checkSequenceNumber,
+                AuxOnUs: formData.auxOnUs,
+                EPC: formData.epc,
                 ScanString: formData.scanString,
                 GiftMethod: formData.method,
                 GiftPlatform: formData.platform,
