@@ -1,8 +1,5 @@
 import OpenAI from 'openai';
 import jpeg from 'jpeg-js';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
 
 // Lazy load OpenAI to prevent build-time errors when env var is missing
 function getOpenAI() {
@@ -46,16 +43,15 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
     }
 
     // Dynamic import to prevent top-level crashes in Serverless/Edge
-    // NOTE: Switched to CommonJS require for better Vercel compatibility
     // @ts-ignore
-    const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
     // Standard Node.js worker setup for pdfjs-dist
-    // Use require.resolve to ensure Webpack bundles the file and we get the correct runtime path
-    try {
-        pdfjs.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.js');
-    } catch (e) {
-        console.warn('Could not resolve pdf.worker.js, falling back to default worker resolution', e);
+    // We do NOT want to set workerSrc for Vercel/Serverless as it causes path resolution errors.
+    // PDF.js will fall back to "fake worker" (main thread) which is fine for backend tasks.
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+        // Only set if strictly needed, but for Vercel often best to leave null to force main thread
+        // pdfjs.GlobalWorkerOptions.workerSrc = '...';
     }
 
     // Load the PDF
