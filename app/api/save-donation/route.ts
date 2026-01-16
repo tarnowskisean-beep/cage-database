@@ -40,7 +40,8 @@ export async function POST(request: Request) {
             postMarkYear, postMarkQuarter, isInactive, comment,
             campaignId,
             // EXTRACT BATCH ID FROM BODY
-            batchId
+            batchId,
+            donorId // New Field
         } = body;
 
         if (!batchId) {
@@ -72,20 +73,21 @@ export async function POST(request: Request) {
 
         const result = await query(
             `INSERT INTO "Donations" 
-            ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", 
-             "TransactionType", "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate",
-             "GiftType", "GiftYear", "GiftQuarter", 
-             "DonorEmail", "DonorPhone", "OrganizationName",
-             "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix",
-             "DonorAddress", "DonorCity", "DonorState", "DonorZip",
-             "DonorEmployer", "DonorOccupation",
-             "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
-             "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
-             "CampaignID", "ResolutionStatus", "AssignedToUserID", "IsFlagged",
-             "RoutingNumber", "AccountNumber", "CheckSequenceNumber", "AuxOnUs", "EPC"
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
-            RETURNING *`,
+                ("ClientID", "BatchID", "GiftAmount", "SecondaryID", "CheckNumber", "ScanString", 
+                 "TransactionType", "GiftMethod", "GiftPlatform", "GiftDate", "BatchDate",
+                 "GiftType", "GiftYear", "GiftQuarter", 
+                 "DonorEmail", "DonorPhone", "OrganizationName",
+                 "DonorPrefix", "DonorFirstName", "DonorMiddleName", "DonorLastName", "DonorSuffix",
+                 "DonorAddress", "DonorCity", "DonorState", "DonorZip",
+                 "DonorEmployer", "DonorOccupation",
+                 "GiftPledgeAmount", "GiftFee", "GiftCustodian", "GiftConduit",
+                 "ReceiptYear", "ReceiptQuarter", "IsInactive", "Comment",
+                 "CampaignID", "ResolutionStatus", "AssignedToUserID", "IsFlagged",
+                 "RoutingNumber", "AccountNumber", "CheckSequenceNumber", "AuxOnUs", "EPC",
+                 "DonorID"
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45)
+                RETURNING *`,
             [
                 batch.ClientID,
                 batchId,
@@ -117,7 +119,8 @@ export async function POST(request: Request) {
                 body.accountNumber, // $41
                 body.checkSequenceNumber, // $42
                 body.auxOnUs, // $43
-                body.epc // $44
+                body.epc, // $44
+                donorId || null // $45
             ]
         );
 

@@ -54,6 +54,7 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
         donorPhone: '',
         donorEmail: '',
         comment: '',
+        donorId: null as number | null, // New Field
 
         // Hidden / System
         checkNumber: '',
@@ -377,7 +378,8 @@ export function useBatchEntry({ id }: UseBatchEntryProps) {
                 ReceiptQuarter: formData.postMarkQuarter,
                 IsInactive: formData.isInactive === 'True',
                 Comment: formData.comment,
-                CampaignID: formData.campaignId
+                CampaignID: formData.campaignId,
+                donorId: formData.donorId // Pass to API
             };
 
             let res;

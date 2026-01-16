@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Link from 'next/link';
 import { METHODS, PLATFORMS, GIFT_TYPES, TRANSACTION_TYPES, YES_NO_OPTIONS } from '@/lib/constants';
@@ -8,8 +6,92 @@ import { Label } from '@/app/components/ui/Label';
 import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
 import { useBatchEntry } from '@/app/hooks/useBatchEntry';
+import { useDuplicateCheck } from '@/app/hooks/useDuplicateCheck';
 import { faker } from '@faker-js/faker';
 import BatchAttachments from '@/app/components/BatchAttachments';
+
+function DuplicateAlert({ formData, setFormData }: { formData: any, setFormData: any }) {
+    const { matches, loading, checkDuplicates, clearMatches } = useDuplicateCheck();
+
+    useEffect(() => {
+        // Trigger check when enough data exists
+        if ((formData.donorFirstName && formData.donorLastName) || formData.donorEmail) {
+            checkDuplicates({
+                firstName: formData.donorFirstName,
+                lastName: formData.donorLastName,
+                email: formData.donorEmail,
+                address: formData.donorAddress
+            });
+        } else {
+            clearMatches();
+        }
+    }, [formData.donorFirstName, formData.donorLastName, formData.donorEmail, formData.donorAddress, checkDuplicates, clearMatches]);
+
+    // If linked, don't show alerts? Or show "Linked to X"?
+    if (formData.donorId) return (
+        <div style={{ gridColumn: 'span 2', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--color-success)', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>✅ Linked to Existing Donor (ID: {formData.donorId})</span>
+            <button
+                onClick={() => setFormData((prev: any) => ({ ...prev, donorId: null }))}
+                style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+                Unlink
+            </button>
+        </div>
+    );
+
+    if (matches.length === 0) return null;
+
+    return (
+        <div style={{ gridColumn: 'span 2', background: '#fff7ed', border: '1px solid #fdba74', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#c2410c', fontWeight: 600 }}>
+                ⚠️ Possible Duplicates Found
+                {loading && <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>(Checking...)</span>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {matches.slice(0, 3).map((m: any) => (
+                    <div key={m.DonorID} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '0.5rem', borderRadius: '4px', border: '1px solid #fed7aa' }}>
+                        <div>
+                            <div style={{ fontWeight: 600, color: '#333' }}>{m.DonorFirstName} {m.DonorLastName} <span style={{ fontSize: '0.8rem', color: '#666' }}>(ID: {m.DonorID})</span></div>
+                            <div style={{ fontSize: '0.8rem', color: '#666' }}>{[m.DonorAddress, m.DonorEmail].filter(Boolean).join(' • ')}</div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                if (confirm(`Use existing donor details for ${m.DonorFirstName}?`)) {
+                                    setFormData((prev: any) => ({
+                                        ...prev,
+                                        donorId: m.DonorID,
+                                        donorFirstName: m.DonorFirstName || prev.donorFirstName,
+                                        donorLastName: m.DonorLastName || prev.donorLastName,
+                                        donorAddress: m.DonorAddress || prev.donorAddress,
+                                        donorCity: m.DonorAddress ? (m.DonorCity || prev.donorCity) : prev.donorCity, // Only overwrite if address exists
+                                        donorState: m.DonorAddress ? (m.DonorState || prev.donorState) : prev.donorState,
+                                        donorZip: m.DonorAddress ? (m.DonorZip || prev.donorZip) : prev.donorZip,
+                                        donorEmail: m.DonorEmail || prev.donorEmail,
+                                        donorPrefix: m.DonorPrefix || prev.donorPrefix,
+                                        // Update Campaign? No, keep current.
+                                    }));
+                                }
+                            }}
+                            style={{
+                                background: '#fff7ed',
+                                border: '1px solid #fdba74',
+                                color: '#c2410c',
+                                padding: '0.3rem 0.6rem',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                fontSize: '0.8rem'
+                            }}
+                        >
+                            🔗 Link & Use
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export default function BatchEntry({ id }: { id: string }) {
     const {
@@ -260,6 +342,12 @@ export default function BatchEntry({ id }: { id: string }) {
                             padding: '1.5rem',
                             borderRadius: '8px'
                         }}>
+
+                            {/* DUPLICATE ALERT */}
+                            <DuplicateAlert
+                                formData={formData}
+                                setFormData={setFormData}
+                            />
 
                             {/* LEFT COLUMN: DONOR */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
