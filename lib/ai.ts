@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import jpeg from 'jpeg-js';
 
 
@@ -9,8 +8,6 @@ function getOpenAI() {
     if (!apiKey) {
         // Warning instead of error to allow build to pass if this path isn't hit
         console.warn("OPENAI_API_KEY is missing. AI features will fail at runtime.");
-        // We can throw here if we want runtime safety, but for build safety we just need to not crash on module load.
-        // Returning a dummy or throwing inside the usage is better.
     }
     return new OpenAI({ apiKey: apiKey || 'dummy-key-for-build' });
 }
@@ -21,6 +18,16 @@ function getOpenAI() {
  * This avoids the need for Canvas/DOM dependencies.
  */
 export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNumber: number, image: Buffer }[]> {
+    // Dynamic import to prevent top-level crashes in Serverless/Edge
+    // @ts-ignore
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+    // Standard Node.js worker setup for pdfjs-dist if needed
+    // In legacy build, it might not be strictly required for getOperatorList, but good to fallback
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+        pdfjs.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.mjs';
+    }
+
     // Load the PDF
     const data = new Uint8Array(pdfBuffer);
     const loadingTask = pdfjs.getDocument({ data, verbosity: 0 });
@@ -56,9 +63,6 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
                         const srcData = img.data;
 
                         // jpeg-js expects: { width, height, data: Buffer (RGBA) }
-                        // If srcData is RGB (3 bytes), we need to convert to RGBA (4 bytes) for jpeg-js?
-                        // Actually jpeg-js encodes FROM: { data: Buffer, width, height } where data is [r,g,b,a,...]
-
                         let rawBuffer: Buffer;
 
                         // Heuristic: Check size
