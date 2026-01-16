@@ -2,9 +2,19 @@ import OpenAI from 'openai';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import jpeg from 'jpeg-js';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+
+// Lazy load OpenAI to prevent build-time errors when env var is missing
+function getOpenAI() {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        // Warning instead of error to allow build to pass if this path isn't hit
+        console.warn("OPENAI_API_KEY is missing. AI features will fail at runtime.");
+        // We can throw here if we want runtime safety, but for build safety we just need to not crash on module load.
+        // Returning a dummy or throwing inside the usage is better.
+    }
+    return new OpenAI({ apiKey: apiKey || 'dummy-key-for-build' });
+}
+
 
 /**
  * Extracts raw image data from a PDF buffer by parsing internal operators.
@@ -123,7 +133,7 @@ export async function extractDonationData(imageBuffer: Buffer, pageNumber: numbe
     `;
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await getOpenAI().chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
