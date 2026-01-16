@@ -300,7 +300,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
 
         // 4. Match OR Create
         const batchDonations = await query(
-            'SELECT "DonationID", "DonorFirstName", "DonorLastName", "Amount" FROM "Donations" WHERE "BatchID" = $1',
+            'SELECT "DonationID", "DonorFirstName", "DonorLastName", "GiftAmount" FROM "Donations" WHERE "BatchID" = $1',
             [batchId]
         );
 
@@ -320,7 +320,7 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
 
             // A. TRY TO MATCH
             for (const donation of batchDonations.rows) {
-                const dbAmount = parseFloat(donation.Amount);
+                const dbAmount = parseFloat(donation.GiftAmount);
                 if (Math.abs(dbAmount - extAmount) < 0.01) {
                     const dbName = ((donation.DonorFirstName || '') + ' ' + (donation.DonorLastName || '')).trim().toLowerCase();
                     const extName = (extracted.name || '').toLowerCase();

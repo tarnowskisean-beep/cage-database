@@ -14,6 +14,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [analysisProgress, setAnalysisProgress] = useState<{ current: number, total: number } | null>(null);
 
     const fetchDocuments = async () => {
         try {
@@ -75,15 +76,13 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
         if (documents.length === 0) return alert("No documents to analyze.");
         if (!confirm(`Run AI Analysis on ALL ${documents.length} attached documents?`)) return;
 
+        setAnalysisProgress({ current: 0, total: documents.length });
+
         let totalProcessed = 0;
         let totalMatched = 0;
         let totalCreated = 0;
         let errors = 0;
         let lastError = '';
-
-
-
-        // ... (in component)
 
         for (const doc of documents) {
             try {
@@ -104,11 +103,13 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
                 lastError = e.message;
                 errors++;
             }
+            setAnalysisProgress(prev => prev ? { ...prev, current: prev.current + 1 } : null);
         }
 
         let msg = `Analysis Complete!\nProcessed Docs: ${documents.length}\nMatched (Linked): ${totalMatched}\nCreated (New): ${totalCreated}`;
         if (errors > 0) msg += `\nErrors: ${errors}\nLast Error: ${lastError}`;
 
+        setAnalysisProgress(null);
         alert(msg);
         window.location.reload();
     };
@@ -120,24 +121,32 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>ATTACHMENTS</h3>
                 {documents.length > 0 && (
-                    <button
-                        onClick={handleAnalyzeAll}
-                        style={{
-                            fontSize: '0.75rem',
-                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.25rem 0.6rem',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            fontWeight: 600
-                        }}
-                    >
-                        ✨ Analyze All
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {analysisProgress && (
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6366f1' }}>
+                                Processing {analysisProgress.current}/{analysisProgress.total}...
+                            </span>
+                        )}
+                        <button
+                            onClick={handleAnalyzeAll}
+                            disabled={!!analysisProgress}
+                            style={{
+                                fontSize: '0.75rem',
+                                background: analysisProgress ? '#ccc' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.25rem 0.6rem',
+                                borderRadius: '4px',
+                                cursor: analysisProgress ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                fontWeight: 600
+                            }}
+                        >
+                            {analysisProgress ? 'Wait...' : '✨ Analyze All'}
+                        </button>
+                    </div>
                 )}
             </div>
 
