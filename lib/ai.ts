@@ -47,11 +47,9 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
     // Standard Node.js worker setup for pdfjs-dist
-    // We do NOT want to set workerSrc for Vercel/Serverless as it causes path resolution errors.
-    // PDF.js will fall back to "fake worker" (main thread) which is fine for backend tasks.
+    // We point to a CDN to ensure the worker script is available regardless of serverless path rewriting
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-        // Only set if strictly needed, but for Vercel often best to leave null to force main thread
-        // pdfjs.GlobalWorkerOptions.workerSrc = '...';
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.530/legacy/build/pdf.worker.mjs';
     }
 
     // Load the PDF
