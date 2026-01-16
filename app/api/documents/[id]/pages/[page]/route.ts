@@ -114,7 +114,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         }
 
         if (bestImage) {
-            return new NextResponse(bestImage, {
+            return new NextResponse(bestImage as any, {
                 headers: {
                     'Content-Type': 'image/jpeg',
                     'Cache-Control': 'public, max-age=3600'

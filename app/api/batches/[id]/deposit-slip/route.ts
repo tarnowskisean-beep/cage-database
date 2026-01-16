@@ -45,7 +45,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         const pdfBuffer = await generateDepositSlip(batch, donations);
 
         // 4. Return Stream
-        return new NextResponse(pdfBuffer, {
+        return new NextResponse(pdfBuffer as any, {
             headers: {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': `attachment; filename="DepositSlip_${batch.BatchCode}.pdf"`
