@@ -46,15 +46,16 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
     }
 
     // Dynamic import to prevent top-level crashes in Serverless/Edge
+    // NOTE: Switched to CommonJS require for better Vercel compatibility
     // @ts-ignore
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
 
     // Standard Node.js worker setup for pdfjs-dist
     // Use require.resolve to ensure Webpack bundles the file and we get the correct runtime path
     try {
-        pdfjs.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+        pdfjs.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.js');
     } catch (e) {
-        console.warn('Could not resolve pdf.worker.mjs, falling back to default worker resolution', e);
+        console.warn('Could not resolve pdf.worker.js, falling back to default worker resolution', e);
     }
 
     // Load the PDF
