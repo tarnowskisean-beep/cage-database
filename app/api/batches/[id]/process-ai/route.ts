@@ -54,17 +54,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 pdfBuffer = file;
             } else if (doc.StorageKey.startsWith('link:')) {
                 // Link handling (Drive or Public)
-                if (url.includes('drive.google.com') && process.env.GDRIVE_CREDENTIALS) {
+                let driveFileId = '';
+                const patterns = [
+                    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                    /id=([a-zA-Z0-9_-]+)/,
+                    /\/d\/([a-zA-Z0-9_-]+)/
+                ];
+                for (const p of patterns) {
+                    const match = url.match(p);
+                    if (match && match[1]) {
+                        driveFileId = match[1];
+                        break;
+                    }
+                }
+
+                if (driveFileId && process.env.GDRIVE_CREDENTIALS) {
                     try {
-                        const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                        if (match && match[1]) {
-                            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
-                            const auth = google.auth.fromJSON(credentials);
-                            (auth as any).scopes = ['https://www.googleapis.com/auth/drive.readonly'];
-                            const drive = google.drive({ version: 'v3', auth: auth as any });
-                            const res = await drive.files.get({ fileId: match[1], alt: 'media' }, { responseType: 'arraybuffer' });
-                            pdfBuffer = Buffer.from(res.data as ArrayBuffer);
-                        }
+                        const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
+                        const auth = google.auth.fromJSON(credentials);
+                        (auth as any).scopes = ['https://www.googleapis.com/auth/drive.readonly'];
+                        const drive = google.drive({ version: 'v3', auth: auth as any });
+                        const res = await drive.files.get({ fileId: driveFileId, alt: 'media' }, { responseType: 'arraybuffer' });
+                        pdfBuffer = Buffer.from(res.data as ArrayBuffer);
                     } catch (e) {
                         console.error('Drive fetch failed', e);
                     }
@@ -72,7 +83,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
                 // Fallback public fetch
                 if (!pdfBuffer) {
-                    const res = await fetch(url.includes('drive.google.com') ? `https://drive.google.com/uc?export=download&id=${url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)?.[1]}` : url);
+                    let fetchUrl = url;
+                    if (driveFileId) fetchUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+
+                    const res = await fetch(fetchUrl);
                     if (res.ok) pdfBuffer = Buffer.from(await res.arrayBuffer());
                 }
             }

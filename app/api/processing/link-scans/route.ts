@@ -39,17 +39,22 @@ export async function POST(request: Request) {
 
 
         // 2. Download File
+        // 2. Download File
         if (StorageKey.startsWith('link:')) {
             const url = StorageKey.replace('link:', '');
-            let fileBuffer: Buffer | null = null;
             let driveFileId = '';
 
-            // INTELLIGENT G-DRIVE HANDLER
-            // Convert /file/d/XXX/view  ->  /uc?export=download&id=XXX
-            if (url.includes('drive.google.com') && url.includes('/file/d/')) {
-                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            // ROBUST DRIVE ID EXTRACTION
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/, // /file/d/ID
+                /id=([a-zA-Z0-9_-]+)/,          // ?id=ID
+                /\/d\/([a-zA-Z0-9_-]+)/         // /d/ID
+            ];
+            for (const p of patterns) {
+                const match = url.match(p);
                 if (match && match[1]) {
                     driveFileId = match[1];
+                    break;
                 }
             }
 
@@ -58,12 +63,9 @@ export async function POST(request: Request) {
                 try {
                     const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS);
                     const auth = google.auth.fromJSON(credentials);
-                    // Scope for read-only drive access
                     (auth as any).scopes = ['https://www.googleapis.com/auth/drive.readonly'];
-
                     const drive = google.drive({ version: 'v3', auth: auth as any });
 
-                    // Get file as stream/buffer
                     const response = await drive.files.get({
                         fileId: driveFileId,
                         alt: 'media'
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
                     fileBuffer = Buffer.from(response.data as ArrayBuffer);
 
                 } catch (authErr: any) {
-                    console.warn('Authenticated Drive download failed, falling back to public fetch:', authErr.message);
+                    console.warn('Authenticated Drive download failed:', authErr.message);
                 }
             }
 
@@ -80,17 +82,34 @@ export async function POST(request: Request) {
                 // Fallback or Public Link
                 let fetchUrl = url;
                 if (driveFileId) {
-                    console.log('Converting Google Drive Viewer Link to Direct Download:', driveFileId);
+                    // Convert to reliable export link
                     fetchUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
                 }
 
-                const res = await fetch(fetchUrl);
-                if (!res.ok) throw new Error(`Failed to fetch file from link: ${res.statusText}`);
-                const arrayBuffer = await res.arrayBuffer();
-                fileBuffer = Buffer.from(arrayBuffer);
+                try {
+                    const res = await fetch(fetchUrl);
+                    if (!res.ok) {
+                        // More specific error
+                        if (res.status === 403 || res.status === 401) {
+                            throw new Error(`Access Denied (Status ${res.status}). Please ensure the link is 'Anyone with the link' OR shared with the system email.`);
+                        }
+                        if (res.status === 404) {
+                            throw new Error(`File not found (Status 404). Check the link.`);
+                        }
+                        throw new Error(`Download failed: ${res.statusText}`);
+                    }
+                    const arrayBuffer = await res.arrayBuffer();
+                    fileBuffer = Buffer.from(arrayBuffer);
+                } catch (fetchErr: any) {
+                    console.error("Public Fetch Error:", fetchErr);
+                    // If we have a drive ID but failed, report likely cause
+                    if (driveFileId) {
+                        return NextResponse.json({ error: `Could not access Google Drive file. Ensure link is public or shared. Error: ${fetchErr.message}` }, { status: 400 });
+                    }
+                    return NextResponse.json({ error: `Could not download file. Error: ${fetchErr.message}` }, { status: 400 });
+                }
             }
         } else if (StorageKey.startsWith('gcs:')) {
-            // ... GCS implementation if needed ...
             const bucketName = process.env.GCS_BUCKET_NAME!;
             const filePath = StorageKey.replace('gcs:', '');
             const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!);
@@ -100,7 +119,7 @@ export async function POST(request: Request) {
         }
 
         if (!fileBuffer) {
-            return NextResponse.json({ error: 'Could not retrieve file content' }, { status: 400 });
+            return NextResponse.json({ error: 'System could not retrieve file content (Unknown Storage Type or Empty)' }, { status: 400 });
         }
 
         // 3. Gemini Analysis
