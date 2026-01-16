@@ -22,6 +22,31 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<{ pageNum
     // @ts-ignore
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
+    // Polyfill for DOMMatrix and DOMPoint which are needed by pdfjs-dist in Node < 22 or serverless
+    if (typeof global.DOMMatrix === 'undefined') {
+        // @ts-ignore
+        global.DOMMatrix = class DOMMatrix {
+            a: number; b: number; c: number; d: number; e: number; f: number;
+            constructor(init?: any) {
+                this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
+                if (init && init.length === 6) { [this.a, this.b, this.c, this.d, this.e, this.f] = init; }
+            }
+            // Minimal stubs
+            setMatrixValue(str: string) { return this; }
+            translate(x: number, y: number) { return this; }
+            scale(x: number, y: number) { return this; }
+            toString() { return `matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.e}, ${this.f})`; }
+        };
+    }
+    if (typeof global.DOMPoint === 'undefined') {
+        // @ts-ignore
+        global.DOMPoint = class DOMPoint {
+            x: number; y: number; z: number; w: number;
+            constructor(x = 0, y = 0, z = 0, w = 1) { this.x = x; this.y = y; this.z = z; this.w = w; }
+            matrixTransform(matrix: any) { return new global.DOMPoint(this.x, this.y, this.z, this.w); }
+        };
+    }
+
     // Standard Node.js worker setup for pdfjs-dist if needed
     // In legacy build, it might not be strictly required for getOperatorList, but good to fallback
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
