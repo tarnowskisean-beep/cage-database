@@ -124,13 +124,13 @@ if (originalMimeType === 'application/pdf') {
     if (images.length === 0) {
         return NextResponse.json({ error: 'Could not extract images from PDF for AI analysis.' }, { status: 400 });
     }
-    // Use first page for now
-    base64Image = images[0].data;
-    imageMimeType = images[0].mimeType;
+    // Use first page logic. Note: extractImagesFromPdf returns { pageNumber, image: Buffer }
+    base64Image = images[0].image.toString('base64');
+    imageMimeType = 'image/jpeg'; // library output is jpeg
 } else {
     // Assume image
     base64Image = fileBuffer.toString('base64');
-    imageMimeType = 'image/jpeg'; // Default assumption if not PDF logic, though explicit check is better
+    imageMimeType = 'image/jpeg';
 }
 
 const prompt = `
