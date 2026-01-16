@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         const iclBuffer = await generateICL(id);
 
         // Return Stream
-        return new NextResponse(iclBuffer, {
+        return new NextResponse(iclBuffer as any, {
             headers: {
                 'Content-Type': 'application/octet-stream', // X9.37 usually generic binary
                 'Content-Disposition': `attachment; filename="Batch_${id}_ICL.x937"`
