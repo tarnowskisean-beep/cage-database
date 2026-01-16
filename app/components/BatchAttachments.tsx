@@ -76,6 +76,7 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
 
         let totalProcessed = 0;
         let totalMatched = 0;
+        let errors = 0;
         let lastError = '';
 
         for (const doc of documents) {
