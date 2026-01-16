@@ -83,21 +83,25 @@ export async function POST(request: Request) {
                     fetchUrl = 'https://drive.google.com/uc?export=download&id=' + driveFileId;
                 }
 
-try {
-    const res = await fetch(fetchUrl);
-    if (!res.ok) {
-        if (res.status === 403 || res.status === 401) throw new Error(`Access Denied(Status ${ res.status }).`);
-        if (res.status === 404) throw new Error(`File not found(Status 404).`);
-        throw new Error(`Download failed: ${ res.statusText } `);
-    }
-    const arrayBuffer = await res.arrayBuffer();
-    fileBuffer = Buffer.from(arrayBuffer);
-} catch (fetchErr: any) {
-    if (driveFileId) {
-        return NextResponse.json({ error: `Could not access Google Drive file.${ fetchErr.message } ` }, { status: 400 });
-    }
-    return NextResponse.json({ error: `Could not download file.${ fetchErr.message } ` }, { status: 400 });
-}
+                try {
+                    const res = await fetch(fetchUrl);
+                    if (!res.ok) {
+                        if (res.status === 403 || res.status === 401) {
+                            throw new Error('Access Denied (Status ' + res.status + ').');
+                        }
+                        if (res.status === 404) {
+                            throw new Error('File not found (Status 404).');
+                        }
+                        throw new Error('Download failed: ' + res.statusText);
+                    }
+                    const arrayBuffer = await res.arrayBuffer();
+                    fileBuffer = Buffer.from(arrayBuffer);
+                } catch (fetchErr: any) {
+                    if (driveFileId) {
+                        return NextResponse.json({ error: 'Could not access Google Drive file. ' + fetchErr.message }, { status: 400 });
+                    }
+                    return NextResponse.json({ error: 'Could not download file. ' + fetchErr.message }, { status: 400 });
+                }
             }
         } else if (StorageKey.startsWith('gcs:')) {
     const bucketName = process.env.GCS_BUCKET_NAME!;
