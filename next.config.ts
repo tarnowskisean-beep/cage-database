@@ -17,11 +17,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  experimental: {
-    turbopack: {
-      root: process.cwd(),
-    }
-  }
+
 };
 
 export default nextConfig;
