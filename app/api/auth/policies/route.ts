@@ -8,6 +8,8 @@ import { logAudit } from "@/lib/audit";
 import { getPendingPolicies } from '@/lib/policy';
 
 // GET: Check if user needs to accept policies
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ needsAcceptance: false }); // Or 401
