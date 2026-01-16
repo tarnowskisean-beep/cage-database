@@ -288,6 +288,26 @@ export default function BatchEntry({ id }: { id: string }) {
                         </a>
                     )}
 
+                    {/* ICL BUTTON (X9.37) */}
+                    {['Checks', 'Mixed'].includes(batch?.PaymentCategory || '') && (
+                        <a
+                            href={`/api/batches/${id}/icl`}
+                            className="btn-secondary"
+                            style={{
+                                marginRight: '1rem',
+                                fontSize: '0.8rem',
+                                padding: '0.2rem 0.6rem',
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: '#1e3a8a', // Dark blue for banking
+                                color: 'white'
+                            }}
+                        >
+                            🏦 X9.37 ICL
+                        </a>
+                    )}
+
                     <button
                         onClick={handleFillFakeData}
                         disabled={batch?.Status === 'Reconciled'}
