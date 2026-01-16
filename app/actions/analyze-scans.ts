@@ -166,7 +166,14 @@ export async function analyzeScanAction(batchId: string, documentId: number) {
 
             // Check for Sign-in specifically (Private File)
             if (fileBuffer.toString('utf-8').includes('Sign-in') || fileBuffer.toString('utf-8').includes('ServiceLogin')) {
-                return { error: `Access Denied: The file is private (Redirected to Sign-in). Please ensure the file is shared with the system service account or set to "Anyone with the link". (Auth Error: ${authError || 'None'})`, status: 400 };
+                let serviceAccountEmail = 'system service account';
+                if (process.env.GDRIVE_CREDENTIALS) {
+                    try {
+                        const creds = JSON.parse(process.env.GDRIVE_CREDENTIALS);
+                        if (creds.client_email) serviceAccountEmail = creds.client_email;
+                    } catch (e) { /* ignore */ }
+                }
+                return { error: `Access Denied: The file is private (Redirected to Sign-in). Please ensure the file is shared with ${serviceAccountEmail} or set to "Anyone with the link". (Auth Error: ${authError || 'None'})`, status: 400 };
             }
 
             return { error: `Download failed: The system retrieved a web page instead of the file. content: ${htmlTitle}`, status: 400 };
