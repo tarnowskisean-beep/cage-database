@@ -172,7 +172,7 @@ const response = await openai.chat.completions.create({
                 {
                     type: "image_url",
                     image_url: {
-                        url: `data:${ imageMimeType }; base64, ${ base64Image } `,
+                        url: 'data:' + imageMimeType + ';base64,' + base64Image,
                         detail: "high",
                     },
                 },
