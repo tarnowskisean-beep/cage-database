@@ -53,11 +53,12 @@ export default function PolicyEnforcement({ initialPolicies = [] }: Props) {
             if (res.ok) {
                 setOpen(false); // Close
             } else {
-                alert('Failed to process acceptance. Please try again.');
+                const errorData = await res.json().catch(() => ({}));
+                alert(`Failed to process acceptance: ${errorData.error || 'Unknown error'}`);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert('Network error');
+            alert(`Network error: ${e.message}`);
         } finally {
             setLoading(false);
         }

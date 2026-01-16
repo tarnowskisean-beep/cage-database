@@ -42,6 +42,8 @@ export async function POST(req: Request) {
         // Simple validation
         if (!Array.isArray(policyIds)) throw new Error("Invalid payload");
 
+        console.log(`[PolicyAcceptance] Processing for UserID: ${userId} (${typeof userId}), Policies: ${JSON.stringify(policyIds)}`);
+
         for (const pid of policyIds) {
             tasks.push(query(`
                 INSERT INTO "PolicyAcceptances" ("UserID", "PolicyID", "IPAddress")
@@ -63,6 +65,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true });
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        console.error('[PolicyAcceptance] Error:', e);
+        return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 });
     }
 }
