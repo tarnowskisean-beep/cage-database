@@ -137,31 +137,30 @@ if (originalMimeType === 'application/pdf') {
     imageMimeType = 'image/jpeg';
 }
 
-const prompt = `
-            Analyze this document of donation scans.
-            Extract a list of all distinct donations / checks found.
-            
-            For each donation, extract:
-1. Donor Name(best guess)
-2. Amount(exact number)
-3. Check Number(if visible)
-    4. Memo / Notes(handwritten)
-5. Address(full donor address if visible)
-    6. Confidence Score(0.0 to 1.0)
-
-            Return ONLY a valid JSON array of objects:
-[
-    {
-        "name": "John Doe",
-        "amount": 100.00,
-        "page": 1,
-        "check_number": "1234",
-        "memo": "Note",
-        "address": "123 Main St",
-        "confidence": 0.95
-    }
-]
-        `;
+        const prompt = 
+            'Analyze this document of donation scans.\n' +
+            'Extract a list of all distinct donations/checks found.\n' +
+            '\n' +
+            'For each donation, extract:\n' +
+            '1. Donor Name (best guess)\n' +
+            '2. Amount (exact number)\n' +
+            '3. Check Number (if visible)\n' +
+            '4. Memo / Notes (handwritten)\n' +
+            '5. Address (full donor address if visible)\n' +
+            '6. Confidence Score (0.0 to 1.0)\n' +
+            '\n' +
+            'Return ONLY a valid JSON array of objects:\n' +
+            '[\n' +
+            '    { \n' +
+            '        "name": "John Doe", \n' +
+            '        "amount": 100.00, \n' +
+            '        "page": 1, \n' +
+            '        "check_number": "1234", \n' +
+            '        "memo": "Note",\n' +
+            '        "address": "123 Main St",\n' +
+            '        "confidence": 0.95\n' +
+            '    }\n' +
+            ']';
 
 const response = await openai.chat.completions.create({
     model: "gpt-4o",
