@@ -1,27 +1,25 @@
+'use server';
 
-import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import OpenAI from 'openai';
 import { Storage } from '@google-cloud/storage';
 import { google } from 'googleapis';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { extractImagesFromPdf } from '@/lib/ai'; // Import the helper
+import { extractImagesFromPdf } from '@/lib/ai';
 
-// Allow up to 60 seconds for AI processing (Vercel Hobby Limit)
+// Allow up to 60 seconds for AI processing
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export async function analyzeScanAction(batchId: string, documentId: number) {
     try {
         const session = await getServerSession(authOptions);
         if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return { error: 'Unauthorized', status: 401 };
         }
 
-        const { batchId, documentId } = await request.json();
-
         if (!process.env.OPENAI_API_KEY) {
-            return NextResponse.json({ error: 'OPENAI_API_KEY is missing' }, { status: 500 });
+            return { error: 'OPENAI_API_KEY is missing', status: 500 };
         }
 
         const openai = new OpenAI({
@@ -35,7 +33,7 @@ export async function POST(request: Request) {
         );
 
         if (docResult.rows.length === 0) {
-            return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+            return { error: 'Document not found', status: 404 };
         }
 
         const { StorageKey, DocumentType } = docResult.rows[0];
@@ -88,34 +86,25 @@ export async function POST(request: Request) {
                 try {
                     const res = await fetch(fetchUrl);
                     if (!res.ok) {
-                        if (res.status === 403 || res.status === 401) {
-                            throw new Error('Access Denied (Status ' + res.status + ').');
-                        }
-                        if (res.status === 404) {
-                            throw new Error('File not found (Status 404).');
-                        }
-                        throw new Error('Download failed: ' + res.statusText);
+                        return { error: `Download failed: ${res.statusText}`, status: 400 };
                     }
                     const arrayBuffer = await res.arrayBuffer();
                     fileBuffer = Buffer.from(arrayBuffer);
                 } catch (fetchErr: any) {
-                    if (driveFileId) {
-                        return NextResponse.json({ error: 'Could not access Google Drive file. ' + fetchErr.message }, { status: 400 });
-                    }
-                    return NextResponse.json({ error: 'Could not download file. ' + fetchErr.message }, { status: 400 });
+                    return { error: `Could not download file: ${fetchErr.message}`, status: 400 };
                 }
             }
         } else if (StorageKey.startsWith('gcs:')) {
             const bucketName = process.env.GCS_BUCKET_NAME!;
             const filePath = StorageKey.replace('gcs:', '');
-            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!);
+            const credentials = JSON.parse(process.env.GDRIVE_CREDENTIALS!); // Assuming GCS uses same creds or env var structure as previously set
             const storage = new Storage({ projectId: credentials.project_id, credentials });
             const [file] = await storage.bucket(bucketName).file(filePath).download();
             fileBuffer = file;
         }
 
         if (!fileBuffer) {
-            return NextResponse.json({ error: 'System could not retrieve file content' }, { status: 400 });
+            return { error: 'System could not retrieve file content', status: 400 };
         }
 
         // 3. OpenAI Analysis
@@ -128,11 +117,11 @@ export async function POST(request: Request) {
         if (originalMimeType === 'application/pdf') {
             const images = await extractImagesFromPdf(fileBuffer);
             if (images.length === 0) {
-                return NextResponse.json({ error: 'Could not extract images from PDF for AI analysis.' }, { status: 400 });
+                return { error: 'Could not extract images from PDF for AI analysis.', status: 400 };
             }
-            // Use first page logic. Note: extractImagesFromPdf returns { pageNumber, image: Buffer }
+            // Use first page logic.
             base64Image = images[0].image.toString('base64');
-            imageMimeType = 'image/jpeg'; // library output is jpeg
+            imageMimeType = 'image/jpeg';
         } else {
             // Assume image
             base64Image = fileBuffer.toString('base64');
@@ -191,12 +180,10 @@ export async function POST(request: Request) {
         let extractedData: any[] = [];
         try {
             const parsed = JSON.parse(text);
-            // Parse the response from OpenAI
             if (Array.isArray(parsed)) extractedData = parsed;
             else if (parsed.donations && Array.isArray(parsed.donations)) extractedData = parsed.donations;
             else if (parsed.checks && Array.isArray(parsed.checks)) extractedData = parsed.checks;
             else {
-                // Fallback: try to find any array in the values
                 const val = Object.values(parsed).find(v => Array.isArray(v));
                 if (val) extractedData = val as any[];
                 else throw new Error("Could not find array in JSON response");
@@ -292,17 +279,16 @@ export async function POST(request: Request) {
             }
         }
 
-        return NextResponse.json({
+        return {
             success: true,
             processed: extractedData.length,
             matched: matchCount,
             created: createdCount,
             extracted: extractedData
-        });
+        };
 
     } catch (e: any) {
         console.error('AI Processing Error:', e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return { error: e.message, status: 500 };
     }
 }
-

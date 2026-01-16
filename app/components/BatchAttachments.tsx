@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { analyzeScanAction } from '@/app/actions/analyze-scans';
 
 interface Document {
     BatchDocumentID: number;
@@ -80,24 +81,16 @@ export default function BatchAttachments({ batchId, paymentCategory, activeScan 
         let errors = 0;
         let lastError = '';
 
+
+
+        // ... (in component)
+
         for (const doc of documents) {
             try {
-                const res = await fetch('/api/ai-analysis', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ batchId, documentId: doc.BatchDocumentID })
-                });
+                // Call Server Action directly
+                const data = await analyzeScanAction(batchId, doc.BatchDocumentID);
 
-                let data;
-                const contentType = res.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    data = await res.json();
-                } else {
-                    const text = await res.text();
-                    throw new Error(`Server returned ${res.status} ${res.statusText}: ${text.substring(0, 100)}`);
-                }
-
-                if (res.ok) {
+                if (data.success) {
                     totalProcessed += data.processed || 0;
                     totalMatched += data.matched || 0;
                     totalCreated += data.created || 0;
