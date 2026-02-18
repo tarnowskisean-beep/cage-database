@@ -1,0 +1,5 @@
+Type,ID,Created,Description,Amount,Currency,Converted Amount,Fees,Net,Converted Currency,Details,Customer ID,Customer Email,Customer Name
+Charge,ch_3S0mfVIxnatgOG4t07lJlwGP,2025-08-27 16:57,VP.CC.01_Marcel,300.00,usd,300.00,10.50,289.50,usd,
+Charge,ch_3S0mfxIxnatgOG4t0igZRtrt,2025-08-27 16:58,VP.CC.01_Slechta,50.00,usd,50.00,2.00,48.00,usd,
+Charge,ch_3S0mgRIxnatgOG4t2kRdwhzN,2025-08-27 16:58,VP.CC.01_Oakley,25.00,usd,25.00,1.15,23.85,usd,
+Charge,ch_3S0mgwIxnatgOG4t2jiY2V0v,2025-08-27 16:59,VP.CC.01_Jacobson,200.00,usd,200.00,7.10,192.90,usd,
